@@ -1,0 +1,185 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>DARK DIVINE — Product</title>
+  <meta name="description" content="Dark Divine limited-run streetwear. Fit notes, materials and secure checkout.">
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><rect width='32' height='32' fill='%230a0a0b'/><text x='16' y='22' font-family='Georgia' font-size='14' font-weight='bold' fill='%23e8e2d4' text-anchor='middle'>00</text></svg>">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@600;700;800&family=Archivo:wght@400;500;600;700&family=Pinyon+Script&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="assets/css/style.css">
+</head>
+<body data-page="product">
+
+  <div class="wrap crumbs" id="crumbs"></div>
+  <div class="wrap pdp" id="pdp"></div>
+
+  <section class="section" id="relatedSec" style="padding-top:0">
+    <div class="wrap">
+      <div class="strip-head"><h2 class="display">Complete the Fit</h2></div>
+      <div class="grid g4" id="relatedGrid"></div>
+    </div>
+  </section>
+
+  <section class="section" id="recentSec" style="padding-top:0" hidden>
+    <div class="wrap">
+      <div class="strip-head"><h2 class="display">Recently Viewed</h2></div>
+      <div class="grid g4" id="recentGrid"></div>
+    </div>
+  </section>
+
+  <div class="sticky-atc" id="stickyAtc"></div>
+
+  <script src="assets/js/products.js"></script>
+  <script src="assets/js/store.js"></script>
+  <script src="assets/js/ui.js"></script>
+  <script>
+    (function () {
+      const S = window.DDStore, UI = window.DDUI, C = window.DD_CONFIG;
+      const esc = UI.esc;
+      const handle = new URLSearchParams(location.search).get('p');
+      const p = S.byHandle(handle) || window.DD_PRODUCTS[0];
+      document.title = `${p.title} — DARK DIVINE`;
+      S.markViewed(p.handle);
+
+      document.getElementById('crumbs').innerHTML =
+        `<a href="index.html">Home</a> / <a href="shop.html">Shop</a> / <span style="color:var(--bone)">${esc(p.title)}</span>`;
+
+      const low = S.lowStock(p);
+      const off = p.compare && p.compare > p.price ? Math.round((1 - p.price / p.compare) * 100) : 0;
+
+      document.getElementById('pdp').innerHTML = `
+      <div class="gallery">
+        <div class="main"><img id="mainImg" src="${p.images[0]}" alt="${esc(p.title)}"></div>
+        <div class="thumbs" id="thumbs">
+          ${p.images.map((src, i) => `<button data-i="${i}" class="${i === 0 ? 'sel' : ''}" aria-label="Image ${i + 1}"><img src="${src}" alt="" loading="lazy"></button>`).join('')}
+        </div>
+      </div>
+      <div class="buy">
+        <span class="eyebrow">${esc(p.collection)} — ${esc(p.tag)}</span>
+        <h1>${esc(p.title)}</h1>
+        <div class="sub">${esc(p.sub)}</div>
+        <div class="price">${S.money(p.price)}${p.compare && p.compare > p.price ? `<s>${S.money(p.compare)}</s>` : ''}${off ? `<span class="off">Save ${off}%</span>` : ''}</div>
+        ${low ? `<div class="stock-note low">Only ${low} left in this run — no restock</div>` : `<div class="stock-note">In stock — one run only</div>`}
+
+        <div class="desc">${p.desc.map(d => `<p>${esc(d)}</p>`).join('')}</div>
+        ${p.includes ? `<div class="includes"><div class="lbl">This bundle includes</div><ul>${p.includes.map(i => `<li>${esc(i)}</li>`).join('')}</ul></div>` : ''}
+
+        <div id="opts"></div>
+
+        <div class="buy-actions">
+          <button class="btn btn-block" id="addBtn">Add to Cart — ${S.money(p.price)}</button>
+          <button class="btn btn-red btn-block" id="buyBtn">Buy It Now</button>
+          <button class="btn btn-ghost btn-block btn-sm" id="wishPdp">♡ &nbsp;Save for Later</button>
+        </div>
+
+        <div class="trust-banner">
+          <div>${UI.ICONS.lock} Secure checkout</div>
+          <div>${UI.ICONS.truck} Ships in 2 days</div>
+          <div>${UI.ICONS.swap} 30-day returns</div>
+        </div>
+
+        <div class="accord">
+          <details open>
+            <summary>Fit &amp; Sizing</summary>
+            <div class="a">${esc(p.fit)}<br><br><b style="color:var(--bone-dim)">${esc(p.model)}</b><br><br><a href="size-guide.html" data-sg style="color:var(--bone);text-decoration:underline;text-underline-offset:3px">Open the size guide</a></div>
+          </details>
+          <details>
+            <summary>Materials &amp; Care</summary>
+            <div class="a">${esc(p.materials)}<br><br>${esc(p.care)}</div>
+          </details>
+          <details>
+            <summary>Shipping &amp; Returns</summary>
+            <div class="a">Ships from the US within 2 business days — free over $${C.freeShipThreshold}. 30-day returns on unworn items with tags. <a href="shipping.html" style="color:var(--bone);text-decoration:underline;text-underline-offset:3px">Shipping</a> · <a href="returns.html" style="color:var(--bone);text-decoration:underline;text-underline-offset:3px">Returns</a></div>
+          </details>
+        </div>
+
+        <div id="bisBox" style="margin-top:18px"></div>
+      </div>`;
+
+      /* gallery */
+      document.getElementById('thumbs').addEventListener('click', (e) => {
+        const b = e.target.closest('[data-i]');
+        if (!b) return;
+        document.getElementById('mainImg').src = p.images[+b.dataset.i];
+        document.querySelectorAll('#thumbs button').forEach(t => t.classList.toggle('sel', t === b));
+      });
+
+      /* variant picker (swaps color image when a colorway is chosen) */
+      const picker = UI.variantPicker(p, document.getElementById('opts'), (sel, o1) => {
+        if (p.colorImages && o1 && p.colorImages[o1]) {
+          document.getElementById('mainImg').src = p.colorImages[o1];
+          document.querySelectorAll('#thumbs button').forEach(t => t.classList.remove('sel'));
+        }
+        renderBis(sel, o1);
+      });
+
+      function requireSel() {
+        const sel = picker.selection();
+        if (!sel) { UI.toast(p.options2 ? 'Pick both sizes first' : 'Pick your size first'); return null; }
+        return sel;
+      }
+      document.getElementById('addBtn').addEventListener('click', () => {
+        const sel = requireSel(); if (!sel) return;
+        S.addToCart(p.handle, sel[0], sel[1]);
+        UI.toast('Added to cart');
+        UI.openCart();
+      });
+      /* One-click checkout — Stripe Payment Link if configured, live store otherwise */
+      document.getElementById('buyBtn').addEventListener('click', () => {
+        if (!requireSel()) return;
+        window.open(p.stripeLink || p.shopifyUrl, '_blank', 'noopener');
+      });
+      const wishBtn = document.getElementById('wishPdp');
+      function paintWish() { wishBtn.innerHTML = S.inWish(p.handle) ? '♥ &nbsp;Saved' : '♡ &nbsp;Save for Later'; }
+      wishBtn.addEventListener('click', () => { S.toggleWish(p.handle); paintWish(); });
+      paintWish();
+
+      /* back-in-stock capture for sold-out combos */
+      function renderBis(sel, o1) {
+        const box = document.getElementById('bisBox');
+        const soldOut = o1 && !sel && p.options2 === null && S.variantQty(p, o1, '') === 0;
+        if (!soldOut) { box.innerHTML = ''; return; }
+        box.innerHTML = `
+          <div class="includes">
+            <div class="lbl">Sold out in ${esc(o1)} — get notified</div>
+            <form class="signup-form" data-signup="back-in-stock:${p.handle}:${esc(o1)}">
+              <input type="email" required placeholder="Email address" aria-label="Email for restock alert">
+              <button class="btn btn-sm" type="submit">Notify me</button>
+            </form>
+          </div>`;
+      }
+
+      /* sticky mobile ATC */
+      const sticky = document.getElementById('stickyAtc');
+      sticky.innerHTML = `
+        <div><div class="t">${esc(p.title)}</div><div class="p">${S.money(p.price)}</div></div>
+        <button class="btn" id="stickyAdd">Add to Cart</button>`;
+      document.getElementById('stickyAdd').addEventListener('click', () => {
+        const sel = picker.selection();
+        if (!sel) { document.getElementById('opts').scrollIntoView({ behavior: 'smooth', block: 'center' }); UI.toast('Pick your size'); return; }
+        S.addToCart(p.handle, sel[0], sel[1]);
+        UI.toast('Added to cart'); UI.openCart();
+      });
+      window.addEventListener('scroll', () => {
+        sticky.classList.toggle('show', window.scrollY > 520);
+      }, { passive: true });
+
+      /* related: same collection first, then rest */
+      const related = window.DD_PRODUCTS.filter(x => x.handle !== p.handle)
+        .sort((a, b) => (b.collection === p.collection) - (a.collection === p.collection)).slice(0, 4);
+      document.getElementById('relatedGrid').innerHTML = related.map(UI.productCard).join('');
+
+      /* recently viewed */
+      const recent = S.recent().filter(h => h !== p.handle).map(S.byHandle).filter(Boolean).slice(0, 4);
+      if (recent.length) {
+        document.getElementById('recentSec').hidden = false;
+        document.getElementById('recentGrid').innerHTML = recent.map(UI.productCard).join('');
+      }
+      UI.observeReveals();
+    })();
+  </script>
+</body>
+</html>

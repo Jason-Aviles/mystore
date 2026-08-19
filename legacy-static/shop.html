@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Shop All — DARK DIVINE</title>
+  <meta name="description" content="Shop the full Dark Divine catalog — City of Sins bundles, jerseys, nylon pants, hoodies and core essentials. Limited runs, never restocked.">
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><rect width='32' height='32' fill='%230a0a0b'/><text x='16' y='22' font-family='Georgia' font-size='14' font-weight='bold' fill='%23e8e2d4' text-anchor='middle'>00</text></svg>">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@600;700;800&family=Archivo:wght@400;500;600;700&family=Pinyon+Script&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="assets/css/style.css">
+  <style>
+    .filter-bar { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 34px; }
+    .filter-bar button {
+      background: none; border: 1px solid var(--line-strong); color: var(--bone-dim);
+      padding: 9px 18px; font-size: 11px; font-weight: 700; letter-spacing: 0.18em; text-transform: uppercase;
+      transition: all .2s;
+    }
+    .filter-bar button:hover { border-color: var(--bone); color: var(--bone); }
+    .filter-bar button.sel { background: var(--bone); color: var(--void); border-color: var(--bone); }
+    .empty-note { color: var(--silver); padding: 40px 0; }
+  </style>
+</head>
+<body data-page="shop">
+
+  <section class="page-head mesh">
+    <div class="wrap">
+      <span class="eyebrow">The Catalog</span>
+      <h1 id="shopTitle">Shop All</h1>
+    </div>
+  </section>
+
+  <section class="section" style="padding-top:34px">
+    <div class="wrap">
+      <div class="filter-bar" id="filterBar" role="tablist" aria-label="Filter products">
+        <button data-c="all">All</button>
+        <button data-c="bundle">The Drop</button>
+        <button data-c="jersey">Jerseys</button>
+        <button data-c="pants">Pants</button>
+        <button data-c="essentials">Essentials</button>
+        <button data-c="saved">Saved ♥</button>
+      </div>
+      <div class="grid g4" id="shopGrid"></div>
+      <p class="empty-note" id="emptyNote" hidden>Nothing saved yet. Tap the heart on any piece to keep it here.</p>
+    </div>
+  </section>
+
+  <script src="assets/js/products.js"></script>
+  <script src="assets/js/store.js"></script>
+  <script src="assets/js/ui.js"></script>
+  <script>
+    (function () {
+      const P = window.DD_PRODUCTS, UI = window.DDUI, S = window.DDStore;
+      const grid = document.getElementById('shopGrid');
+      const bar = document.getElementById('filterBar');
+      const titles = { all: 'Shop All', bundle: 'The Drop', jersey: 'Jerseys', pants: 'Pants', essentials: 'Essentials', saved: 'Saved Pieces' };
+
+      function render(c) {
+        let items = c === 'all' ? P
+          : c === 'saved' ? P.filter(p => S.inWish(p.handle))
+          : P.filter(p => p.category === c);
+        grid.innerHTML = items.map(UI.productCard).join('');
+        document.getElementById('emptyNote').hidden = !(c === 'saved' && !items.length);
+        document.getElementById('shopTitle').textContent = titles[c] || 'Shop All';
+        bar.querySelectorAll('button').forEach(b => b.classList.toggle('sel', b.dataset.c === c));
+        UI.observeReveals();
+      }
+
+      bar.addEventListener('click', (e) => {
+        const b = e.target.closest('[data-c]');
+        if (!b) return;
+        history.replaceState(null, '', b.dataset.c === 'all' ? 'shop.html' : `shop.html?c=${b.dataset.c}`);
+        render(b.dataset.c);
+      });
+      document.addEventListener('dd:wish', () => {
+        if (bar.querySelector('.sel')?.dataset.c === 'saved') render('saved');
+      });
+
+      render(new URLSearchParams(location.search).get('c') || 'all');
+    })();
+  </script>
+</body>
+</html>

@@ -1,0 +1,12 @@
+node_modules/
+dist/
+.env
+.env.local
+.env.*.local
+# raw media stays local — the web-ready copies live in public/
+CONTENT/
+new images and videos/
+logos/
+shoot/
+cvs/
+reviews-cvs/

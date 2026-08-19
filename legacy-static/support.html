@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Support — DARK DIVINE</title>
+  <meta name="description" content="Contact Dark Divine support — order tracking, sizing help, returns. We answer within 24 hours: support@darkdivine.store">
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><rect width='32' height='32' fill='%230a0a0b'/><text x='16' y='22' font-family='Georgia' font-size='14' font-weight='bold' fill='%23e8e2d4' text-anchor='middle'>00</text></svg>">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@600;700;800&family=Archivo:wght@400;500;600;700&family=Pinyon+Script&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="assets/css/style.css">
+</head>
+<body data-page="support">
+
+  <section class="page-head mesh">
+    <div class="wrap">
+      <span class="eyebrow">We Actually Answer</span>
+      <h1>Support</h1>
+    </div>
+  </section>
+
+  <div class="wrap">
+    <div class="info-cards">
+      <div class="info-card">
+        <h3 class="display">Email Us</h3>
+        <p>Real replies within 24 hours, 7 days a week.<br><a href="mailto:support@darkdivine.store" style="color:var(--bone)">support@darkdivine.store</a></p>
+      </div>
+      <div class="info-card">
+        <h3 class="display">Sizing Help</h3>
+        <p>Send your height and weight — we'll tell you exactly what to order. Or check the <a href="size-guide.html" style="color:var(--bone)">size guide</a>.</p>
+      </div>
+      <div class="info-card">
+        <h3 class="display">DM Us</h3>
+        <p>Fastest for quick questions: <a href="https://instagram.com/darkdivine.store" target="_blank" rel="noopener" style="color:var(--bone)">Instagram</a> or <a href="https://tiktok.com/@darkdivine.store" target="_blank" rel="noopener" style="color:var(--bone)">TikTok</a>.</p>
+      </div>
+    </div>
+
+    <div class="prose" id="track" style="padding-top:10px">
+      <h2 class="display">Track Your Order</h2>
+      <p>Every order gets a tracking number by email the moment it ships. Enter your details below and we'll resend it.</p>
+      <form id="trackForm" style="display:grid;gap:10px;max-width:420px">
+        <input type="text" required placeholder="Order number (e.g. #1042)" aria-label="Order number">
+        <input type="email" required placeholder="Email used at checkout" aria-label="Email">
+        <button class="btn" type="submit">Find My Order</button>
+      </form>
+      <p id="trackMsg" style="min-height:22px;margin-top:12px;color:var(--silver)"></p>
+
+      <h2 class="display">Send a Message</h2>
+      <form id="contactForm" style="display:grid;gap:10px;max-width:520px">
+        <input type="text" required placeholder="Name" aria-label="Name">
+        <input type="email" required placeholder="Email" aria-label="Email">
+        <textarea required rows="5" placeholder="What's going on? Include your order number if you have one." aria-label="Message"></textarea>
+        <button class="btn" type="submit">Send Message</button>
+      </form>
+      <p id="contactMsg" style="min-height:22px;margin-top:12px;color:var(--silver)"></p>
+
+      <h2 class="display">Response Times</h2>
+      <ul>
+        <li>Order issues and tracking — within 24 hours</li>
+        <li>Sizing and product questions — within 24 hours</li>
+        <li>Returns and refunds — approved or answered within 48 hours</li>
+      </ul>
+    </div>
+  </div>
+
+  <script src="assets/js/products.js"></script>
+  <script src="assets/js/store.js"></script>
+  <script src="assets/js/ui.js"></script>
+  <script>
+    // Order tracking portal placeholder — wire to Shopify/17track later.
+    document.getElementById('trackForm').addEventListener('submit', (e) => {
+      e.preventDefault();
+      document.getElementById('trackMsg').textContent =
+        'Got it — we’ll resend your tracking link to that email within a few minutes. Not there in an hour? Email support@darkdivine.store.';
+      e.target.reset();
+    });
+    // Contact form — swap action for Formspree/Shopify contact when ready.
+    document.getElementById('contactForm').addEventListener('submit', (e) => {
+      e.preventDefault();
+      const [name, email, msg] = [...e.target.elements].map(el => el.value);
+      location.href = `mailto:support@darkdivine.store?subject=${encodeURIComponent('Support — ' + name)}&body=${encodeURIComponent(msg + '\n\nFrom: ' + email)}`;
+      document.getElementById('contactMsg').textContent = 'Opening your email app — hit send and we’ll take it from there.';
+    });
+  </script>
+</body>
+</html>
