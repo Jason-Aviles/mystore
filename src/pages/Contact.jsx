@@ -65,17 +65,17 @@ export default function Contact() {
           <h2 className="display">Track Your Order</h2>
           <p>Every order gets a tracking number by email the moment it ships. Need it again? Send us your order details — a human resends it, {CONFIG.supportResponse}.</p>
           <form onSubmit={submitTrack} style={{ display: 'grid', gap: 10, maxWidth: 420 }}>
-            <input type="text" required placeholder="Order number (e.g. #1042)" aria-label="Order number" />
-            <input type="email" required placeholder="Email used at checkout" aria-label="Email" autoComplete="email" />
+            <input type="text" name="order-number" required placeholder="Order number (e.g. #1042)" aria-label="Order number" autoComplete="off" spellCheck="false" />
+            <input type="email" name="order-email" required placeholder="Email used at checkout" aria-label="Email" autoComplete="email" spellCheck="false" />
             <button className="btn" type="submit">Request My Tracking</button>
           </form>
           <p style={{ minHeight: 22, marginTop: 12, color: 'var(--silver)' }} role="status">{trackMsg}</p>
 
           <h2 className="display">Send a Message</h2>
           <form onSubmit={submitContact} style={{ display: 'grid', gap: 10, maxWidth: 520 }}>
-            <input type="text" required placeholder="Name" aria-label="Name" autoComplete="name" />
-            <input type="email" required placeholder="Email" aria-label="Email" autoComplete="email" />
-            <textarea required rows="5" placeholder="What's going on? Include your order number if you have one." aria-label="Message" />
+            <input type="text" name="name" required placeholder="Name" aria-label="Name" autoComplete="name" />
+            <input type="email" name="email" required placeholder="Email" aria-label="Email" autoComplete="email" spellCheck="false" />
+            <textarea name="message" required rows="5" placeholder="What's going on? Include your order number if you have one." aria-label="Message" />
             <button className="btn" type="submit">Send Message</button>
           </form>
           <p style={{ minHeight: 22, marginTop: 12, color: 'var(--silver)' }} role="status">{contactMsg}</p>

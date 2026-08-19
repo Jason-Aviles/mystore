@@ -1,6 +1,9 @@
 import { useEffect, useState } from 'react';
 import { DEFAULT_CONFIG } from '../lib/config';
+import { mergeHomepage } from '../lib/homeContent';
 import { adminGetSettings, adminSaveSettings, uploadProductImage, uploadMedia, isLive } from './adminData';
+import HomepageEditor from './HomepageEditor';
+import { HOMEPAGE_FIELD_GROUPS } from './homepageFields';
 
 /* Site Settings — edit the storefront without touching code.
    Saved overrides merge over DEFAULT_CONFIG on every visitor load. */
@@ -96,7 +99,11 @@ export default function Settings() {
   }
 
   useEffect(() => {
-    adminGetSettings().then((overrides) => setForm({ ...DEFAULT_CONFIG, ...overrides }));
+    adminGetSettings().then((overrides) => setForm({
+      ...DEFAULT_CONFIG,
+      ...overrides,
+      homepage: mergeHomepage(overrides.homepage),
+    }));
   }, []);
 
   if (!form) return <p style={{ color: 'var(--silver)' }}>Loading…</p>;
@@ -224,6 +231,15 @@ export default function Settings() {
             ))}
           </fieldset>
         ))}
+        <div className="admin-head" style={{ marginTop: 12 }}>
+          <h2 className="display">Homepage Content</h2>
+          <span className="admin-mode">{HOMEPAGE_FIELD_GROUPS.length} editable sections</span>
+        </div>
+        <p className="note-banner">
+          Change every static homepage title, paragraph, button, image, video, poster, list, and FAQ here.
+          Product cards still come from Products, and customer reviews still come from Reviews.
+        </p>
+        <HomepageEditor value={form.homepage} onChange={(homepage) => set('homepage', homepage)} onError={setErr} />
         <div style={{ display: 'flex', gap: 12, alignItems: 'center' }}>
           <button className="btn" type="submit">Save Settings</button>
           {saved && <span className="pill ok">Saved — refresh the store to see it</span>}

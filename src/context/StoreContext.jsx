@@ -1,6 +1,7 @@
 import { createContext, useContext, useEffect, useMemo, useState, useCallback } from 'react';
 import { fetchProducts, money, variantQty } from '../lib/catalog';
 import { DEFAULT_CONFIG, fetchSiteSettings } from '../lib/config';
+import { mergeHomepage } from '../lib/homeContent';
 import { initMetaPixel, metaTrack } from '../lib/meta';
 import { fetchCurrentCampaign, readUnlock, saveUnlock, isPreorderProduct } from '../lib/preorder';
 
@@ -33,7 +34,11 @@ export function StoreProvider({ children }) {
   const [settings, setSettings] = useState({});
 
   // admin-saved overrides merge over the shipped defaults
-  const CONFIG = useMemo(() => ({ ...DEFAULT_CONFIG, ...settings }), [settings]);
+  const CONFIG = useMemo(() => ({
+    ...DEFAULT_CONFIG,
+    ...settings,
+    homepage: mergeHomepage(settings.homepage),
+  }), [settings]);
 
   useEffect(() => { fetchSiteSettings().then(setSettings).catch(() => {}); }, []);
   useEffect(() => { fetchCurrentCampaign().then(setCampaign).catch(() => {}); }, []);

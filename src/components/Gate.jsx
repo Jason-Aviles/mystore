@@ -37,6 +37,8 @@ export default function Gate({ onDone }) {
   useEffect(() => {
     const el = root.current;
     if (!el) return;
+    const background = [document.querySelector('.site-top'), document.querySelector('#smooth-wrapper')].filter(Boolean);
+    background.forEach((node) => node.setAttribute('inert', ''));
     el.querySelector('input[type="email"]')?.focus();
     const onKey = (e) => {
       if (e.key !== 'Tab') return;
@@ -46,7 +48,10 @@ export default function Gate({ onDone }) {
       else if (!e.shiftKey && document.activeElement === last) { e.preventDefault(); first.focus(); }
     };
     window.addEventListener('keydown', onKey);
-    return () => window.removeEventListener('keydown', onKey);
+    return () => {
+      window.removeEventListener('keydown', onKey);
+      background.forEach((node) => node.removeAttribute('inert'));
+    };
   }, []);
 
   /* vault doors: shutters part top/bottom, content fades, then unlock */
@@ -140,16 +145,16 @@ export default function Gate({ onDone }) {
     : (campaign?.opens_at || CONFIG.dropDate);  // coming soon: count to open
 
   return (
-    <div className="gate" role="dialog" aria-label="Private preorder access" ref={root}>
+    <div className="gate" role="dialog" aria-modal="true" aria-labelledby="gate-title" ref={root}>
       <div className="gate-shutter top" aria-hidden="true" />
       <div className="gate-shutter bottom" aria-hidden="true" />
       <div className="inner">
         <span className="logo-mark lg" aria-hidden="true" style={{ marginBottom: 18 }} />
-        <div className="logo-big">Dark Divine</div>
+        <div className="logo-big" id="gate-title">Dark Divine</div>
         <div className="script-line">Illuminate the darkness within</div>
         <div className="gate-tease" aria-hidden="true">
           <span className="gt-tape">{campaign ? 'PRIVATE PREORDER' : (CONFIG.dropMode !== false ? CONFIG.dropName : 'DARK DIVINE')}</span>
-          <img src={campaign?.hero_image_url || CONFIG.dropImage || '/media/editorial/cafe-fit.webp'} alt="" />
+          <img src={campaign?.hero_image_url || CONFIG.dropImage || '/media/editorial/cafe-fit.webp'} alt="" fetchPriority="high" />
         </div>
         <div className="lbl" ref={lblRef}>
           {campaign ? `Private Preorder — ${heading}` : `Private Access — ${heading}`}
@@ -181,30 +186,30 @@ export default function Gate({ onDone }) {
           </div>
         ) : (
           <form onSubmit={submit}>
-            <input type="email" required placeholder="EMAIL ADDRESS" aria-label="Email address" autoComplete="email"
+            <input type="email" name="email" required placeholder="EMAIL ADDRESS" aria-label="Email address" autoComplete="email" spellCheck="false"
               value={email} onChange={(e) => setEmail(e.target.value)} />
             <label className="consent-row gate-consent">
-              <input type="checkbox" checked={emailConsent} onChange={(e) => setEmailConsent(e.target.checked)} />
+              <input type="checkbox" name="email-consent" checked={emailConsent} onChange={(e) => setEmailConsent(e.target.checked)} />
               <span>Email me drop dates, access codes, and offers. (Optional — order and production emails arrive either way if you buy.)</span>
             </label>
-            <input type="tel" placeholder="PHONE (OPTIONAL) — SMS ALERTS" aria-label="Phone number, optional" autoComplete="tel"
+            <input type="tel" name="phone" inputMode="tel" placeholder="PHONE (OPTIONAL) — SMS ALERTS" aria-label="Phone number, optional" autoComplete="tel"
               value={phone} onChange={(e) => setPhone(e.target.value)} />
             {phone.trim() && (
               <label className="consent-row gate-consent">
-                <input type="checkbox" checked={smsConsent} onChange={(e) => setSmsConsent(e.target.checked)} />
+                <input type="checkbox" name="sms-consent" checked={smsConsent} onChange={(e) => setSmsConsent(e.target.checked)} />
                 <span>I agree to receive automated SMS alerts from Dark Divine. Msg &amp; data rates may apply. Reply STOP to opt out.</span>
               </label>
             )}
             {(live || !campaign) && (
-              <input className="code" type="text" required placeholder="ACCESS CODE" aria-label="Access code"
-                value={code} onChange={(e) => setCode(e.target.value)} autoComplete="off" ref={codeRef} />
+              <input className="code" type="text" name="access-code" required placeholder="ACCESS CODE" aria-label="Access code"
+                value={code} onChange={(e) => setCode(e.target.value)} autoComplete="off" autoCapitalize="characters" spellCheck="false" ref={codeRef} />
             )}
             <button className="btn" type="submit" disabled={busy}>
               {busy ? 'Checking…' : (campaign ? (live ? 'Enter Private Preorder' : 'Notify Me When It Opens') : 'Enter')}
             </button>
           </form>
         )}
-        <div className="err">{err}</div>
+        <div className="err" role="status" aria-live="polite">{err}</div>
         {(live || !campaign) && !joined && (
           <div className="alt">No code? <button type="button" onClick={joinList} disabled={busy}>Join the list</button> — codes go out before every {campaign ? 'preorder' : 'drop'}.</div>
         )}

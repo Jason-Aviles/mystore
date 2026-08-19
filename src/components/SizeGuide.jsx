@@ -63,14 +63,14 @@ export function SizeRecommender({ p, onPick }) {
       <form onSubmit={suggest} className="sg-rec-form">
         <label>Height
           <span className="sg-ht">
-            <input type="number" inputMode="numeric" min="4" max="7" placeholder="ft" aria-label="Height feet"
+            <input type="number" name="height-feet" inputMode="numeric" min="4" max="7" placeholder="ft" aria-label="Height feet"
               value={ft} onChange={(e) => setFt(e.target.value)} />
-            <input type="number" inputMode="numeric" min="0" max="11" placeholder="in" aria-label="Height inches"
+            <input type="number" name="height-inches" inputMode="numeric" min="0" max="11" placeholder="in" aria-label="Height inches"
               value={inch} onChange={(e) => setInch(e.target.value)} />
           </span>
         </label>
         <label>Weight
-          <input type="number" inputMode="numeric" min="70" max="400" placeholder="lb" aria-label="Weight in pounds"
+          <input type="number" name="weight-pounds" inputMode="numeric" min="70" max="400" placeholder="lb" aria-label="Weight in pounds"
             value={lb} onChange={(e) => setLb(e.target.value)} />
         </label>
         <button className="btn btn-sm" type="submit">Suggest my size</button>

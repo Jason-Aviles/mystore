@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useStore } from '../context/StoreContext';
 import ProductCard from '../components/ProductCard';
@@ -11,14 +11,49 @@ import { ReviewCard } from '../components/Reviews';
 import { fetchReviews, SHOPIFY_RATING_COUNTS, TOTAL_SHOPIFY_RATINGS, RATING_AVG, productAvg } from '../lib/reviews';
 import { saveEmailSignup, saveSmsSignup } from '../lib/marketing';
 import { payMethodList } from '../lib/trust';
+import { formatHomepageText, mergeHomepage } from '../lib/homeContent';
+
+function Lines({ text }) {
+  const lines = String(text || '').split('|');
+  return lines.map((line, index) => (
+    <span key={`${line}-${index}`}>{line}{index < lines.length - 1 && <br />}</span>
+  ));
+}
+
+function HomeLink({ href, children, ...props }) {
+  if (!href || !children) return null;
+  if (/^(?:https?:|mailto:|tel:)/i.test(href)) {
+    return <a href={href} target={href.startsWith('http') ? '_blank' : undefined} rel={href.startsWith('http') ? 'noopener noreferrer' : undefined} {...props}>{children}</a>;
+  }
+  return <Link to={href} {...props}>{children}</Link>;
+}
+
+function RichText({ text }) {
+  const parts = [];
+  const matcher = /\[([^\]]+)\]\(([^)]+)\)/g;
+  let cursor = 0;
+  let match;
+  while ((match = matcher.exec(text)) !== null) {
+    if (match.index > cursor) parts.push(text.slice(cursor, match.index));
+    parts.push(<HomeLink href={match[2]} key={`${match.index}-${match[2]}`}>{match[1]}</HomeLink>);
+    cursor = matcher.lastIndex;
+  }
+  if (cursor < text.length) parts.push(text.slice(cursor));
+  return parts;
+}
 
 export default function Home() {
   const { products, CONFIG, money, markSubscribed, showToast } = useStore();
+  const HOME = useMemo(() => mergeHomepage(CONFIG.homepage), [CONFIG.homepage]);
+  const homeText = (value, extra = {}) => formatHomepageText(value, { ...CONFIG, ...extra });
   const [liveReviews, setLiveReviews] = useState([]);
   useEffect(() => { fetchReviews().then(setLiveReviews); }, []);
   const featured = products.filter((p) => p.featured);
   const best = products.filter((p) => p.bestseller);
   const fresh = products.filter((p) => p.newArrival && !p.featured);
+  const bundles = products.filter((product) => product.category === 'bundle');
+  const maxBundleCombo = Math.max(0, ...bundles.flatMap((product) => product.variants.map((variant) => variant[2] || 0)));
+  const tickerParts = HOME.tickerText.split('·');
 
   const [email, setEmail] = useState('');
   const [phone, setPhone] = useState('');
@@ -63,7 +98,7 @@ export default function Home() {
           through. Scroll TEARS the screen into five slats → Scene B. */}
       <section className="hero-cine2">
         <div className="hs-a">
-          <video className="hs-video hs-broadcast" src={CONFIG.heroVideoA || '/media/editorial/broadcast.mp4'} poster={CONFIG.heroPosterA || '/media/editorial/broadcast-poster.jpg'}
+          <video className="hs-video hs-broadcast" src={CONFIG.heroVideoA} poster={CONFIG.heroPosterA}
             muted loop playsInline preload="none" aria-hidden="true" />
           <div className="vhs-chrome" aria-hidden="true">
             <span className="vhs-tc">TCR 00:00:00:00</span>
@@ -71,11 +106,12 @@ export default function Home() {
             <span className="vhs-scan" />
           </div>
           <div className="hs-kinetic">
-            <h1 className="hs-title" aria-label="Dark Divine">
-              <span className="line"><span className="w">DARK</span></span>
-              <span className="line"><span className="w">DIVINE</span></span>
+            <h1 className="hs-title" aria-label={HOME.heroBrandTitle.replace('|', ' ')}>
+              {HOME.heroBrandTitle.split('|').map((line, index) => (
+                <span className="line" key={`${line}-${index}`}><span className="w">{line}</span></span>
+              ))}
             </h1>
-            <span className="hs-script">{CONFIG.heroScript} the darkness within</span>
+            <span className="hs-script">{CONFIG.heroScript} {HOME.heroScriptSuffix}</span>
           </div>
           <div className="hs-cue" aria-hidden="true"><span /></div>
         </div>
@@ -86,7 +122,7 @@ export default function Home() {
         <div className="hs-b hero">
           <div className="hs-stage" aria-hidden="true">
             <div className="hs-monolith">
-              <video src={CONFIG.heroVideoB || '/media/editorial/hero-film.mp4'} poster={CONFIG.heroPosterB || '/media/editorial/hero-film-poster.jpg'}
+              <video src={CONFIG.heroVideoB} poster={CONFIG.heroPosterB}
                 muted loop playsInline preload="none" />
               <span className="hs-mono-glow" />
             </div>
@@ -94,20 +130,18 @@ export default function Home() {
           </div>
           <div className="wrap hero-inner">
             <span className="script" data-hero-script>{CONFIG.heroScript}</span>
-            <h1 data-hero-title>
-              {CONFIG.heroTitle.split('|').map((line, i, arr) => (
-                <span key={line}>{line}{i < arr.length - 1 && <br />}</span>
-              ))}
-            </h1>
+            <h2 data-hero-title>
+              <Lines text={CONFIG.heroTitle} />
+            </h2>
             <p className="hero-sub" data-hero-sub>{CONFIG.heroSub}</p>
             <div className="hero-ctas" data-hero-ctas>
-              <Link className="btn" to={CONFIG.dropMode !== false ? '/drop' : '/shop'} data-magnetic data-scramble-hover>{CONFIG.dropMode !== false ? 'Enter the Private Drop' : 'Shop the Collection'}</Link>
-              <Link className="btn btn-ghost" to="/shop" data-magnetic data-scramble-hover>Shop All</Link>
+              <HomeLink className="btn" href={CONFIG.dropMode !== false ? HOME.heroPrimaryHrefDrop : HOME.heroPrimaryHrefShop} data-magnetic data-scramble-hover>
+                {CONFIG.dropMode !== false ? HOME.heroPrimaryTextDrop : HOME.heroPrimaryTextShop}
+              </HomeLink>
+              <HomeLink className="btn btn-ghost" href={HOME.heroSecondaryHref} data-magnetic data-scramble-hover>{HOME.heroSecondaryText}</HomeLink>
             </div>
             <div className="hero-meta" data-hero-meta>
-              <span>One run per colorway</span>
-              <span>Free US shipping over ${CONFIG.freeShipThreshold}</span>
-              <span>Secure checkout</span>
+              {HOME.heroMetaItems.map((item, index) => <span key={`${item.text}-${index}`}>{homeText(item.text)}</span>)}
             </div>
           </div>
         </div>
@@ -116,15 +150,16 @@ export default function Home() {
       {/* TICKER */}
       <div className="ticker" aria-hidden="true">
         <div className="ticker-track">
-          <span>City of Sins <i>·</i> Drop 002 <i>·</i> One Run. No Restock. <i>·</i> Dark Divine <i>·</i> 00 <i>·</i></span>
-          <span>City of Sins <i>·</i> Drop 002 <i>·</i> One Run. No Restock. <i>·</i> Dark Divine <i>·</i> 00 <i>·</i></span>
+          {[0, 1].map((copy) => (
+            <span key={copy}>{tickerParts.map((part, index) => <span key={`${copy}-${index}`}>{part}{index < tickerParts.length - 1 && <i>·</i>}</span>)}</span>
+          ))}
         </div>
       </div>
 
       {/* MANIFESTO — one huge line that ignites word by word as you scroll */}
       <section className="manifesto" aria-label="Brand manifesto" data-fx="dust">
         <div className="wrap">
-          <p className="mani-line" data-fx-later="possession">Every piece is cut once. Sold once. Gone forever. You were either in the run — or you weren't.</p>
+          <p className="mani-line" data-fx-later="possession">{HOME.manifestoText}</p>
         </div>
       </section>
 
@@ -132,27 +167,16 @@ export default function Home() {
       <section className="hdrop">
         <div className="hdrop-track">
           <div className="hpanel hp-intro">
-            <span className="hp-act">Act I — {CONFIG.dropName.split('—').pop().trim()}</span>
-            <h2 className="hp-title">
-              {(() => {
-                const words = CONFIG.dropName.split('—')[0].trim().split(' ');
-                return <>{words[0]}{words.length > 1 && <><br />{words.slice(1).join(' ')}</>}</>;
-              })()}
-            </h2>
+            <span className="hp-act">{homeText(HOME.dropActLabel)}</span>
+            <h2 className="hp-title"><Lines text={homeText(HOME.dropTitle)} /></h2>
             {CONFIG.dropImage && (
               <div className="hp-drop-pic" data-hp-media data-speed="1.06"><img src={CONFIG.dropImage} alt={CONFIG.dropName} /></div>
             )}
-            {/* the unit claim is computed from real inventory — it disappears
-                the moment stock levels stop supporting it */}
-            <p>{(() => {
-              const bundles = products.filter((p) => p.category === 'bundle');
-              const maxCombo = Math.max(0, ...bundles.flatMap((p) => p.variants.map((v) => v[2] || 0)));
-              return maxCombo > 0 && maxCombo <= 3
-                ? 'Three matched bundles. Jersey plus nylon pants, numbered — no size combo has more than three units. Scroll →'
-                : 'Three matched bundles. Jersey plus nylon pants, numbered, cut in small runs. Scroll →';
-            })()}</p>
+            <p>{maxBundleCombo > 0 && maxBundleCombo <= 3 ? HOME.dropBodyLimited : HOME.dropBodyGeneral}</p>
             {featured[0]?.compare > featured[0]?.price && (
-              <p className="hp-anchor">Pieces separately {money(featured[0].compare)} — the bundle {money(featured[0].price)}</p>
+              <p className="hp-anchor">{homeText(HOME.dropAnchorText, {
+                comparePrice: money(featured[0].compare), price: money(featured[0].price),
+              })}</p>
             )}
             {CONFIG.dropMode !== false && <Countdown target={CONFIG.dropDate} />}
           </div>
@@ -166,14 +190,16 @@ export default function Home() {
                 <span className="eyebrow">{p.collection}</span>
                 <h3>{p.title}</h3>
                 <div className="price">{money(p.price)}{p.compare > p.price && <s>{money(p.compare)}</s>}</div>
-                <Link className="btn btn-sm" to={`/product/${p.handle}`}>View the bundle</Link>
+                <Link className="btn btn-sm" to={`/product/${p.handle}`}>{HOME.dropProductButtonText}</Link>
               </div>
             </div>
           ))}
           <div className="hpanel hp-outro">
-            <Logo3D />
-            <h3 className="hp-title" style={{ fontSize: 'clamp(28px,4.5vw,64px)' }}>No<br />Restock</h3>
-            <Link className="btn" to={CONFIG.dropMode !== false ? '/drop' : '/shop'} data-magnetic data-scramble-hover>{CONFIG.dropMode !== false ? 'Enter the Drop' : 'Shop All'}</Link>
+            <Logo3D modelSrc={HOME.dropOutroLogoModel} posterSrc={HOME.dropOutroLogoPoster} alt={HOME.dropOutroLogoAlt} />
+            <h3 className="hp-title" style={{ fontSize: 'clamp(28px,4.5vw,64px)' }}><Lines text={HOME.dropOutroTitle} /></h3>
+            <HomeLink className="btn" href={CONFIG.dropMode !== false ? HOME.dropOutroHrefDrop : HOME.dropOutroHrefShop} data-magnetic data-scramble-hover>
+              {CONFIG.dropMode !== false ? HOME.dropOutroButtonDrop : HOME.dropOutroButtonShop}
+            </HomeLink>
           </div>
         </div>
       </section>
@@ -183,8 +209,8 @@ export default function Home() {
         <div className="ghost-00" data-speed="0.85">00</div>
         <div className="wrap" style={{ position: 'relative', zIndex: 1 }}>
           <div className="section-head split">
-            <div><span className="sec-index"><i>02</i>Most Wanted</span><h2 data-fx="echo">Best Sellers</h2></div>
-            <Link className="btn btn-ghost btn-sm" to="/shop">Shop all</Link>
+            <div><span className="sec-index"><i>{HOME.bestIndex}</i>{HOME.bestEyebrow}</span><h2 data-fx="echo">{HOME.bestTitle}</h2></div>
+            <HomeLink className="btn btn-ghost btn-sm" href={HOME.bestButtonHref}>{HOME.bestButtonText}</HomeLink>
           </div>
           <div className="grid g4 feature-first" data-fx-grid>{best.map((p) => <ProductCard key={p.handle} p={p} />)}</div>
         </div>
@@ -195,7 +221,7 @@ export default function Home() {
         <section className="section" style={{ paddingTop: 0 }}>
           <div className="wrap">
             <div className="section-head split">
-              <div><span className="sec-index"><i>03</i>Just Landed</span><h2>New Arrivals</h2></div>
+              <div><span className="sec-index"><i>{HOME.newIndex}</i>{HOME.newEyebrow}</span><h2>{HOME.newTitle}</h2></div>
             </div>
             <div className="grid g4">{fresh.map((p) => <ProductCard key={p.handle} p={p} />)}</div>
           </div>
@@ -205,14 +231,14 @@ export default function Home() {
       {/* BRAND STORY */}
       <section className="section mesh" id="story">
         <div className="wrap story">
-          <Reveal className="media" data-fx="shatter"><img src="/media/editorial/tee-model-pose-2.webp" alt="Dark Divine serpent tee — studio portrait" loading="lazy" /></Reveal>
+          <Reveal className="media" data-fx="shatter"><img src={HOME.storyImage} alt={HOME.storyImageAlt} loading="lazy" /></Reveal>
           <Reveal>
-            <span className="sec-index" style={{ maxWidth: 260 }}><i>04</i>The Brand</span>
-            <div className="script-line" data-fx="fangBite">Illuminate the darkness within</div>
-            <p data-lines>Dark Divine didn’t start in a boardroom. It started with a serpent, a number, and the idea that what you wear should say something before you do.</p>
-            <p data-lines>Every piece runs through the same hands: designed in-house, sampled until the fit is right, and produced in one small run. No warehouse of leftovers. No re-releases. The 00 on the chest isn’t a size — it’s a marker that you were there for the run.</p>
-            <p>We’d rather sell out than mass-produce. That’s the whole model.</p>
-            <div className="sig">Dark Divine — darkdivine.store</div>
+            <span className="sec-index" style={{ maxWidth: 260 }}><i>{HOME.storyIndex}</i>{HOME.storyEyebrow}</span>
+            <div className="script-line" data-fx="fangBite">{HOME.storyScript}</div>
+            {HOME.storyParagraph1 && <p data-lines>{HOME.storyParagraph1}</p>}
+            {HOME.storyParagraph2 && <p data-lines>{HOME.storyParagraph2}</p>}
+            {HOME.storyParagraph3 && <p>{HOME.storyParagraph3}</p>}
+            <div className="sig">{HOME.storySignature}</div>
           </Reveal>
         </div>
       </section>
@@ -221,17 +247,12 @@ export default function Home() {
       <section className="section" style={{ paddingTop: 0 }}>
         <div className="wrap">
           <div className="section-head">
-            <span className="sec-index" style={{ maxWidth: 420, margin: '0 auto' }}><i>05</i>Built, Not Printed</span>
-            <h2>What You're Paying For</h2>
+            <span className="sec-index" style={{ maxWidth: 420, margin: '0 auto' }}><i>{HOME.qualityIndex}</i>{HOME.qualityEyebrow}</span>
+            <h2>{HOME.qualityTitle}</h2>
           </div>
           <Reveal className="quality-grid">
-            {[
-              ['I', 'Game-Grade Mesh', 'Jerseys are cut from breathable athletic mesh with stitched varsity trim — built like game wear, not novelty prints.'],
-              ['II', 'Heavyweight Cotton', 'Hoodies and sweats are 100% premium cotton fleece that holds structure and survives the dryer.'],
-              ['III', 'Ripstop Nylon', "Track pants in lightweight mesh-lined ripstop — moves fast, doesn't wrinkle, doesn't quit."],
-              ['IV', 'One Run Only', "Small-batch production, numbered drops. Scarcity here isn't marketing — it's how we make things."],
-            ].map(([n, h, t]) => (
-              <div className="q-cell" key={n}><span className="num">{n}</span><h3>{h}</h3><p>{t}</p></div>
+            {HOME.qualityItems.map((item, index) => (
+              <div className="q-cell" key={`${item.number}-${index}`}><span className="num">{item.number}</span><h3>{item.title}</h3><p>{item.text}</p></div>
             ))}
           </Reveal>
         </div>
@@ -241,10 +262,10 @@ export default function Home() {
       <section className="section mesh">
         <div className="wrap">
           <div className="section-head split">
-            <div><span className="sec-index"><i>06</i>Social Proof</span><h2 data-fx="constrictor">Worn &amp; Vouched</h2></div>
+            <div><span className="sec-index"><i>{HOME.socialIndex}</i>{HOME.socialEyebrow}</span><h2 data-fx="constrictor">{HOME.socialTitle}</h2></div>
             <div className="rating-summary">
               <span className="big" data-fx="coilCounter">{RATING_AVG}★</span>
-              <span><b style={{ color: 'var(--bone)' }}>{TOTAL_SHOPIFY_RATINGS + liveReviews.filter((r) => r.source !== 'shopify_import').length}</b> verified customer reviews<br />across the catalog</span>
+              <span><b style={{ color: 'var(--bone)' }}>{TOTAL_SHOPIFY_RATINGS + liveReviews.filter((r) => r.source !== 'shopify_import').length}</b> <Lines text={HOME.socialReviewLabel.replace('\n', '|')} /></span>
             </div>
           </div>
           <Reveal className="proof-grid">
@@ -271,35 +292,26 @@ export default function Home() {
             </div>
           )}
           <p className="form-note" style={{ marginTop: 18 }}>
-            Real reviews from verified orders. New ones are collected after checkout — order email required for the Verified badge.
+            {HOME.socialNote}
           </p>
         </div>
       </section>
 
       {/* THE REEL — draggable film strip of real campaign motion */}
-      <FilmStrip />
+      <FilmStrip content={HOME} />
 
       {/* LOOKBOOK */}
       <section className="section" style={{ paddingTop: 0 }}>
         <div className="wrap">
           <div className="section-head split">
-            <div><span className="sec-index"><i>07</i>On Instagram</span><h2>The Lookbook</h2></div>
-            <a className="btn btn-ghost btn-sm" href={CONFIG.instagram} target="_blank" rel="noopener noreferrer">{CONFIG.instagramHandle}</a>
+            <div><span className="sec-index"><i>{HOME.lookbookIndex}</i>{HOME.lookbookEyebrow}</span><h2>{HOME.lookbookTitle}</h2></div>
+            <HomeLink className="btn btn-ghost btn-sm" href={homeText(HOME.lookbookButtonHref)}>{homeText(HOME.lookbookButtonText)}</HomeLink>
           </div>
           <div className="lookbook" data-cursor="view" data-fx="slitherWake">
-            {[
-              ['/media/editorial/studio-00-pants.webp', 'Dark Divine 00 nylon pants — studio', 'the 00 pants', '/product/city-of-sins-nylon-pants'],
-              ['/media/editorial/ig-hatstore.webp', 'Dark Divine 00 pants styled in a hat store', '@darkdivine.official', '/product/dark-divine-sweat-pants'],
-              ['/media/editorial/pendant-graded-1.webp', 'Dark Divine serpent pendant and tee — editorial', 'the serpent', '/product/dark-divine-t-shirt'],
-              ['/media/editorial/tee-model-pose.webp', 'Dark Divine serpent tee — studio pose', 'the tee, worn', '/product/dark-divine-t-shirt'],
-              ['/media/editorial/edited-igreel_00018_.webp', 'Dark Divine tee mirror selfie', 'the tee', '/product/dark-divine-t-shirt'],
-              ['/media/editorial/mask-backscript.webp', 'Illuminate The Darkness Within — back script', 'the darkness within', '/product/dark-divine-hoodie'],
-              ['/media/editorial/hoodie-mirror.webp', 'Dark Divine zip hoodie mirror fit', 'the zip hoodie', '/product/dark-divine-hoodie'],
-              ['/media/editorial/ig-jersey-fit.webp', 'City of Sins jersey fit check', 'the jersey', '/product/city-of-sins-jersey'],
-            ].map(([src, alt, tag, to]) => (
-              <Reveal as={Link} className="look" to={to} key={src} data-fx="xray">
-                <img src={src} alt={alt} loading="lazy" />
-                <span className="tag">{tag}</span>
+            {HOME.lookbookItems.map((item, index) => (
+              <Reveal as={Link} className="look" to={item.to || '/shop'} key={`${item.src}-${index}`} data-fx="xray">
+                <img src={item.src} alt={item.alt} loading="lazy" />
+                <span className="tag">{item.tag}</span>
               </Reveal>
             ))}
           </div>
@@ -309,17 +321,10 @@ export default function Home() {
       {/* FAQ */}
       <section className="section" style={{ paddingTop: 0 }}>
         <div className="wrap">
-          <div className="section-head"><span className="sec-index"><i>08</i>Questions</span><h2>Before You Ask</h2></div>
+          <div className="section-head"><span className="sec-index"><i>{HOME.faqIndex}</i>{HOME.faqEyebrow}</span><h2>{HOME.faqTitle}</h2></div>
           <div className="faq">
-            {[
-              ['How does sizing run?', <>Jerseys and tees run true to size with a relaxed athletic cut — size up if you want it oversized. Nylon pants are a relaxed straight leg; size down for a tapered stack. Every product page has fit notes and model sizing, and the full <Link to="/size-guide">size guide</Link> has flat measurements.</>],
-              ['When will my order ship?', <>Orders ship within {CONFIG.processingDays} business days from the US. Standard delivery is 3–7 business days, and you'll get a tracking number by email the moment it leaves. Full details in the <Link to="/shipping">shipping policy</Link>.</>],
-              ["What's the return policy?", <>{CONFIG.returnsDays} days, unworn with tags, full refund to your original payment — no restocking fee, no interrogation. Drop items are final sale only when marked on the product page. Details in <Link to="/refunds">returns &amp; refunds</Link>.</>],
-              ['Will sold-out pieces restock?', <>No. One production run per colorway is the rule the brand is built on. If a size sells out before the run does, join the back-in-stock list on the product page — remaining units sometimes free up from unpaid orders.</>],
-              ['Is checkout secure?', <>Yes — payments run through Stripe over an encrypted connection, and we never see or store your card number. Accepted: {payMethodList(CONFIG).join(', ')}.</>],
-              ['How do I get a drop access code?', <>Join the email list below. Access codes go out to the list before every drop — that's the only place they're published.</>],
-            ].map(([q, a]) => (
-              <details key={q}><summary>{q}</summary><div className="a">{a}</div></details>
+            {HOME.faqItems.map((item, index) => (
+              <details key={`${item.question}-${index}`}><summary>{item.question}</summary><div className="a"><RichText text={homeText(item.answer, { payMethods: payMethodList(CONFIG).join(', ') })} /></div></details>
             ))}
           </div>
         </div>
@@ -329,32 +334,32 @@ export default function Home() {
       <section className="section" id="signup">
         <div className="wrap">
           <Reveal className="signup-box mesh">
-            <video className="ambient-video" src="/media/brand/logo-3d-web.mp4" autoPlay muted loop playsInline preload="none" aria-hidden="true" />
-            <span className="eyebrow" style={{ justifyContent: 'center' }}>Private List</span>
-            <h2 data-fx="charOrbit">First Access or No Access</h2>
-            <p>Drop dates, private access codes, and 10% off your first order. One email per drop — nothing else.</p>
+            <video className="ambient-video" src={HOME.signupVideo} poster={HOME.signupVideoPoster || undefined} autoPlay muted loop playsInline preload="none" aria-hidden="true" />
+            <span className="eyebrow" style={{ justifyContent: 'center' }}>{HOME.signupEyebrow}</span>
+            <h2 data-fx="charOrbit">{HOME.signupTitle}</h2>
+            <p>{HOME.signupBody}</p>
             {signedUp ? (
-              <p style={{ color: 'var(--bone)', fontWeight: 600 }}>You're in. Code <b>{CONFIG.welcomeCode}</b> = 10% off your first order.</p>
+              <p style={{ color: 'var(--bone)', fontWeight: 600 }}>{homeText(HOME.signupSuccessText)}</p>
             ) : (
               <form onSubmit={submitSignup}>
                 <div className="signup-form">
-                  <input type="email" required placeholder="Email address" aria-label="Email address" autoComplete="email"
+                  <input type="email" name="email" required placeholder={HOME.signupEmailPlaceholder} aria-label={HOME.signupEmailPlaceholder} autoComplete="email" spellCheck="false"
                     value={email} onChange={(e) => setEmail(e.target.value)} />
-                  <button className="btn" type="submit">Join the List</button>
+                  <button className="btn" type="submit">{HOME.signupButtonText}</button>
                 </div>
                 <div className="signup-form" style={{ marginTop: 10 }}>
-                  <input type="tel" placeholder="Phone (optional — SMS drop alerts)" aria-label="Phone for SMS alerts" autoComplete="tel"
+                  <input type="tel" name="phone" inputMode="tel" placeholder={HOME.signupPhonePlaceholder} aria-label={HOME.signupPhonePlaceholder} autoComplete="tel"
                     value={phone} onChange={(e) => setPhone(e.target.value)} />
                 </div>
                 {phone && (
                   <label className="consent-row">
-                    <input type="checkbox" checked={smsConsent} onChange={(e) => setSmsConsent(e.target.checked)} />
-                    <span>I agree to receive automated SMS drop alerts from Dark Divine. Msg &amp; data rates may apply. Reply STOP to opt out.</span>
+                    <input type="checkbox" name="sms-consent" checked={smsConsent} onChange={(e) => setSmsConsent(e.target.checked)} />
+                    <span>{HOME.signupSmsConsent}</span>
                   </label>
                 )}
               </form>
             )}
-            <p className="form-note">Unsubscribe anytime. We never sell your info.</p>
+            <p className="form-note">{HOME.signupNote}</p>
           </Reveal>
         </div>
       </section>

@@ -5,9 +5,12 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "build": "npm run test:media && vite build",
+    "build": "npm run test:media && npm run test:notifications && npm run test:homepage && vite build",
     "preview": "vite preview",
     "test:media": "node --test scripts/media-integrity.test.mjs scripts/media-compatibility.test.mjs",
+    "test:notifications": "node --test scripts/owner-sale-alert.test.mjs",
+    "test:homepage": "node --test scripts/homepage-content.test.mjs",
+    "test:responsive": "node --test scripts/responsive-accessibility.test.mjs",
     "import:shopify": "node scripts/import-shopify.mjs",
     "import:reviews": "node scripts/import-reviews.mjs"
   },
@@ -23,6 +26,7 @@
   "devDependencies": {
     "@vitejs/plugin-react": "^4.3.1",
     "csv-parse": "^5.5.6",
+    "playwright": "^1.61.1",
     "vite": "^5.4.0"
   }
 }

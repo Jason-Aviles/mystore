@@ -1,4 +1,5 @@
 import { normalizeSiteSettings } from './media';
+import { DEFAULT_HOMEPAGE } from './homeContent';
 export { normalizeMediaUrl, normalizeSiteSettings } from './media';
 
 /* Site configuration.
@@ -65,6 +66,7 @@ export const DEFAULT_CONFIG = {
   // The admin Site Settings field still overrides this if you set it there.
   metaPixelId: import.meta.env.VITE_META_PIXEL_ID || '',
   justSoldPopups: true, // corner toasts from real paid orders
+  homepage: DEFAULT_HOMEPAGE,
 };
 
 // Back-compat: modules that want the static defaults.

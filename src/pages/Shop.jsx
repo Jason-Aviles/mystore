@@ -113,10 +113,10 @@ export default function Shop() {
             ))}
           </div>
           <div className="shop-tools">
-            <input type="search" placeholder="Search pieces…" aria-label="Search products"
+            <input type="search" name="search" placeholder="Search pieces…" aria-label="Search products" autoComplete="off"
               value={query} onChange={(e) => setQuery(e.target.value)} />
             <span className="count" aria-live="polite">{items.length} piece{items.length === 1 ? '' : 's'}</span>
-            <select value={sort} onChange={(e) => setSort(e.target.value)} aria-label="Sort products">
+            <select name="sort" value={sort} onChange={(e) => setSort(e.target.value)} aria-label="Sort products">
               <option value="featured">Featured</option>
               <option value="newest">Newest</option>
               <option value="best-selling">Best selling</option>

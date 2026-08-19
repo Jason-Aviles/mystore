@@ -24,6 +24,7 @@ export default function Layout() {
   usePageMotion(!loading);
   return (
     <>
+      <a className="skip-link" href="#main-content">Skip to main content</a>
       <Preloader />
       <Cursor />
       {(!unlocked || forceGate) && CONFIG.gateEnabled && <Gate onDone={() => setPreview(false)} />}
@@ -39,7 +40,7 @@ export default function Layout() {
           {/* Suspense sits INSIDE the keyed page-root so code-split routes
               load on navigation without disturbing the single-wrapper rule
               the GSAP pin/unmount fix depends on */}
-          <main><div className="page-root" key={pathname}><Suspense fallback={null}><Outlet /></Suspense></div></main>
+          <main id="main-content" tabIndex="-1"><div className="page-root" key={pathname}><Suspense fallback={null}><Outlet /></Suspense></div></main>
           <Footer />
         </div>
       </div>

@@ -33,6 +33,26 @@ export function normalizeSiteSettings(settings) {
   for (const key of MEDIA_SETTING_KEYS) {
     if (key in normalized) normalized[key] = normalizeMediaUrl(normalized[key]);
   }
+  if (normalized.homepage && typeof normalized.homepage === 'object' && !Array.isArray(normalized.homepage)) {
+    const homepage = { ...normalized.homepage };
+    for (const key of ['storyImage', 'dropOutroLogoPoster', 'dropOutroLogoModel', 'signupVideo', 'signupVideoPoster']) {
+      if (key in homepage) homepage[key] = normalizeMediaUrl(homepage[key]);
+    }
+    if (Array.isArray(homepage.reelItems)) {
+      homepage.reelItems = homepage.reelItems.map((item) => ({
+        ...item,
+        src: normalizeMediaUrl(item.src),
+        poster: normalizeMediaUrl(item.poster),
+      }));
+    }
+    if (Array.isArray(homepage.lookbookItems)) {
+      homepage.lookbookItems = homepage.lookbookItems.map((item) => ({
+        ...item,
+        src: normalizeMediaUrl(item.src),
+      }));
+    }
+    normalized.homepage = homepage;
+  }
   return normalized;
 }
 

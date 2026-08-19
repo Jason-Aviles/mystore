@@ -33,7 +33,7 @@ export default function Footer() {
               <p style={{ color: 'var(--bone)' }}>You're in. Code <b>{CONFIG.welcomeCode}</b> = 10% off.</p>
             ) : (
               <form className="foot-signup" onSubmit={submit}>
-                <input type="email" required placeholder="Email for drop alerts" aria-label="Email for drop alerts" autoComplete="email"
+                <input type="email" name="email" required placeholder="Email for drop alerts" aria-label="Email for drop alerts" autoComplete="email" spellCheck="false"
                   value={email} onChange={(e) => setEmail(e.target.value)} />
                 <button className="btn btn-sm" type="submit">Join</button>
               </form>

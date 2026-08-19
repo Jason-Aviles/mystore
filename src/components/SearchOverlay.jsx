@@ -81,7 +81,7 @@ export default function SearchOverlay({ open, onClose }) {
     <div className="search-overlay" ref={root} role="dialog" aria-modal="true" aria-label="Search">
       <div className="wrap so-inner">
         <div className="so-field">
-          <input ref={inputRef} type="search" placeholder="Search the catalog…" aria-label="Search products"
+          <input ref={inputRef} type="search" name="search" placeholder="Search the catalog…" aria-label="Search products"
             value={q} onChange={(e) => setQ(e.target.value)} autoComplete="off" spellCheck="false" />
           <span className="so-input-line" aria-hidden="true" />
         </div>

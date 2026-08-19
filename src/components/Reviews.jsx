@@ -50,7 +50,7 @@ export function ReviewForm({ productHandle, product = null, products = [], onDon
       {!productHandle && products.length > 0 && (
         <div>
           <label className="rf-lbl" htmlFor="rf-product">What did you cop?</label>
-          <select id="rf-product" required value={form.product_handle} onChange={(e) => set('product_handle', e.target.value)}>
+          <select id="rf-product" name="product-handle" required value={form.product_handle} onChange={(e) => set('product_handle', e.target.value)}>
             <option value="" disabled>Pick the piece</option>
             {products.map((p) => <option key={p.handle} value={p.handle}>{p.title}</option>)}
           </select>
@@ -67,21 +67,21 @@ export function ReviewForm({ productHandle, product = null, products = [], onDon
         </div>
       </div>
       <div className={compact ? '' : 'rf-row'}>
-        <input type="text" required placeholder="Name (shown with your review)" aria-label="Name"
+        <input type="text" name="reviewer-name" required placeholder="Name (shown with your review)" aria-label="Name" autoComplete="name"
           value={form.name} onChange={(e) => set('name', e.target.value)} />
-        <input type="email" placeholder="Order email (adds the Verified badge)" aria-label="Order email"
+        <input type="email" name="reviewer-email" placeholder="Order email (adds the Verified badge)" aria-label="Order email" autoComplete="email" spellCheck="false"
           value={form.email} onChange={(e) => set('email', e.target.value)} />
       </div>
       {sizes && (
         <div>
           <label className="rf-lbl" htmlFor="rf-size">Size you bought (optional — helps others pick)</label>
-          <select id="rf-size" value={form.size} onChange={(e) => set('size', e.target.value)}>
+          <select id="rf-size" name="size" value={form.size} onChange={(e) => set('size', e.target.value)}>
             <option value="">Prefer not to say</option>
             {sizes.map((s) => <option key={s} value={s}>{s}</option>)}
           </select>
         </div>
       )}
-      <textarea required rows="3" placeholder="How's the fit? The fabric? Would you cop again?" aria-label="Your review"
+      <textarea name="review" required rows="3" placeholder="How's the fit? The fabric? Would you cop again?" aria-label="Your review"
         value={form.body} onChange={(e) => set('body', e.target.value)} />
       <button className="btn" type="submit" disabled={state === 'busy'}>
         {state === 'busy' ? 'Posting…' : 'Post Review'}
@@ -172,13 +172,13 @@ export function ProductReviews({ p }) {
         {reviews.length > 0 ? (
           <>
             <div className="rv-tools">
-              <select value={sort} onChange={(e) => setSort(e.target.value)} aria-label="Sort reviews">
+              <select name="review-sort" value={sort} onChange={(e) => setSort(e.target.value)} aria-label="Sort reviews">
                 <option value="newest">Most recent</option>
                 <option value="highest">Highest rated</option>
                 <option value="lowest">Lowest rated</option>
               </select>
               <label className="rv-verified">
-                <input type="checkbox" checked={verifiedOnly} onChange={(e) => setVerifiedOnly(e.target.checked)} />
+                <input type="checkbox" name="verified-only" checked={verifiedOnly} onChange={(e) => setVerifiedOnly(e.target.checked)} />
                 Verified buyers only
               </label>
             </div>

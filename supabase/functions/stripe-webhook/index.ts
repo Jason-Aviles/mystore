@@ -10,6 +10,7 @@
 //     event: checkout.session.completed
 import Stripe from 'npm:stripe@16';
 import { createClient } from 'npm:@supabase/supabase-js@2';
+import { sendOwnerSaleAlerts } from '../_shared/owner-sale-alert.mjs';
 
 const cryptoProvider = Stripe.createSubtleCryptoProvider();
 
@@ -151,9 +152,40 @@ Deno.serve(async (req) => {
         }
       } catch { /* never block payment confirmation */ }
 
-      // decrement inventory for each line item
+      // Load line items once for the private owner alert and inventory update.
       const { data: items } = await supabase.from('order_items')
-        .select('product_handle, option1, option2, qty').eq('order_id', found.id);
+        .select('product_handle, title, option1, option2, qty, price').eq('order_id', found.id);
+
+      // Private operational alerts. Destinations and provider credentials live
+      // only in Supabase Edge Function secrets. A provider outage must never
+      // turn a successful customer payment into a webhook failure.
+      try {
+        const alertResult = await sendOwnerSaleAlerts({
+          sale: {
+            orderId: found.id,
+            totalCents: session.amount_total ?? Math.round((items ?? []).reduce((sum, item) => sum + Number(item.price) * Number(item.qty), 0) * 100),
+            currency: session.currency ?? 'usd',
+            customerEmail: session.customer_details?.email ?? session.customer_email ?? '',
+            items: items ?? [],
+          },
+          secrets: {
+            ownerEmail: Deno.env.get('OWNER_SALE_EMAIL'),
+            ownerPhone: Deno.env.get('OWNER_SALE_PHONE'),
+            resendApiKey: Deno.env.get('RESEND_API_KEY'),
+            resendFrom: Deno.env.get('RESEND_FROM') ?? 'Dark Divine <contact@darkdivine.store>',
+            twilioAccountSid: Deno.env.get('TWILIO_ACCOUNT_SID'),
+            twilioAuthToken: Deno.env.get('TWILIO_AUTH_TOKEN'),
+            twilioFrom: Deno.env.get('TWILIO_FROM'),
+          },
+        });
+        if (alertResult.email === 'failed' || alertResult.sms === 'failed') {
+          console.error('Owner sale alert provider failure', alertResult);
+        }
+      } catch (error) {
+        console.error('Owner sale alert failed', String(error));
+      }
+
+      // decrement inventory for each line item
       for (const it of items ?? []) {
         if (!it.product_handle || !it.option1) continue;
         let q = supabase.from('product_variants')

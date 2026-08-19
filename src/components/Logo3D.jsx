@@ -1,39 +1,44 @@
 import { useEffect, useRef, useState } from 'react';
 
-/* Interactive 3D serpent-crown logo (the real GLB, not a render).
-   model-viewer (~1MB of JS) only downloads once this section nears the
-   viewport — the poster (3D still) stands in until then, so the
-   storefront's first load never pays for it. */
-export default function Logo3D({ className = '' }) {
+/* The model-viewer bundle loads only when the logo approaches the viewport.
+   Both model and poster can be replaced through Homepage Content settings. */
+export default function Logo3D({
+  className = '',
+  modelSrc = '/media/brand/logo.glb',
+  posterSrc = '/media/brand/logo-3d.png',
+  alt = 'Dark Divine serpent crown logo in 3D',
+}) {
   const [ready, setReady] = useState(false);
   const holder = useRef(null);
 
   useEffect(() => {
+    if (!modelSrc) return undefined;
     let alive = true;
-    const el = holder.current;
-    if (!el || !('IntersectionObserver' in window)) {
-      import('@google/model-viewer').then(() => { if (alive) setReady(true); });
+    const element = holder.current;
+    const load = () => import('@google/model-viewer').then(() => { if (alive) setReady(true); });
+    if (!element || !('IntersectionObserver' in window)) {
+      load();
       return () => { alive = false; };
     }
-    const io = new IntersectionObserver((entries) => {
-      if (entries.some((e) => e.isIntersecting)) {
-        io.disconnect();
-        import('@google/model-viewer').then(() => { if (alive) setReady(true); });
+    const observer = new IntersectionObserver((entries) => {
+      if (entries.some((entry) => entry.isIntersecting)) {
+        observer.disconnect();
+        load();
       }
     }, { rootMargin: '600px' });
-    io.observe(el);
-    return () => { alive = false; io.disconnect(); };
-  }, []);
+    observer.observe(element);
+    return () => { alive = false; observer.disconnect(); };
+  }, [modelSrc]);
 
-  if (!ready) {
-    return <img ref={holder} className={`logo3d ${className}`} src="/media/brand/logo-3d.png" alt="" style={{ objectFit: 'contain' }} />;
+  if (!modelSrc || !ready) {
+    return posterSrc ? <img ref={holder} className={`logo3d ${className}`} src={posterSrc} alt={alt} style={{ objectFit: 'contain' }} /> : null;
   }
   return (
     <model-viewer
       class={`logo3d ${className}`}
-      src="/media/brand/logo.glb"
-      poster="/media/brand/logo-3d.png"
-      alt="Dark Divine serpent crown logo in 3D"
+      src={modelSrc}
+      poster={posterSrc}
+      alt={alt}
       auto-rotate
       camera-controls
       disable-zoom

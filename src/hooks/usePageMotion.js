@@ -60,6 +60,7 @@ export default function usePageMotion(ready) {
     mm.add({
       motionOK: '(prefers-reduced-motion: no-preference)',
       reduced: '(prefers-reduced-motion: reduce)',
+      phone: '(max-width: 899px)',
     }, (ctx) => {
       /* ---- GENTLE TIER (prefers-reduced-motion) ----
          Not a dead page: soft opacity fades only — no pins, no parallax,
@@ -255,6 +256,7 @@ export default function usePageMotion(ready) {
          irises open through the void; the copy then rises inside it. */
       const hero2 = document.querySelector('.hero-cine2');
       if (hero2) {
+        const phone = ctx.conditions.phone;
         gsap.set('.hs-kinetic', { transformPerspective: 800 });
         gsap.set('.hs-title .line', { perspective: 700 });
 
@@ -331,30 +333,31 @@ export default function usePageMotion(ready) {
            flash at the crossover, slats exit revealing the film world */
         const slats = gsap.utils.toArray('.hs-slat');
         gsap.timeline({
-          scrollTrigger: { trigger: '.hero-cine2', start: 'top top', end: '+=230%', pin: true, scrub: 0.6, invalidateOnRefresh: true },
+          scrollTrigger: { trigger: '.hero-cine2', start: 'top top', end: phone ? '+=165%' : '+=230%', pin: true, scrub: phone ? 0.35 : 0.6, invalidateOnRefresh: true },
         })
           .to('.hs-title .line:first-child .w', { xPercent: -20, ease: 'none', duration: 0.4 }, 0)
           .to('.hs-title .line:last-child .w', { xPercent: 20, ease: 'none', duration: 0.4 }, 0)
           /* zoom pivots near the model's head so the push-in never crops it */
-          .to('.hs-video', { scale: 1.22, transformOrigin: '50% 18%', ease: 'none', duration: 0.45 }, 0)
+          .to('.hs-video', { scale: phone ? 1.12 : 1.22, transformOrigin: '50% 18%', ease: 'none', duration: 0.45 }, 0)
           .fromTo(slats, { yPercent: 103 }, { yPercent: 0, ease: 'none', duration: 0.14, stagger: 0.03 }, 0.24)
           .fromTo('.hs-burn', { opacity: 0 }, { opacity: 1, ease: 'none', duration: 0.03 }, 0.4)
           .to('.hs-burn', { opacity: 0, ease: 'none', duration: 0.05 }, 0.44)
-          .set('.hs-a', { autoAlpha: 0 }, 0.42)
-          .set('.hs-b', { autoAlpha: 1 }, 0.42)
+          .to('.hs-a', { autoAlpha: 0, ease: 'none', duration: phone ? 0.08 : 0.001 }, phone ? 0.36 : 0.42)
+          .to('.hs-b', { autoAlpha: 1, ease: 'none', duration: phone ? 0.08 : 0.001 }, phone ? 0.36 : 0.42)
           .to(slats, { yPercent: -103, ease: 'none', duration: 0.14, stagger: 0.03 }, 0.44)
           /* THE MONOLITH: the film floats in as a tilted 3D slab hovering
              over its own reflection, straightens, then flies forward and
              LOCKS at cinema width — contain-scale with letterbox bars, so
              the full frame stays visible and the model's head never crops. */
           .fromTo('.hs-monolith',
-            { rotationX: 16, rotationY: -9, scale: 0.52, y: '12vh', autoAlpha: 0 },
-            { rotationX: 10, rotationY: -5, scale: 0.62, y: '6vh', autoAlpha: 1, ease: 'none', duration: 0.1 }, 0.42)
-          .to('.hs-monolith', { rotationX: 6, rotationY: -2, scale: 0.78, y: '2vh', ease: 'none', duration: 0.12 }, 0.52)
+            { rotationX: phone ? 7 : 16, rotationY: phone ? -3 : -9, scale: phone ? 0.82 : 0.52, y: phone ? '7vh' : '12vh', autoAlpha: 0 },
+            { rotationX: phone ? 4 : 10, rotationY: phone ? -1 : -5, scale: phone ? 0.9 : 0.62, y: phone ? '3vh' : '6vh', autoAlpha: 1, ease: 'none', duration: 0.1 }, 0.42)
+          .to('.hs-monolith', { rotationX: phone ? 2 : 6, rotationY: phone ? 0 : -2, scale: phone ? 0.98 : 0.78, y: phone ? '1vh' : '2vh', ease: 'none', duration: 0.12 }, 0.52)
           .to('.hs-monolith', {
             rotationX: 0, rotationY: 0, y: 0, ease: 'none', duration: 0.16,
             scale: () => {
               const m = document.querySelector('.hs-monolith');
+              if (phone) return 1;
               if (!m) return 1.3;
               return Math.min(window.innerWidth / m.offsetWidth, window.innerHeight / m.offsetHeight);
             },

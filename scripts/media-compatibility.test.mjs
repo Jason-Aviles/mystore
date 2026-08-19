@@ -42,3 +42,23 @@ test('persisted settings, products, and campaigns normalize legacy media fields'
     { id: 7, hero_image_url: '/media/editorial/drop.webp' },
   );
 });
+
+test('persisted homepage lists normalize nested image, video, poster, and model URLs', () => {
+  const settings = normalizeSiteSettings({
+    homepage: {
+      storyImage: '/content/story.webp',
+      signupVideo: '/content/signup.mp4',
+      dropOutroLogoModel: '/brand/logo.glb',
+      reelItems: [{ type: 'video', src: '/content/reel.mp4', poster: '/images/poster.jpg' }],
+      lookbookItems: [{ src: '/images/look.webp', tag: 'look' }],
+    },
+  });
+
+  assert.deepEqual(settings.homepage, {
+    storyImage: '/media/editorial/story.webp',
+    signupVideo: '/media/editorial/signup.mp4',
+    dropOutroLogoModel: '/media/brand/logo.glb',
+    reelItems: [{ type: 'video', src: '/media/editorial/reel.mp4', poster: '/media/editorial/poster.jpg' }],
+    lookbookItems: [{ src: '/media/editorial/look.webp', tag: 'look' }],
+  });
+});
