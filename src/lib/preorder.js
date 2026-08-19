@@ -2,6 +2,8 @@
    Every date shown anywhere comes from the campaign row the admin saved;
    nothing here invents urgency, stock, or timelines. */
 import { supabase, hasSupabase } from './supabase';
+import { normalizeCampaignMedia } from './media';
+export { normalizeCampaignMedia } from './media';
 
 /** The campaign the storefront should currently present:
     a live one first, else a coming-soon one, else null. */
@@ -12,7 +14,8 @@ export async function fetchCurrentCampaign() {
     .in('status', ['live', 'coming_soon'])
     .order('created_at', { ascending: false });
   if (!data?.length) return null;
-  return data.find((c) => campaignLive(c)) || data.find((c) => c.status === 'coming_soon') || data[0];
+  const campaign = data.find((c) => campaignLive(c)) || data.find((c) => c.status === 'coming_soon') || data[0];
+  return normalizeCampaignMedia(campaign);
 }
 
 /** live = status 'live' AND inside the open/close window right now. */

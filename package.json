@@ -5,8 +5,9 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "build": "vite build",
+    "build": "npm run test:media && vite build",
     "preview": "vite preview",
+    "test:media": "node --test scripts/media-integrity.test.mjs scripts/media-compatibility.test.mjs",
     "import:shopify": "node scripts/import-shopify.mjs",
     "import:reviews": "node scripts/import-reviews.mjs"
   },

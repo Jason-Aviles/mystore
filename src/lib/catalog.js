@@ -5,6 +5,8 @@
      works end-to-end before any backend exists. */
 import seed from '../data/products.json';
 import { supabase, hasSupabase } from './supabase';
+import { normalizeProductMedia } from './media';
+export { normalizeProductMedia } from './media';
 
 const LS_KEY = 'dd_admin_catalog';
 
@@ -12,7 +14,7 @@ export function localOverlay() {
   try { return JSON.parse(localStorage.getItem(LS_KEY)) || null; } catch { return null; }
 }
 export function saveLocalOverlay(products) {
-  localStorage.setItem(LS_KEY, JSON.stringify(products));
+  localStorage.setItem(LS_KEY, JSON.stringify(products.map(normalizeProductMedia)));
 }
 export function resetLocalOverlay() {
   localStorage.removeItem(LS_KEY);
@@ -20,7 +22,7 @@ export function resetLocalOverlay() {
 
 /** Rows from Supabase → the product shape the UI uses. */
 function fromDb(row, variants) {
-  return {
+  return normalizeProductMedia({
     ...row.data,
     handle: row.handle,
     title: row.title,
@@ -42,7 +44,7 @@ function fromDb(row, variants) {
     variants: variants
       .filter((v) => v.product_handle === row.handle)
       .map((v) => [v.option1, v.option2 || '', v.inventory_qty]),
-  };
+  });
 }
 
 export async function fetchProducts() {
@@ -56,7 +58,7 @@ export async function fetchProducts() {
     }
     // fall through to seed if the tables are empty or unreachable
   }
-  return localOverlay() ?? seed;
+  return (localOverlay() ?? seed).map(normalizeProductMedia);
 }
 
 export function variantQty(p, o1, o2) {

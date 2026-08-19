@@ -268,7 +268,7 @@ export default function Preorders() {
             <label>Name<input required value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} placeholder="CITY OF SINS — PRIVATE PREORDER" /></label>
             <label>Slug<input value={form.slug} onChange={(e) => setForm({ ...form, slug: e.target.value })} placeholder="auto from name" /></label>
             <label>Description (shown on the gate)<textarea rows={3} value={form.description} onChange={(e) => setForm({ ...form, description: e.target.value })} /></label>
-            <label>Hero image URL<input value={form.hero_image_url} onChange={(e) => setForm({ ...form, hero_image_url: e.target.value })} placeholder="/content/..." /></label>
+            <label>Hero image URL<input value={form.hero_image_url} onChange={(e) => setForm({ ...form, hero_image_url: e.target.value })} placeholder="/media/editorial/..." /></label>
             <label>Status
               <select value={form.status} onChange={(e) => setForm({ ...form, status: e.target.value })}>
                 {STATUSES.map((s) => <option key={s} value={s}>{s}</option>)}

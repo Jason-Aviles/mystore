@@ -63,7 +63,7 @@ export default function Home() {
           through. Scroll TEARS the screen into five slats → Scene B. */}
       <section className="hero-cine2">
         <div className="hs-a">
-          <video className="hs-video hs-broadcast" src={CONFIG.heroVideoA || '/content/broadcast.mp4'} poster={CONFIG.heroPosterA || '/content/broadcast-poster.jpg'}
+          <video className="hs-video hs-broadcast" src={CONFIG.heroVideoA || '/media/editorial/broadcast.mp4'} poster={CONFIG.heroPosterA || '/media/editorial/broadcast-poster.jpg'}
             muted loop playsInline preload="none" aria-hidden="true" />
           <div className="vhs-chrome" aria-hidden="true">
             <span className="vhs-tc">TCR 00:00:00:00</span>
@@ -86,7 +86,7 @@ export default function Home() {
         <div className="hs-b hero">
           <div className="hs-stage" aria-hidden="true">
             <div className="hs-monolith">
-              <video src={CONFIG.heroVideoB || '/content/hero-film.mp4'} poster={CONFIG.heroPosterB || '/content/hero-film-poster.jpg'}
+              <video src={CONFIG.heroVideoB || '/media/editorial/hero-film.mp4'} poster={CONFIG.heroPosterB || '/media/editorial/hero-film-poster.jpg'}
                 muted loop playsInline preload="none" />
               <span className="hs-mono-glow" />
             </div>
@@ -205,7 +205,7 @@ export default function Home() {
       {/* BRAND STORY */}
       <section className="section mesh" id="story">
         <div className="wrap story">
-          <Reveal className="media" data-fx="shatter"><img src="/content/tee-model-pose-2.webp" alt="Dark Divine serpent tee — studio portrait" loading="lazy" /></Reveal>
+          <Reveal className="media" data-fx="shatter"><img src="/media/editorial/tee-model-pose-2.webp" alt="Dark Divine serpent tee — studio portrait" loading="lazy" /></Reveal>
           <Reveal>
             <span className="sec-index" style={{ maxWidth: 260 }}><i>04</i>The Brand</span>
             <div className="script-line" data-fx="fangBite">Illuminate the darkness within</div>
@@ -288,14 +288,14 @@ export default function Home() {
           </div>
           <div className="lookbook" data-cursor="view" data-fx="slitherWake">
             {[
-              ['/content/studio-00-pants.webp', 'Dark Divine 00 nylon pants — studio', 'the 00 pants', '/product/city-of-sins-nylon-pants'],
-              ['/content/ig-hatstore.webp', 'Dark Divine 00 pants styled in a hat store', '@darkdivine.official', '/product/dark-divine-sweat-pants'],
-              ['/content/pendant-graded-1.webp', 'Dark Divine serpent pendant and tee — editorial', 'the serpent', '/product/dark-divine-t-shirt'],
-              ['/content/tee-model-pose.webp', 'Dark Divine serpent tee — studio pose', 'the tee, worn', '/product/dark-divine-t-shirt'],
-              ['/images/edited-igreel_00018_.webp', 'Dark Divine tee mirror selfie', 'the tee', '/product/dark-divine-t-shirt'],
-              ['/content/mask-backscript.webp', 'Illuminate The Darkness Within — back script', 'the darkness within', '/product/dark-divine-hoodie'],
-              ['/content/hoodie-mirror.webp', 'Dark Divine zip hoodie mirror fit', 'the zip hoodie', '/product/dark-divine-hoodie'],
-              ['/content/ig-jersey-fit.webp', 'City of Sins jersey fit check', 'the jersey', '/product/city-of-sins-jersey'],
+              ['/media/editorial/studio-00-pants.webp', 'Dark Divine 00 nylon pants — studio', 'the 00 pants', '/product/city-of-sins-nylon-pants'],
+              ['/media/editorial/ig-hatstore.webp', 'Dark Divine 00 pants styled in a hat store', '@darkdivine.official', '/product/dark-divine-sweat-pants'],
+              ['/media/editorial/pendant-graded-1.webp', 'Dark Divine serpent pendant and tee — editorial', 'the serpent', '/product/dark-divine-t-shirt'],
+              ['/media/editorial/tee-model-pose.webp', 'Dark Divine serpent tee — studio pose', 'the tee, worn', '/product/dark-divine-t-shirt'],
+              ['/media/editorial/edited-igreel_00018_.webp', 'Dark Divine tee mirror selfie', 'the tee', '/product/dark-divine-t-shirt'],
+              ['/media/editorial/mask-backscript.webp', 'Illuminate The Darkness Within — back script', 'the darkness within', '/product/dark-divine-hoodie'],
+              ['/media/editorial/hoodie-mirror.webp', 'Dark Divine zip hoodie mirror fit', 'the zip hoodie', '/product/dark-divine-hoodie'],
+              ['/media/editorial/ig-jersey-fit.webp', 'City of Sins jersey fit check', 'the jersey', '/product/city-of-sins-jersey'],
             ].map(([src, alt, tag, to]) => (
               <Reveal as={Link} className="look" to={to} key={src} data-fx="xray">
                 <img src={src} alt={alt} loading="lazy" />
@@ -329,7 +329,7 @@ export default function Home() {
       <section className="section" id="signup">
         <div className="wrap">
           <Reveal className="signup-box mesh">
-            <video className="ambient-video" src="/brand/logo-3d-web.mp4" autoPlay muted loop playsInline preload="none" aria-hidden="true" />
+            <video className="ambient-video" src="/media/brand/logo-3d-web.mp4" autoPlay muted loop playsInline preload="none" aria-hidden="true" />
             <span className="eyebrow" style={{ justifyContent: 'center' }}>Private List</span>
             <h2 data-fx="charOrbit">First Access or No Access</h2>
             <p>Drop dates, private access codes, and 10% off your first order. One email per drop — nothing else.</p>

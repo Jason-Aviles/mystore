@@ -43,9 +43,9 @@
       "2XL"
     ],
     "images": [
-      "/images/products/Qwen_Edit_2511_00015.webp",
-      "/images/products/3.webp",
-      "/images/products/7.webp"
+      "/media/products/Qwen_Edit_2511_00015.webp",
+      "/media/products/3.webp",
+      "/media/products/7.webp"
     ],
     "colorImages": null,
     "variants": [
@@ -223,9 +223,9 @@
       "2XL"
     ],
     "images": [
-      "/images/products/Qwen_Edit_2511_00017.webp",
-      "/images/products/1_3d7c7d86-5f10-45cf-8c1a-06ab3b7d5f30.webp",
-      "/images/products/9.webp"
+      "/media/products/Qwen_Edit_2511_00017.webp",
+      "/media/products/1_3d7c7d86-5f10-45cf-8c1a-06ab3b7d5f30.webp",
+      "/media/products/9.webp"
     ],
     "colorImages": null,
     "variants": [
@@ -403,9 +403,9 @@
       "2XL"
     ],
     "images": [
-      "/images/products/Qwen_Edit_2511_00016.webp",
-      "/images/products/5.webp",
-      "/images/products/11.webp"
+      "/media/products/Qwen_Edit_2511_00016.webp",
+      "/media/products/5.webp",
+      "/media/products/11.webp"
     ],
     "colorImages": null,
     "variants": [
@@ -578,15 +578,15 @@
       "2XL"
     ],
     "images": [
-      "/images/products/1.webp",
-      "/images/products/3.webp",
-      "/images/products/5.webp",
-      "/images/products/2_1.webp"
+      "/media/products/1.webp",
+      "/media/products/3.webp",
+      "/media/products/5.webp",
+      "/media/products/2_1.webp"
     ],
     "colorImages": {
-      "Olive": "/images/products/1.webp",
-      "Red": "/images/products/3.webp",
-      "Blue": "/images/products/5.webp"
+      "Olive": "/media/products/1.webp",
+      "Red": "/media/products/3.webp",
+      "Blue": "/media/products/5.webp"
     },
     "variants": [
       [
@@ -708,17 +708,17 @@
       "2XL"
     ],
     "images": [
-      "/images/products/7.webp",
-      "/images/products/9.webp",
-      "/images/products/11.webp",
-      "/images/products/8.webp",
-      "/images/products/10.webp",
-      "/images/products/12.webp"
+      "/media/products/7.webp",
+      "/media/products/9.webp",
+      "/media/products/11.webp",
+      "/media/products/8.webp",
+      "/media/products/10.webp",
+      "/media/products/12.webp"
     ],
     "colorImages": {
-      "Black": "/images/products/7.webp",
-      "Olive": "/images/products/9.webp",
-      "Gray": "/images/products/11.webp"
+      "Black": "/media/products/7.webp",
+      "Olive": "/media/products/9.webp",
+      "Gray": "/media/products/11.webp"
     },
     "variants": [
       [
@@ -836,10 +836,10 @@
     ],
     "options2": null,
     "images": [
-      "/content/hoodie-front-real.webp",
-      "/content/hoodie-flat-real.webp",
-      "/content/hoodie-worn-real.webp",
-      "/content/hoodie-side-real.webp"
+      "/media/editorial/hoodie-front-real.webp",
+      "/media/editorial/hoodie-flat-real.webp",
+      "/media/editorial/hoodie-worn-real.webp",
+      "/media/editorial/hoodie-side-real.webp"
     ],
     "colorImages": null,
     "variants": [
@@ -908,9 +908,9 @@
     ],
     "options2": null,
     "images": [
-      "/content/sweats-leg-real.webp",
-      "/content/sweats-pair-real.webp",
-      "/content/sweats-set-real.webp"
+      "/media/editorial/sweats-leg-real.webp",
+      "/media/editorial/sweats-pair-real.webp",
+      "/media/editorial/sweats-set-real.webp"
     ],
     "colorImages": null,
     "variants": [
@@ -978,12 +978,12 @@
     ],
     "options2": null,
     "images": [
-      "/images/products/IMG-5255.webp",
-      "/content/tee-back-real.webp",
-      "/content/tee-flat-real.webp",
-      "/content/tee-front-real.webp",
-      "/images/products/IMG-5256.webp",
-      "/images/products/IMG-5257.webp"
+      "/media/products/IMG-5255.webp",
+      "/media/editorial/tee-back-real.webp",
+      "/media/editorial/tee-flat-real.webp",
+      "/media/editorial/tee-front-real.webp",
+      "/media/products/IMG-5256.webp",
+      "/media/products/IMG-5257.webp"
     ],
     "colorImages": null,
     "variants": [

@@ -132,7 +132,7 @@ export default function Shop() {
               if (i === 3 && active === 'all' && !query) {
                 return [card, (
                   <figure className="grid-ed" key="ed-1" aria-hidden="true" data-fx="kenBurns">
-                    <img src={CONFIG.shopCampaignImage || '/content/couch-couple.webp'} alt="" loading="lazy" />
+                    <img src={CONFIG.shopCampaignImage || '/media/editorial/couch-couple.webp'} alt="" loading="lazy" />
                     <figcaption>Cut once. Worn forever.{CONFIG.dropMode !== false && <em> — {CONFIG.dropName}</em>}</figcaption>
                   </figure>
                 )];

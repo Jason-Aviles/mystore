@@ -18,15 +18,15 @@ gsap.registerPlugin(Draggable, InertiaPlugin);
 /* ratio is locked per asset so card widths are stable before video
    metadata loads — keeps Draggable bounds true from first paint */
 const REEL = [
-  { type: 'video', src: '/content/ad1-web.mp4', poster: '/content/poster-ad1.jpg', tag: 'enter the darkness — the spot', ratio: '16 / 9' },
-  { type: 'video', src: '/content/LTX_2.0_i2v_00019_-web.mp4', poster: '/content/poster-LTX_2.0_i2v_00019_.jpg', tag: 'the serpent tee', ratio: '1280 / 704' },
-  { type: 'image', src: '/content/ig-hatstore.webp', tag: '@darkdivine.official', ratio: '1205 / 1597' },
-  { type: 'video', src: '/content/ComfyUI_00018_-web.mp4', poster: '/content/poster-ComfyUI_00018_.jpg', tag: 'matching sets', ratio: '1 / 1' },
-  { type: 'image', src: '/content/ig-jersey-fit.webp', tag: 'city of sins jersey', ratio: '560 / 790' },
-  { type: 'video', src: '/content/dji-wall.mp4', poster: '/content/poster-dji-wall.jpg', tag: 'the wall — on set', ratio: '16 / 9' },
-  { type: 'video', src: '/content/LTX_2.0_i2v_00065_-web.mp4', poster: '/content/poster-LTX_2.0_i2v_00065_.jpg', tag: 'worn, not staged', ratio: '1280 / 704' },
-  { type: 'video', src: '/content/Wan22_00018-web.mp4', poster: '/content/poster-Wan22_00018.jpg', tag: 'illuminate within', ratio: '480 / 832' },
-  { type: 'video', src: '/content/dji-location.mp4', poster: '/content/poster-dji.jpg', tag: 'on location — the bridge', ratio: '16 / 9' },
+  { type: 'video', src: '/media/editorial/ad1-web.mp4', poster: '/media/editorial/poster-ad1.jpg', tag: 'enter the darkness — the spot', ratio: '16 / 9' },
+  { type: 'video', src: '/media/editorial/LTX_2.0_i2v_00019_-web.mp4', poster: '/media/editorial/poster-LTX_2.0_i2v_00019_.jpg', tag: 'the serpent tee', ratio: '1280 / 704' },
+  { type: 'image', src: '/media/editorial/ig-hatstore.webp', tag: '@darkdivine.official', ratio: '1205 / 1597' },
+  { type: 'video', src: '/media/editorial/ComfyUI_00018_-web.mp4', poster: '/media/editorial/poster-ComfyUI_00018_.jpg', tag: 'matching sets', ratio: '1 / 1' },
+  { type: 'image', src: '/media/editorial/ig-jersey-fit.webp', tag: 'city of sins jersey', ratio: '560 / 790' },
+  { type: 'video', src: '/media/editorial/dji-wall.mp4', poster: '/media/editorial/poster-dji-wall.jpg', tag: 'the wall — on set', ratio: '16 / 9' },
+  { type: 'video', src: '/media/editorial/LTX_2.0_i2v_00065_-web.mp4', poster: '/media/editorial/poster-LTX_2.0_i2v_00065_.jpg', tag: 'worn, not staged', ratio: '1280 / 704' },
+  { type: 'video', src: '/media/editorial/Wan22_00018-web.mp4', poster: '/media/editorial/poster-Wan22_00018.jpg', tag: 'illuminate within', ratio: '480 / 832' },
+  { type: 'video', src: '/media/editorial/dji-location.mp4', poster: '/media/editorial/poster-dji.jpg', tag: 'on location — the bridge', ratio: '16 / 9' },
 ];
 
 export default function FilmStrip() {

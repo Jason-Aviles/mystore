@@ -190,8 +190,8 @@ h1, h2, h3, .display {
 .logo-mark {
   display: inline-block; width: 26px; height: 26px; flex-shrink: 0;
   background: var(--bone);
-  -webkit-mask: url('/brand/favicon.svg') center / contain no-repeat;
-  mask: url('/brand/favicon.svg') center / contain no-repeat;
+  -webkit-mask: url('/media/brand/favicon.svg') center / contain no-repeat;
+  mask: url('/media/brand/favicon.svg') center / contain no-repeat;
 }
 .logo-mark.lg { width: 74px; height: 74px; }
 .pl-mark { display: block; margin: 0 auto 20px; }
@@ -623,7 +623,7 @@ h1, h2, h3, .display {
 @media (prefers-reduced-motion: reduce) {
   /* poster only, no motion: swap the video for its still */
   .hs-b .hero-media video { display: none; }
-  .hs-b .hero-media { background: url('/content/hero-film-poster.jpg') center 28% / cover no-repeat; }
+  .hs-b .hero-media { background: url('/media/editorial/hero-film-poster.jpg') center 28% / cover no-repeat; }
 }
 .hs-b::after {
   content: ''; position: absolute; inset: 0; z-index: -1;
@@ -1721,8 +1721,8 @@ input, textarea { caret-color: var(--red); }
   content: ''; position: absolute; left: 50%; top: -37px; width: 74px; height: 74px;
   transform: translateX(-50%);
   background: var(--bone);
-  -webkit-mask: url('/brand/favicon.svg') center / contain no-repeat;
-  mask: url('/brand/favicon.svg') center / contain no-repeat;
+  -webkit-mask: url('/media/brand/favicon.svg') center / contain no-repeat;
+  mask: url('/media/brand/favicon.svg') center / contain no-repeat;
   filter: drop-shadow(0 6px 24px rgba(239, 182, 196, 0.35));
 }
 .admin-login .box::after {

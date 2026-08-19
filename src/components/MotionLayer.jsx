@@ -100,9 +100,9 @@ export function Preloader() {
   return (
     <div className="preloader" ref={root} aria-hidden="true">
       {/* campaign frames that strobe during the count */}
-      <div className="pl-flash" style={{ backgroundImage: 'url(/content/pendant-graded-2.webp)' }} />
-      <div className="pl-flash" style={{ backgroundImage: 'url(/content/ig-hatstore.webp)' }} />
-      <div className="pl-flash" style={{ backgroundImage: 'url(/content/broadcast-poster.jpg)' }} />
+      <div className="pl-flash" style={{ backgroundImage: 'url(/media/editorial/pendant-graded-2.webp)' }} />
+      <div className="pl-flash" style={{ backgroundImage: 'url(/media/editorial/ig-hatstore.webp)' }} />
+      <div className="pl-flash" style={{ backgroundImage: 'url(/media/editorial/broadcast-poster.jpg)' }} />
       {/* the exit slats — same tear language as the hero */}
       <div className="pl-slats">
         {[0, 1, 2, 3, 4].map((i) => <span className="pl-slat" key={i} />)}

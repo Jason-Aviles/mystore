@@ -149,7 +149,7 @@ export default function Gate({ onDone }) {
         <div className="script-line">Illuminate the darkness within</div>
         <div className="gate-tease" aria-hidden="true">
           <span className="gt-tape">{campaign ? 'PRIVATE PREORDER' : (CONFIG.dropMode !== false ? CONFIG.dropName : 'DARK DIVINE')}</span>
-          <img src={campaign?.hero_image_url || CONFIG.dropImage || '/content/cafe-fit.webp'} alt="" />
+          <img src={campaign?.hero_image_url || CONFIG.dropImage || '/media/editorial/cafe-fit.webp'} alt="" />
         </div>
         <div className="lbl" ref={lblRef}>
           {campaign ? `Private Preorder — ${heading}` : `Private Access — ${heading}`}

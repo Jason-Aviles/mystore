@@ -73,7 +73,7 @@ export default function Popups() {
       <div className="panel pop-panel">
         <button className="close" onClick={() => setOpen(false)} aria-label="Close">&times;</button>
         <div className="pop-media" aria-hidden="true">
-          <img src={CONFIG.popupImage || '/content/pendant-graded-1.webp'} alt="" />
+          <img src={CONFIG.popupImage || '/media/editorial/pendant-graded-1.webp'} alt="" />
         </div>
         <div className="pop-body">
           {done ? (

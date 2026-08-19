@@ -26,13 +26,13 @@ export default function Logo3D({ className = '' }) {
   }, []);
 
   if (!ready) {
-    return <img ref={holder} className={`logo3d ${className}`} src="/brand/logo-3d.png" alt="" style={{ objectFit: 'contain' }} />;
+    return <img ref={holder} className={`logo3d ${className}`} src="/media/brand/logo-3d.png" alt="" style={{ objectFit: 'contain' }} />;
   }
   return (
     <model-viewer
       class={`logo3d ${className}`}
-      src="/brand/logo.glb"
-      poster="/brand/logo-3d.png"
+      src="/media/brand/logo.glb"
+      poster="/media/brand/logo-3d.png"
       alt="Dark Divine serpent crown logo in 3D"
       auto-rotate
       camera-controls

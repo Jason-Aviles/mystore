@@ -1,3 +1,6 @@
+import { normalizeSiteSettings } from './media';
+export { normalizeMediaUrl, normalizeSiteSettings } from './media';
+
 /* Site configuration.
    DEFAULT_CONFIG ships with the bundle; the admin panel's Site Settings
    page saves overrides (Supabase `site_settings` in live mode, localStorage
@@ -47,10 +50,10 @@ export const DEFAULT_CONFIG = {
   dropImage: '',
   // Hero background videos + their poster stills. Blank falls back to the
   // built-in clips. Admin can upload/replace these in Site Settings.
-  heroVideoA: '/content/broadcast.mp4',
-  heroPosterA: '/content/broadcast-poster.jpg',
-  heroVideoB: '/content/hero-film.mp4',
-  heroPosterB: '/content/hero-film-poster.jpg',
+  heroVideoA: '/media/editorial/broadcast.mp4',
+  heroPosterA: '/media/editorial/broadcast-poster.jpg',
+  heroVideoB: '/media/editorial/hero-film.mp4',
+  heroPosterB: '/media/editorial/hero-film-poster.jpg',
   shopCampaignImage: '', // editorial tile in the Shop All grid (defaults to the couch shot) // admin-uploaded picture of the next drop — shows in the gate, homepage timer panel, and Drop page
   reviewPopups: true, // corner toasts featuring real verified reviews
   popupEnabled: true,   // email capture popup
@@ -70,10 +73,10 @@ export const CONFIG = DEFAULT_CONFIG;
 const LS_KEY = 'dd_site_settings';
 
 export function localSettings() {
-  try { return JSON.parse(localStorage.getItem(LS_KEY)) || {}; } catch { return {}; }
+  try { return normalizeSiteSettings(JSON.parse(localStorage.getItem(LS_KEY)) || {}); } catch { return {}; }
 }
 export function saveLocalSettings(patch) {
-  localStorage.setItem(LS_KEY, JSON.stringify({ ...localSettings(), ...patch }));
+  localStorage.setItem(LS_KEY, JSON.stringify(normalizeSiteSettings({ ...localSettings(), ...patch })));
 }
 
 /** Fetch admin overrides. Live → site_settings table; demo → localStorage. */
@@ -81,7 +84,7 @@ export async function fetchSiteSettings() {
   const { supabase, hasSupabase } = await import('./supabase');
   if (hasSupabase) {
     const { data } = await supabase.from('site_settings').select('data').eq('id', 1).maybeSingle();
-    return data?.data || {};
+    return normalizeSiteSettings(data?.data || {});
   }
   return localSettings();
 }

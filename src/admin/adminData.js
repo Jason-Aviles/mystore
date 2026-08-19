@@ -5,7 +5,7 @@
    learn the panel and stage catalog changes before going live. */
 import seed from '../data/products.json';
 import { supabase, hasSupabase } from '../lib/supabase';
-import { localOverlay, saveLocalOverlay } from '../lib/catalog';
+import { localOverlay, normalizeProductMedia, saveLocalOverlay } from '../lib/catalog';
 
 export const isLive = hasSupabase;
 
@@ -17,7 +17,7 @@ export async function adminListProducts() {
       supabase.from('product_variants').select('*'),
     ]);
     if (prods) {
-      return prods.map((row) => ({
+      return prods.map((row) => normalizeProductMedia({
         ...row.data,
         handle: row.handle,
         title: row.title,
@@ -36,12 +36,13 @@ export async function adminListProducts() {
       }));
     }
   }
-  return (localOverlay() ?? seed).map((p) => ({ status: 'active', ...p }));
+  return (localOverlay() ?? seed).map((p) => normalizeProductMedia({ status: 'active', ...p }));
 }
 
 export async function adminSaveProduct(product) {
+  const normalizedProduct = normalizeProductMedia(product);
   if (isLive) {
-    const { variants, ...p } = product;
+    const { variants, ...p } = normalizedProduct;
     const row = {
       handle: p.handle,
       title: p.title,
@@ -67,8 +68,8 @@ export async function adminSaveProduct(product) {
     return;
   }
   const list = (localOverlay() ?? seed).slice();
-  const i = list.findIndex((x) => x.handle === product.handle);
-  if (i >= 0) list[i] = product; else list.push(product);
+  const i = list.findIndex((x) => x.handle === normalizedProduct.handle);
+  if (i >= 0) list[i] = normalizedProduct; else list.push(normalizedProduct);
   saveLocalOverlay(list);
 }
 

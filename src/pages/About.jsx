@@ -15,7 +15,7 @@ export default function About() {
       </section>
       <section className="section" style={{ paddingTop: 40 }}>
         <div className="wrap story">
-          <Reveal className="media" data-fx="molt"><img src="/content/pendant-graded-2.webp" alt="Dark Divine serpent pendant — editorial portrait" loading="lazy" /></Reveal>
+          <Reveal className="media" data-fx="molt"><img src="/media/editorial/pendant-graded-2.webp" alt="Dark Divine serpent pendant — editorial portrait" loading="lazy" /></Reveal>
           <Reveal>
             <div className="script-line">Illuminate the darkness within</div>
             <p data-lines>Dark Divine didn’t start in a boardroom. It started with a serpent, a number, and the idea that what you wear should say something before you do.</p>

@@ -10,7 +10,7 @@
 
    Notes:
    - Product image URLs from the Shopify CDN are kept as-is; swap them
-     later by editing the product in /admin or re-pointing to /images/products.
+     later by editing the product in /admin or re-pointing to /media/products.
    - Existing rows with the same handle/email are updated, not duplicated.
    ============================================================ */
 import { readFileSync, existsSync } from 'node:fs';

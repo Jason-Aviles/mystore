@@ -16,12 +16,12 @@ gsap.registerPlugin(SplitText);
    ============================================================ */
 
 const LINKS = [
-  ['/', 'Home', '/content/poster-LTX_2.0_i2v_00019_.webp'],
-  ['/shop', 'Shop All', '/content/ig-hatstore.webp'],
-  ['/drop', 'The Drop', '/content/desert-00.webp'],
-  ['/collection/essentials', 'Essentials', '/content/hoodie-script-back.webp'],
-  ['/about', 'Our Story', '/content/couch-couple.webp'],
-  ['/contact', 'Support', '/content/ig-jersey-fit.webp'],
+  ['/', 'Home', '/media/editorial/poster-LTX_2.0_i2v_00019_.webp'],
+  ['/shop', 'Shop All', '/media/editorial/ig-hatstore.webp'],
+  ['/drop', 'The Drop', '/media/editorial/desert-00.webp'],
+  ['/collection/essentials', 'Essentials', '/media/editorial/hoodie-script-back.webp'],
+  ['/about', 'Our Story', '/media/editorial/couch-couple.webp'],
+  ['/contact', 'Support', '/media/editorial/ig-jersey-fit.webp'],
 ];
 
 export default function MegaMenu({ open, onClose }) {
