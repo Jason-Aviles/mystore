@@ -880,10 +880,25 @@ export default function usePageMotion(ready) {
         gsap.to(w, { y: i % 2 ? 5 : -5, duration: 3.2 + i, yoyo: true, repeat: -1, ease: 'sine.inOut', delay: 2.2 });
       });
 
-      /* ---- header: tucks away scrolling down, returns scrolling up ---- */
-      const header = document.querySelector('.site-header');
-      if (header) {
-        const hide = gsap.to(header, { yPercent: -102, duration: 0.55, ease: 'power2.inOut', paused: true });
+      /* ---- fixed chrome: announcement + header leave and return together ---- */
+      const siteTop = document.querySelector('.site-top');
+      if (siteTop) {
+        const disableChrome = () => {
+          siteTop.inert = true;
+          siteTop.style.pointerEvents = 'none';
+        };
+        const enableChrome = () => {
+          siteTop.inert = false;
+          siteTop.style.removeProperty('pointer-events');
+        };
+        const hide = gsap.to(siteTop, {
+          yPercent: -102,
+          duration: 0.55,
+          ease: 'power2.inOut',
+          paused: true,
+          onStart: disableChrome,
+          onReverseComplete: enableChrome,
+        });
         ScrollTrigger.create({
           start: 'top top', end: 'max',
           onUpdate: (self) => {
@@ -893,6 +908,7 @@ export default function usePageMotion(ready) {
             else if (self.direction === -1 || self.scroll() <= 480) hide.reverse();
           },
         });
+        cleanups.push(enableChrome);
       }
 
       /* ---- CAMERA LANGUAGE: every section dollies in through its window ---- */

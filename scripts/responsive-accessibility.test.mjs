@@ -138,6 +138,57 @@ test('the phone header and page content do not overflow horizontally', async () 
   await context.close();
 });
 
+test('the ultrawide header tucks away and returns as one complete unit', async () => {
+  const { context, page } = await desktopPage({ viewport: { width: 3815, height: 785 } });
+  await page.goto(ORIGIN, { waitUntil: 'networkidle' });
+  await page.waitForFunction(() => document.querySelector('.scroll-progress')?.style.transform);
+
+  const visible = await page.locator('.site-top').evaluate((top) => {
+    const topRect = top.getBoundingClientRect();
+    const announcementRect = top.querySelector('.annc').getBoundingClientRect();
+    const headerRect = top.querySelector('.site-header').getBoundingClientRect();
+    return {
+      top: topRect.top,
+      bottom: topRect.bottom,
+      announcementBottom: announcementRect.bottom,
+      headerTop: headerRect.top,
+      inert: top.inert,
+    };
+  });
+  assert.ok(Math.abs(visible.top) < 1);
+  assert.ok(visible.bottom > 0);
+  assert.ok(visible.headerTop >= visible.announcementBottom - 1);
+  assert.equal(visible.inert, false);
+
+  await page.mouse.wheel(0, 1400);
+  await page.waitForFunction(() => {
+    const top = document.querySelector('.site-top');
+    return top?.inert && top.getBoundingClientRect().bottom <= 0;
+  }, undefined, { timeout: 3000 });
+  const hidden = await page.locator('.site-top').evaluate((top) => ({
+    bottom: top.getBoundingClientRect().bottom,
+    inert: top.inert,
+  }));
+  assert.ok(hidden.bottom <= 0, `hidden header still ends at ${hidden.bottom}px`);
+  assert.equal(hidden.inert, true);
+  await page.screenshot({ path: join(tmpdir(), 'darkdivine-header-ultrawide-hidden.png') });
+
+  await page.mouse.wheel(0, -160);
+  await page.waitForFunction(() => {
+    const top = document.querySelector('.site-top');
+    return !top?.inert && Math.abs(top.getBoundingClientRect().top) < 1;
+  }, undefined, { timeout: 3000 });
+  const returned = await page.locator('.site-top').evaluate((top) => ({
+    top: top.getBoundingClientRect().top,
+    inert: top.inert,
+  }));
+  assert.ok(Math.abs(returned.top) < 1);
+  assert.equal(returned.inert, false);
+
+  await page.screenshot({ path: join(tmpdir(), 'darkdivine-header-ultrawide-returned.png') });
+  await context.close();
+});
+
 test('client navigation renders a non-overlapping editorial product story at 1004px', async () => {
   const { context, page } = await desktopPage({ viewport: { width: 1004, height: 847 } });
   await navigateToBundle(page);
