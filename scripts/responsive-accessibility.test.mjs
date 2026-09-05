@@ -158,16 +158,29 @@ test('client navigation renders a non-overlapping editorial product story at 100
     );
     const lines = [...story.querySelectorAll('.ps-line')];
     const lineRects = lines.map((line) => line.getBoundingClientRect());
+    const heading = story.querySelector('.ps-line h2');
+    const headingText = heading.firstChild;
+    const headingWords = [...headingText.textContent.matchAll(/\S+/g)];
     const button = story.querySelector('.ps-action, .ps-line button');
+    const buttonParts = [...button.querySelectorAll('.ps-action-part')];
     const text = [...story.querySelectorAll('.ps-line h2, .ps-line p')];
     const visibleFrames = [...story.querySelectorAll('.ps-frame')].filter(shown);
     return {
       enhanced: story.classList.contains('is-enhanced'),
       pinned: story.parentElement.classList.contains('pin-spacer'),
+      currentSteps: story.querySelectorAll('.ps-step[aria-current="step"]').length,
       linePositions: lines.map((line) => getComputedStyle(line).position),
       readableLines: lines.every(shown),
+      brokenHeadingWords: headingWords.some((word) => {
+        const range = document.createRange();
+        range.setStart(headingText, word.index);
+        range.setEnd(headingText, word.index + word[0].length);
+        return range.getClientRects().length > 1;
+      }),
       lineOverlap: lineRects.some((rect, i) => lineRects.slice(i + 1).some((other) => intersects(rect, other))),
       buttonOverlap: text.some((node) => intersects(node.getBoundingClientRect(), button.getBoundingClientRect())),
+      intactButtonParts: buttonParts.length === 2
+        && buttonParts.every((part) => part.getClientRects().length === 1),
       visibleFrames: visibleFrames.length,
       copyRight: story.querySelector('.ps-copy').getBoundingClientRect().right,
       frameLeft: visibleFrames[0].getBoundingClientRect().left,
@@ -179,14 +192,22 @@ test('client navigation renders a non-overlapping editorial product story at 100
 
   assert.equal(layout.enhanced, false);
   assert.equal(layout.pinned, false);
+  assert.equal(layout.currentSteps, 0);
   assert.ok(layout.linePositions.every((position) => position !== 'absolute'));
   assert.equal(layout.readableLines, true);
+  assert.equal(layout.brokenHeadingWords, false);
   assert.equal(layout.lineOverlap, false);
   assert.equal(layout.buttonOverlap, false);
+  assert.equal(layout.intactButtonParts, true);
   assert.equal(layout.visibleFrames, 1);
   assert.ok(layout.copyRight <= layout.frameLeft, 'editorial copy must stay clear of the product image');
   assert.equal(layout.buttonVisible, true);
   assert.equal(layout.documentWidth, layout.viewport);
+  await page.locator('.pstory').evaluate((story) => {
+    story.querySelector('.ps-line h2').textContent = 'Blood Heat Bundle';
+    story.querySelector('[data-ps="1"] p').textContent =
+      'Jersey runs true with a relaxed athletic cut. Pants are a relaxed straight leg with adjustable drawstring waist \u2014 size down for a tapered stack.';
+  });
   await page.locator('.pstory').scrollIntoViewIfNeeded();
   await page.waitForTimeout(300);
   await page.screenshot({ path: join(tmpdir(), 'darkdivine-product-story-1004.png') });
@@ -203,28 +224,47 @@ test('client navigation initializes one scoped cinematic on wide desktops', asyn
     pinned: story.parentElement.classList.contains('pin-spacer'),
     enhancedStories: document.querySelectorAll('.pstory.is-enhanced').length,
     storyTriggers: window.__ddProductStoryTriggerCount?.() ?? -1,
+    progressRails: story.querySelectorAll('.ps-progress').length,
+    progressSteps: story.querySelectorAll('.ps-step').length,
     framePositions: [...story.querySelectorAll('.ps-frame')].map((frame) => getComputedStyle(frame).position),
   }));
   assert.equal(state.pinned, true);
   assert.equal(state.enhancedStories, 1);
   assert.equal(state.storyTriggers, 1);
+  assert.equal(state.progressRails, 1);
+  assert.equal(state.progressSteps, 3);
   assert.ok(state.framePositions.every((position) => position === 'absolute'));
 
   const spacerTop = await page.locator('.pstory').evaluate((story) => (
     story.parentElement.getBoundingClientRect().top + window.scrollY
   ));
   const checkpoints = [0.14, 0.48, 0.82];
-  for (const progress of checkpoints) {
+  const expectedActs = ['Piece', 'Cut', 'Run'];
+  for (const [index, progress] of checkpoints.entries()) {
     await page.evaluate(({ top, progress: point }) => window.scrollTo(0, top + (window.innerHeight * 2.5 * point)), { top: spacerTop, progress });
-    await page.waitForTimeout(450);
+    await page.waitForFunction(() => (
+      Math.abs(document.querySelector('.pstory')?.getBoundingClientRect().top ?? 999) < 2
+    ));
+    await page.waitForFunction((expectedAct) => (
+      document.querySelector('.ps-step[aria-current="step"]')?.textContent.trim() === expectedAct
+    ), expectedActs[index]);
     const captionState = await page.locator('.ps-line').evaluateAll((lines) => lines.map((line) => ({
       visible: Number(getComputedStyle(line).opacity) > 0.5,
       pointerEvents: getComputedStyle(line).pointerEvents,
     })));
     const visible = captionState.filter((line) => line.visible);
+    const settledFrames = await page.locator('.ps-frame').evaluateAll((frames) => frames
+      .map((frame, frameIndex) => ({ frameIndex, opacity: Number(getComputedStyle(frame).opacity) }))
+      .filter((frame) => frame.opacity > 0.01));
+    const activeStep = await page.locator('.ps-step[aria-current="step"]').textContent();
     assert.equal(visible.length, 1, `expected one caption at cinematic progress ${progress}, received ${visible.length}`);
     assert.equal(visible[0].pointerEvents, 'auto');
     assert.ok(captionState.filter((line) => !line.visible).every((line) => line.pointerEvents === 'none'));
+    assert.equal(activeStep.trim(), expectedActs[index]);
+    assert.deepEqual(settledFrames.map((frame) => frame.frameIndex), [index]);
+    await page.screenshot({
+      path: join(tmpdir(), `darkdivine-product-story-1200-${expectedActs[index].toLowerCase()}.png`),
+    });
   }
   await page.evaluate((top) => window.scrollTo(0, top + (window.innerHeight * 2.5 * 0.98)), spacerTop);
   await page.waitForTimeout(450);

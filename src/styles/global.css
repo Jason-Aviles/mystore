@@ -1499,35 +1499,73 @@ input:focus-visible, textarea:focus-visible, select:focus-visible { outline: 2px
 @media (min-width: 900px) {
   .pstory {
     display: block; position: relative; padding: clamp(72px, 8vw, 112px) var(--gutter);
-    background: var(--void); overflow: hidden;
+    background:
+      radial-gradient(circle at 76% 42%, rgba(239, 182, 196, 0.07), transparent 28%),
+      var(--void);
+    overflow: hidden;
   }
   .ps-stage {
-    width: min(1120px, 100%); min-height: clamp(580px, 66vw, 720px); margin: 0 auto;
-    display: grid; grid-template-columns: minmax(280px, 0.72fr) minmax(0, 1.28fr);
-    grid-template-areas: 'copy media';
-    border: 1px solid var(--line-strong);
-    background: linear-gradient(118deg, rgba(239, 182, 196, 0.045), transparent 34%), var(--ink);
+    width: min(1180px, 100%); min-height: clamp(620px, 68vw, 760px); margin: 0 auto;
+    display: grid; grid-template-columns: minmax(300px, 0.72fr) minmax(0, 1.28fr);
+    grid-template-areas: 'rail media'; position: relative;
+    background: var(--ink);
   }
   .ps-frame { display: none; min-width: 0; overflow: hidden; background: var(--card-2); }
   .ps-frame:first-child { display: block; position: relative; grid-area: media; }
+  .ps-frame:first-child { clip-path: polygon(5% 0, 100% 0, 100% 100%, 0 100%); }
+  .ps-frame::after {
+    content: ''; position: absolute; inset: 0; pointer-events: none;
+    background: linear-gradient(90deg, rgba(9, 9, 10, 0.2), transparent 22%);
+  }
   .ps-frame img { width: 100%; height: 100%; object-fit: cover; }
+  .ps-rail {
+    grid-area: rail; min-width: 0; position: relative; isolation: isolate;
+    padding: clamp(34px, 4vw, 58px); display: grid; grid-template-rows: auto 1fr;
+    background: linear-gradient(145deg, rgba(239, 182, 196, 0.04), transparent 58%);
+  }
+  .ps-rail::before {
+    content: ''; position: absolute; inset: 0; z-index: -1; opacity: 0.12; pointer-events: none;
+    background-image:
+      repeating-linear-gradient(60deg, var(--line) 0 1px, transparent 1px 18px),
+      repeating-linear-gradient(-60deg, var(--line) 0 1px, transparent 1px 18px);
+    mask-image: linear-gradient(to bottom, black, transparent 46%);
+  }
+  .ps-progress { position: relative; z-index: 2; }
+  .ps-progress-track { height: 1px; background: var(--line-strong); overflow: hidden; }
+  .ps-progress-fill { display: block; width: 100%; height: 100%; background: var(--red); }
+  .ps-progress ol {
+    list-style: none; margin: 14px 0 0; padding: 0; display: flex; justify-content: space-between;
+  }
+  .ps-step {
+    color: var(--muted); font-size: 10px; letter-spacing: 0.22em; text-transform: uppercase;
+    transition: color 180ms ease;
+  }
+  .pstory.is-enhanced .ps-step.is-active { color: var(--bone); }
   .ps-copy {
-    grid-area: copy; min-width: 0; padding: clamp(30px, 4vw, 54px);
-    display: grid; align-content: center; border-right: 1px solid var(--line-strong);
+    min-width: 0; display: grid; align-content: center;
   }
   .ps-line {
-    position: relative; min-width: 0; padding: clamp(20px, 2.5vw, 30px) 0;
+    position: relative; min-width: 0; padding: clamp(22px, 2.7vw, 34px) 0;
     border-bottom: 1px solid var(--line); overflow-wrap: anywhere;
   }
   .ps-line:first-child { padding-top: 0; }
   .ps-line:last-child { padding-bottom: 0; border-bottom: 0; }
   .ps-line h2 {
-    margin-top: 10px; font-size: clamp(25px, 3vw, 38px); line-height: 1.05;
-    text-wrap: balance; overflow-wrap: anywhere;
+    margin-top: 12px; font-size: clamp(32px, 4.2vw, 58px); line-height: 0.92;
+    text-wrap: balance; overflow-wrap: normal; word-break: normal; hyphens: none;
   }
   .ps-line p { color: var(--bone-dim); margin: 10px 0 0; line-height: 1.6; overflow-wrap: break-word; }
-  .ps-action-row { display: block; margin-top: 18px; }
-  .ps-action { width: 100%; min-height: 52px; white-space: normal; line-height: 1.35; }
+  .ps-line .ps-deck { max-width: 26ch; margin-top: 18px; color: var(--muted); }
+  .ps-action-row { display: block; margin-top: 24px; }
+  .ps-action {
+    width: 100%; min-height: 56px; line-height: 1.35;
+    display: flex; align-items: center; justify-content: center; gap: 12px; flex-wrap: wrap;
+    border: 1px solid var(--bone); border-bottom: 3px solid var(--red);
+    clip-path: polygon(0 0, calc(100% - 16px) 0, 100% 16px, 100% 100%, 0 100%);
+    transition: color 180ms ease, background-color 180ms ease, border-color 180ms ease;
+  }
+  .ps-action-part { white-space: nowrap; }
+  .ps-action:hover { color: var(--bone); background: var(--red); border-color: var(--red); }
 }
 @media (min-width: 1200px) and (prefers-reduced-motion: no-preference) {
   .pstory.is-enhanced { height: 100vh; padding: 0; }
@@ -1537,17 +1575,25 @@ input:focus-visible, textarea:focus-visible, select:focus-visible { outline: 2px
   }
   .pstory.is-enhanced .ps-frame,
   .pstory.is-enhanced .ps-frame:first-child {
-    display: block; position: absolute; inset: 6vh 6vw 6vh 38vw;
+    display: block; position: absolute; inset: 6vh 5vw 6vh 36vw;
     min-height: 0; background: var(--card-2); will-change: clip-path, transform, opacity;
   }
+  .pstory.is-enhanced .ps-frame:first-child { clip-path: none; }
+  .pstory.is-enhanced .ps-rail {
+    position: absolute; inset: 0 auto 0 0; width: 36vw; min-width: 0;
+    padding: 10vh 4vw 9vh 6vw; display: grid; grid-template-rows: auto 1fr;
+    background: linear-gradient(90deg, var(--void) 72%, transparent);
+    z-index: 2;
+  }
+  .pstory.is-enhanced .ps-progress { align-self: start; }
   .pstory.is-enhanced .ps-copy {
-    position: absolute; left: 6vw; bottom: 10vh; width: min(320px, 26vw);
-    min-width: 0; padding: 0; display: grid; align-items: end;
-    border: 0; z-index: 2;
+    min-width: 0; padding: 0; display: grid; align-items: center;
   }
   .pstory.is-enhanced .ps-line {
-    grid-area: 1 / 1; align-self: end; width: 100%; padding: 0; border: 0;
+    grid-area: 1 / 1; align-self: center; width: min(330px, 26vw); padding: 0; border: 0;
+    overflow: hidden;
   }
+  .pstory.is-enhanced .ps-line h2 { font-size: clamp(46px, 5.2vw, 82px); }
 }
 
 /* About serpent mark reveal */
