@@ -41,9 +41,22 @@ async function phonePage({ reducedMotion = 'no-preference', viewport = { width: 
 before(async () => {
   server = spawn(process.execPath, [
     'node_modules/vite/bin/vite.js', '--host', '127.0.0.1', '--port', String(PORT),
-  ], { cwd: process.cwd(), stdio: 'ignore' });
+  ], {
+    cwd: process.cwd(),
+    stdio: 'ignore',
+    env: {
+      ...process.env,
+      VITE_SUPABASE_URL: '',
+      VITE_SUPABASE_ANON_KEY: '',
+    },
+  });
   await waitForServer();
-  browser = await chromium.launch({ headless: true });
+  try {
+    browser = await chromium.launch({ headless: true });
+  } catch (error) {
+    if (!String(error).includes("Executable doesn't exist")) throw error;
+    browser = await chromium.launch({ headless: true, channel: 'chrome' });
+  }
 });
 
 after(async () => {
@@ -96,6 +109,42 @@ test('the phone header and page content do not overflow horizontally', async () 
   }));
   assert.equal(layout.documentWidth, layout.viewport);
   assert.ok(layout.actionRight <= layout.viewport, `header actions end at ${layout.actionRight}px`);
+
+  await context.close();
+});
+
+test('the desktop product film keeps its frames layered and its copy readable', async () => {
+  const { context, page } = await phonePage({ viewport: { width: 1200, height: 900 } });
+  await page.goto(`${ORIGIN}/product/city-of-sins-blood-heat-bundle`, { waitUntil: 'networkidle' });
+
+  const layout = await page.locator('.pstory').evaluate((story) => {
+    const frame = story.querySelector('.ps-frame');
+    const copy = story.querySelector('.ps-copy');
+    return {
+      framePosition: getComputedStyle(frame).position,
+      frameWidth: frame.getBoundingClientRect().width,
+      copyWidth: copy.getBoundingClientRect().width,
+      frameLeft: frame.getBoundingClientRect().left,
+      copyRight: copy.getBoundingClientRect().right,
+    };
+  });
+
+  assert.equal(layout.framePosition, 'absolute');
+  assert.ok(layout.frameWidth < 1200, `film frame must respect its side insets; received ${layout.frameWidth}px`);
+  assert.ok(layout.copyWidth >= 280, `film copy collapsed to ${layout.copyWidth}px`);
+  assert.ok(layout.copyRight <= layout.frameLeft, `film copy overlaps the image by ${layout.copyRight - layout.frameLeft}px`);
+
+  await context.close();
+});
+
+test('the scroll-driven product film is removed when reduced motion is requested', async () => {
+  const { context, page } = await phonePage({
+    reducedMotion: 'reduce',
+    viewport: { width: 1200, height: 900 },
+  });
+  await page.goto(`${ORIGIN}/product/city-of-sins-blood-heat-bundle`, { waitUntil: 'networkidle' });
+
+  assert.equal(await page.locator('.pstory').evaluate((story) => getComputedStyle(story).display), 'none');
 
   await context.close();
 });
