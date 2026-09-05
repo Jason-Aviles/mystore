@@ -1764,7 +1764,7 @@ input, textarea { caret-color: var(--red); }
   display: flex; align-items: center; justify-content: center;
 }
 .hs-monolith {
-  position: relative; width: min(72vw, 1100px); aspect-ratio: 16 / 9;
+  position: relative; width: min(82vw, 145.8vh); aspect-ratio: 16 / 9;
   transform-style: preserve-3d; border: 1px solid var(--line-strong);
   overflow: hidden; will-change: transform;
   box-shadow: 0 40px 80px -30px rgba(0, 0, 0, 0.8);
@@ -1777,7 +1777,7 @@ input, textarea { caret-color: var(--red); }
 }
 .hs-floor {
   position: absolute; left: 50%; bottom: 6vh; transform: translateX(-50%) scaleY(-1);
-  width: min(72vw, 1100px); height: 18vh; pointer-events: none;
+  width: min(82vw, 145.8vh); height: 18vh; pointer-events: none;
   background: linear-gradient(180deg, rgba(242, 241, 238, 0.07), transparent 70%);
   -webkit-mask: linear-gradient(0deg, black, transparent);
   mask: linear-gradient(0deg, black, transparent);

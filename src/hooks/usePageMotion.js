@@ -331,9 +331,16 @@ export default function usePageMotion(ready) {
 
         /* THE TEAR: five slats sweep up covering the broadcast, film-burn
            flash at the crossover, slats exit revealing the film world */
+        const monolithMidAt = phone ? 0.52 : 0.58;
+        const monolithFillAt = phone ? 0.64 : 0.76;
+        const heroScriptAt = phone ? 0.6 : 0.76;
+        const heroTitleAt = phone ? 0.64 : 0.82;
+        const heroSubAt = phone ? 0.72 : 0.94;
+        const heroCtasAt = phone ? 0.79 : 1.04;
+        const heroMetaAt = phone ? 0.88 : 1.16;
         const slats = gsap.utils.toArray('.hs-slat');
         gsap.timeline({
-          scrollTrigger: { trigger: '.hero-cine2', start: 'top top', end: phone ? '+=165%' : '+=230%', pin: true, scrub: phone ? 0.35 : 0.6, invalidateOnRefresh: true },
+          scrollTrigger: { trigger: '.hero-cine2', start: 'top top', end: phone ? '+=165%' : '+=300%', pin: true, scrub: phone ? 0.35 : 0.6, invalidateOnRefresh: true },
         })
           .to('.hs-title .line:first-child .w', { xPercent: -20, ease: 'none', duration: 0.4 }, 0)
           .to('.hs-title .line:last-child .w', { xPercent: 20, ease: 'none', duration: 0.4 }, 0)
@@ -350,24 +357,24 @@ export default function usePageMotion(ready) {
              LOCKS at cinema width — contain-scale with letterbox bars, so
              the full frame stays visible and the model's head never crops. */
           .fromTo('.hs-monolith',
-            { rotationX: phone ? 7 : 16, rotationY: phone ? -3 : -9, scale: phone ? 0.82 : 0.52, y: phone ? '7vh' : '12vh', autoAlpha: 0 },
-            { rotationX: phone ? 4 : 10, rotationY: phone ? -1 : -5, scale: phone ? 0.9 : 0.62, y: phone ? '3vh' : '6vh', autoAlpha: 1, ease: 'none', duration: 0.1 }, 0.42)
-          .to('.hs-monolith', { rotationX: phone ? 2 : 6, rotationY: phone ? 0 : -2, scale: phone ? 0.98 : 0.78, y: phone ? '1vh' : '2vh', ease: 'none', duration: 0.12 }, 0.52)
+            { rotationX: phone ? 7 : 11, rotationY: phone ? -3 : -6, scale: phone ? 0.82 : 0.78, y: phone ? '7vh' : '8vh', autoAlpha: 0 },
+            { rotationX: phone ? 4 : 7, rotationY: phone ? -1 : -3, scale: phone ? 0.9 : 0.84, y: phone ? '3vh' : '4vh', autoAlpha: 1, ease: 'none', duration: phone ? 0.1 : 0.16 }, 0.42)
+          .to('.hs-monolith', { rotationX: phone ? 2 : 3, rotationY: phone ? 0 : -1, scale: phone ? 0.98 : 0.92, y: phone ? '1vh' : '2vh', ease: 'none', duration: phone ? 0.12 : 0.18 }, monolithMidAt)
           .to('.hs-monolith', {
-            rotationX: 0, rotationY: 0, y: 0, ease: 'none', duration: 0.16,
+            rotationX: 0, rotationY: 0, y: 0, ease: 'none', duration: phone ? 0.16 : 0.28,
             scale: () => {
               const m = document.querySelector('.hs-monolith');
               if (phone) return 1;
               if (!m) return 1.3;
               return Math.min(window.innerWidth / m.offsetWidth, window.innerHeight / m.offsetHeight);
             },
-          }, 0.64)
-          .to('.hs-floor, .hs-mono-glow', { autoAlpha: 0, ease: 'none', duration: 0.06 }, 0.64)
-          .fromTo('[data-hero-script]', { opacity: 0, y: 34 }, { opacity: 0.9, y: 0, ease: 'none', duration: 0.1 }, 0.6)
-          .fromTo('[data-hero-title]', { opacity: 0, y: 56 }, { opacity: 1, y: 0, ease: 'none', duration: 0.14 }, 0.64)
-          .fromTo('[data-hero-sub]', { opacity: 0, y: 30 }, { opacity: 1, y: 0, ease: 'none', duration: 0.11 }, 0.72)
-          .fromTo('[data-hero-ctas]', { opacity: 0, y: 28 }, { opacity: 1, y: 0, ease: 'none', duration: 0.11 }, 0.79)
-          .fromTo('[data-hero-meta]', { opacity: 0 }, { opacity: 1, ease: 'none', duration: 0.09 }, 0.88)
+          }, monolithFillAt)
+          .to('.hs-floor, .hs-mono-glow', { autoAlpha: 0, ease: 'none', duration: 0.08 }, monolithFillAt)
+          .fromTo('[data-hero-script]', { opacity: 0, y: 34 }, { opacity: 0.9, y: 0, ease: 'none', duration: phone ? 0.1 : 0.14 }, heroScriptAt)
+          .fromTo('[data-hero-title]', { opacity: 0, y: 56 }, { opacity: 1, y: 0, ease: 'none', duration: phone ? 0.14 : 0.18 }, heroTitleAt)
+          .fromTo('[data-hero-sub]', { opacity: 0, y: 30 }, { opacity: 1, y: 0, ease: 'none', duration: phone ? 0.11 : 0.14 }, heroSubAt)
+          .fromTo('[data-hero-ctas]', { opacity: 0, y: 28 }, { opacity: 1, y: 0, ease: 'none', duration: phone ? 0.11 : 0.14 }, heroCtasAt)
+          .fromTo('[data-hero-meta]', { opacity: 0 }, { opacity: 1, ease: 'none', duration: phone ? 0.09 : 0.12 }, heroMetaAt)
           .to('.hs-cue', { opacity: 0, ease: 'none', duration: 0.08 }, 0.28);
       }
 

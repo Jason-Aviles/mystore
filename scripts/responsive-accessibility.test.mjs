@@ -468,6 +468,44 @@ test('the tablet cinematic transition also fills the available frame', async () 
   await context.close();
 });
 
+test('the ultrawide cinematic transition reveals a substantial frame and grows progressively', async () => {
+  const viewport = { width: 3790, height: 1742 };
+  const { context, page } = await desktopPage({ viewport });
+  await page.goto(ORIGIN, { waitUntil: 'networkidle' });
+  await page.waitForFunction(() => document.querySelector('.scroll-progress')?.style.transform);
+
+  const heroRange = await page.locator('.hero-cine2').evaluate((hero) => {
+    const spacer = hero.parentElement;
+    return {
+      top: spacer.classList.contains('pin-spacer') ? spacer.offsetTop : hero.offsetTop,
+      distance: spacer.offsetHeight - hero.offsetHeight,
+    };
+  });
+  const samples = [];
+  for (const progress of [0.46, 0.54, 0.62, 0.70, 0.78]) {
+    await page.evaluate(({ top, distance, progress: point }) => {
+      window.scrollTo(0, top + distance * point);
+    }, { ...heroRange, progress });
+    await page.waitForTimeout(900);
+    const frame = await page.locator('.hs-monolith').boundingBox();
+    assert.ok(frame, `second hero frame must render at ${progress} progress`);
+    samples.push(frame.width);
+  }
+
+  const minimumWidth = Math.min(...samples);
+  assert.ok(
+    minimumWidth >= viewport.width * 0.48,
+    `ultrawide hero shrinks to ${Math.round(minimumWidth)}px (${Math.round((minimumWidth / viewport.width) * 100)}% of the viewport)`,
+  );
+  const largestStep = Math.max(...samples.slice(1).map((width, index) => width - samples[index]));
+  assert.ok(
+    largestStep <= viewport.width * 0.14,
+    `ultrawide hero grows ${Math.round(largestStep)}px between adjacent samples`,
+  );
+
+  await context.close();
+});
+
 test('public pages provide a keyboard skip link to the main content', async () => {
   const { context, page } = await phonePage();
   await page.goto(`${ORIGIN}/about`, { waitUntil: 'networkidle' });
