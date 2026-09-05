@@ -9,6 +9,7 @@ import { returnsClaim, shipsClaim, guaranteePoints, buyReassurance } from '../li
 import VariantPicker, { useSelection, selectionState } from '../components/VariantPicker';
 import SizeGuideModal from '../components/SizeGuide';
 import ProductCard from '../components/ProductCard';
+import ProductStory from '../components/ProductStory';
 import ScrollSerpent from '../components/ScrollSerpent';
 import { Lock, Truck, Swap, Shield, Crown, VenomDrop } from '../components/Icons';
 import { ProductReviews, Stars } from '../components/Reviews';
@@ -527,25 +528,8 @@ export default function Product() {
         </div>
       </div>
 
-      {/* THE CLOSE-UP — pinned film sequence built from this product's real
-          gallery + copy. Desktop only (CSS hides it below 900px). */}
       {p.images.length >= 3 && (
-        <section className="pstory" aria-label={`${p.title} up close`}>
-          <div className="ps-stage">
-            {p.images.slice(0, 3).map((src, i) => (
-              <div className={`ps-frame ps-${i}`} key={src} data-fx={i === 0 ? 'kenBurns' : undefined}><img src={src} alt="" loading="lazy" /></div>
-            ))}
-            <div className="ps-copy">
-              <div className="ps-line" data-ps="0"><span className="eyebrow">The Piece</span><h3>{p.title}</h3></div>
-              <div className="ps-line" data-ps="1"><span className="eyebrow">The Cut</span><p>{p.fit}</p></div>
-              <div className="ps-line" data-ps="2">
-                <span className="eyebrow">The Run</span>
-                <p>One production run. Never reprinted.</p>
-                {!gone && <button className="btn" onClick={add}>Add to Cart — {money(p.price)}</button>}
-              </div>
-            </div>
-          </div>
-        </section>
+        <ProductStory product={p} soldOut={gone} priceLabel={money(p.price)} onAdd={add} />
       )}
 
       <ProductReviews p={p} />

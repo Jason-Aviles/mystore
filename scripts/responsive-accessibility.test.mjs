@@ -1,6 +1,8 @@
 import assert from 'node:assert/strict';
 import { after, before, test } from 'node:test';
 import { spawn } from 'node:child_process';
+import { tmpdir } from 'node:os';
+import { join } from 'node:path';
 import { chromium } from 'playwright';
 
 const PORT = 4174;
@@ -36,6 +38,29 @@ async function phonePage({ reducedMotion = 'no-preference', viewport = { width: 
   });
   const page = await context.newPage();
   return { context, page };
+}
+
+async function desktopPage({ reducedMotion = 'no-preference', viewport = { width: 1200, height: 900 } } = {}) {
+  const context = await browser.newContext({
+    viewport,
+    deviceScaleFactor: 1,
+    isMobile: false,
+    hasTouch: false,
+    reducedMotion,
+  });
+  await context.addInitScript(() => {
+    localStorage.setItem('dd_access', JSON.stringify(1));
+    sessionStorage.setItem('dd_loaded', '1');
+  });
+  const page = await context.newPage();
+  return { context, page };
+}
+
+async function navigateToBundle(page) {
+  await page.goto(`${ORIGIN}/shop`, { waitUntil: 'networkidle' });
+  await page.locator('a[href="/product/city-of-sins-blood-heat-bundle"]').first().click();
+  await page.waitForURL('**/product/city-of-sins-blood-heat-bundle');
+  await page.locator('.pstory').waitFor({ state: 'attached' });
 }
 
 before(async () => {
@@ -113,38 +138,201 @@ test('the phone header and page content do not overflow horizontally', async () 
   await context.close();
 });
 
-test('the desktop product film keeps its frames layered and its copy readable', async () => {
-  const { context, page } = await phonePage({ viewport: { width: 1200, height: 900 } });
-  await page.goto(`${ORIGIN}/product/city-of-sins-blood-heat-bundle`, { waitUntil: 'networkidle' });
+test('client navigation renders a non-overlapping editorial product story at 1004px', async () => {
+  const { context, page } = await desktopPage({ viewport: { width: 1004, height: 847 } });
+  await navigateToBundle(page);
+  await page.locator('.ps-line h2').evaluate((heading) => {
+    heading.textContent = 'Blood Heat Bundle Extended Editorial Edition';
+    heading.closest('.ps-copy').querySelector('[data-ps="1"] p').textContent =
+      'Jersey runs true with a relaxed athletic cut. Pants use a relaxed straight leg with an adjustable drawstring waist and a deliberately long fit description that must wrap safely.';
+  });
 
   const layout = await page.locator('.pstory').evaluate((story) => {
-    const frame = story.querySelector('.ps-frame');
-    const copy = story.querySelector('.ps-copy');
+    const shown = (element) => {
+      const style = getComputedStyle(element);
+      return style.display !== 'none' && style.visibility !== 'hidden' && Number(style.opacity) > 0;
+    };
+    const intersects = (a, b) => (
+      a.left < b.right - 1 && a.right > b.left + 1
+      && a.top < b.bottom - 1 && a.bottom > b.top + 1
+    );
+    const lines = [...story.querySelectorAll('.ps-line')];
+    const lineRects = lines.map((line) => line.getBoundingClientRect());
+    const button = story.querySelector('.ps-action, .ps-line button');
+    const text = [...story.querySelectorAll('.ps-line h2, .ps-line p')];
+    const visibleFrames = [...story.querySelectorAll('.ps-frame')].filter(shown);
     return {
-      framePosition: getComputedStyle(frame).position,
-      frameWidth: frame.getBoundingClientRect().width,
-      copyWidth: copy.getBoundingClientRect().width,
-      frameLeft: frame.getBoundingClientRect().left,
-      copyRight: copy.getBoundingClientRect().right,
+      enhanced: story.classList.contains('is-enhanced'),
+      pinned: story.parentElement.classList.contains('pin-spacer'),
+      linePositions: lines.map((line) => getComputedStyle(line).position),
+      readableLines: lines.every(shown),
+      lineOverlap: lineRects.some((rect, i) => lineRects.slice(i + 1).some((other) => intersects(rect, other))),
+      buttonOverlap: text.some((node) => intersects(node.getBoundingClientRect(), button.getBoundingClientRect())),
+      visibleFrames: visibleFrames.length,
+      copyRight: story.querySelector('.ps-copy').getBoundingClientRect().right,
+      frameLeft: visibleFrames[0].getBoundingClientRect().left,
+      buttonVisible: shown(button) && button.getBoundingClientRect().height >= 44,
+      viewport: window.innerWidth,
+      documentWidth: document.documentElement.scrollWidth,
     };
   });
 
-  assert.equal(layout.framePosition, 'absolute');
-  assert.ok(layout.frameWidth < 1200, `film frame must respect its side insets; received ${layout.frameWidth}px`);
-  assert.ok(layout.copyWidth >= 280, `film copy collapsed to ${layout.copyWidth}px`);
-  assert.ok(layout.copyRight <= layout.frameLeft, `film copy overlaps the image by ${layout.copyRight - layout.frameLeft}px`);
+  assert.equal(layout.enhanced, false);
+  assert.equal(layout.pinned, false);
+  assert.ok(layout.linePositions.every((position) => position !== 'absolute'));
+  assert.equal(layout.readableLines, true);
+  assert.equal(layout.lineOverlap, false);
+  assert.equal(layout.buttonOverlap, false);
+  assert.equal(layout.visibleFrames, 1);
+  assert.ok(layout.copyRight <= layout.frameLeft, 'editorial copy must stay clear of the product image');
+  assert.equal(layout.buttonVisible, true);
+  assert.equal(layout.documentWidth, layout.viewport);
+  await page.locator('.pstory').scrollIntoViewIfNeeded();
+  await page.waitForTimeout(300);
+  await page.screenshot({ path: join(tmpdir(), 'darkdivine-product-story-1004.png') });
 
   await context.close();
 });
 
-test('the scroll-driven product film is removed when reduced motion is requested', async () => {
-  const { context, page } = await phonePage({
+test('client navigation initializes one scoped cinematic on wide desktops', async () => {
+  const { context, page } = await desktopPage();
+  await navigateToBundle(page);
+  await page.locator('.pstory.is-enhanced').waitFor();
+
+  const state = await page.locator('.pstory').evaluate((story) => ({
+    pinned: story.parentElement.classList.contains('pin-spacer'),
+    enhancedStories: document.querySelectorAll('.pstory.is-enhanced').length,
+    storyTriggers: window.__ddProductStoryTriggerCount?.() ?? -1,
+    framePositions: [...story.querySelectorAll('.ps-frame')].map((frame) => getComputedStyle(frame).position),
+  }));
+  assert.equal(state.pinned, true);
+  assert.equal(state.enhancedStories, 1);
+  assert.equal(state.storyTriggers, 1);
+  assert.ok(state.framePositions.every((position) => position === 'absolute'));
+
+  const spacerTop = await page.locator('.pstory').evaluate((story) => (
+    story.parentElement.getBoundingClientRect().top + window.scrollY
+  ));
+  const checkpoints = [0.14, 0.48, 0.82];
+  for (const progress of checkpoints) {
+    await page.evaluate(({ top, progress: point }) => window.scrollTo(0, top + (window.innerHeight * 2.5 * point)), { top: spacerTop, progress });
+    await page.waitForTimeout(450);
+    const captionState = await page.locator('.ps-line').evaluateAll((lines) => lines.map((line) => ({
+      visible: Number(getComputedStyle(line).opacity) > 0.5,
+      pointerEvents: getComputedStyle(line).pointerEvents,
+    })));
+    const visible = captionState.filter((line) => line.visible);
+    assert.equal(visible.length, 1, `expected one caption at cinematic progress ${progress}, received ${visible.length}`);
+    assert.equal(visible[0].pointerEvents, 'auto');
+    assert.ok(captionState.filter((line) => !line.visible).every((line) => line.pointerEvents === 'none'));
+  }
+  await page.evaluate((top) => window.scrollTo(0, top + (window.innerHeight * 2.5 * 0.98)), spacerTop);
+  await page.waitForTimeout(450);
+  await page.screenshot({ path: join(tmpdir(), 'darkdivine-product-story-1200.png') });
+
+  await context.close();
+});
+
+test('the product cinematic remounts cleanly through browser back and forward navigation', async () => {
+  const { context, page } = await desktopPage();
+  const pageErrors = [];
+  page.on('pageerror', (error) => pageErrors.push(error.message));
+  await navigateToBundle(page);
+  await page.locator('.pstory.is-enhanced').waitFor();
+
+  await page.goBack({ waitUntil: 'networkidle' });
+  assert.equal(new URL(page.url()).pathname, '/shop');
+  assert.equal(await page.locator('.pstory').count(), 0);
+  assert.equal(await page.locator('.pin-spacer .pstory').count(), 0);
+  assert.equal(await page.evaluate(() => window.__ddProductStoryTriggerCount?.() ?? -1), 0);
+
+  await page.goForward({ waitUntil: 'networkidle' });
+  await page.locator('.pstory.is-enhanced').waitFor();
+  assert.equal(await page.locator('.pstory.is-enhanced').count(), 1);
+  assert.equal(await page.locator('.pstory').evaluate((story) => story.parentElement.classList.contains('pin-spacer')), true);
+  assert.equal(await page.evaluate(() => window.__ddProductStoryTriggerCount?.() ?? -1), 1);
+  assert.deepEqual(pageErrors, []);
+
+  await context.close();
+});
+
+test('reduced motion keeps the desktop product story readable without pinning', async () => {
+  const { context, page } = await desktopPage({
     reducedMotion: 'reduce',
     viewport: { width: 1200, height: 900 },
   });
   await page.goto(`${ORIGIN}/product/city-of-sins-blood-heat-bundle`, { waitUntil: 'networkidle' });
 
-  assert.equal(await page.locator('.pstory').evaluate((story) => getComputedStyle(story).display), 'none');
+  const state = await page.locator('.pstory').evaluate((story) => ({
+    display: getComputedStyle(story).display,
+    enhanced: story.classList.contains('is-enhanced'),
+    pinned: story.parentElement.classList.contains('pin-spacer'),
+    linePositions: [...story.querySelectorAll('.ps-line')].map((line) => getComputedStyle(line).position),
+    readableLines: [...story.querySelectorAll('.ps-line')].every((line) => {
+      const style = getComputedStyle(line);
+      return style.display !== 'none' && style.visibility !== 'hidden' && Number(style.opacity) > 0;
+    }),
+    buttonVisible: (() => {
+      const button = story.querySelector('.ps-action');
+      const style = getComputedStyle(button);
+      return style.display !== 'none' && style.visibility !== 'hidden' && Number(style.opacity) > 0;
+    })(),
+  }));
+  assert.notEqual(state.display, 'none');
+  assert.equal(state.enhanced, false);
+  assert.equal(state.pinned, false);
+  assert.ok(state.linePositions.every((position) => position !== 'absolute'));
+  assert.equal(state.readableLines, true);
+  assert.equal(state.buttonVisible, true);
+
+  await context.close();
+});
+
+test('resizing removes and restores the product cinematic without stale pin state', async () => {
+  const { context, page } = await desktopPage();
+  await page.goto(`${ORIGIN}/product/city-of-sins-blood-heat-bundle`, { waitUntil: 'networkidle' });
+  await page.locator('.pstory.is-enhanced').waitFor();
+
+  await page.setViewportSize({ width: 1004, height: 847 });
+  await page.waitForTimeout(500);
+  const compact = await page.locator('.pstory').evaluate((story) => ({
+    enhanced: story.classList.contains('is-enhanced'),
+    pinned: story.parentElement.classList.contains('pin-spacer'),
+    linePositions: [...story.querySelectorAll('.ps-line')].map((line) => getComputedStyle(line).position),
+    readableLines: [...story.querySelectorAll('.ps-line')].every((line) => {
+      const style = getComputedStyle(line);
+      return style.display !== 'none' && style.visibility !== 'hidden' && Number(style.opacity) > 0;
+    }),
+    storyTriggers: window.__ddProductStoryTriggerCount?.() ?? -1,
+  }));
+  assert.equal(compact.enhanced, false);
+  assert.equal(compact.pinned, false);
+  assert.ok(compact.linePositions.every((position) => position !== 'absolute'));
+  assert.equal(compact.readableLines, true);
+  assert.equal(compact.storyTriggers, 0);
+
+  await page.setViewportSize({ width: 1200, height: 900 });
+  await page.locator('.pstory.is-enhanced').waitFor();
+  assert.equal(await page.locator('.pstory').evaluate((story) => story.parentElement.classList.contains('pin-spacer')), true);
+  assert.equal(await page.evaluate(() => window.__ddProductStoryTriggerCount?.() ?? -1), 1);
+
+  await context.close();
+});
+
+test('the duplicate product story stays out of the phone layout', async () => {
+  const { context, page } = await phonePage();
+  await page.goto(`${ORIGIN}/product/city-of-sins-blood-heat-bundle`, { waitUntil: 'networkidle' });
+
+  const state = await page.locator('.pstory').evaluate((story) => ({
+    display: getComputedStyle(story).display,
+    pinned: story.parentElement.classList.contains('pin-spacer'),
+    viewport: window.innerWidth,
+    documentWidth: document.documentElement.scrollWidth,
+  }));
+  assert.equal(state.display, 'none');
+  assert.equal(state.pinned, false);
+  assert.equal(state.documentWidth, state.viewport);
+  await page.screenshot({ path: join(tmpdir(), 'darkdivine-product-story-390.png') });
 
   await context.close();
 });

@@ -905,7 +905,7 @@ export default function usePageMotion(ready) {
       /* letterbox bars breathe in during the pinned scenes */
       const lbox = gsap.utils.toArray('.lbox-bar');
       if (lbox.length) {
-        ['.hero-cine2', '.hdrop', '.pstory'].forEach((sel) => {
+        ['.hero-cine2', '.hdrop'].forEach((sel) => {
           const el = document.querySelector(sel);
           if (!el) return;
           ScrollTrigger.create({
@@ -965,27 +965,6 @@ export default function usePageMotion(ready) {
           opacity: 1, y: 0, duration: 0.4, stagger: 0.04, ease: 'power2.out', clearProps: 'all',
           scrollTrigger: { trigger: '.trust-row', start: 'top 96%', once: true },
         });
-      }
-
-      /* ---- PDP "THE CLOSE-UP": pinned three-act product film ----
-         Frame 1 fills, then frame 2 wipes over it, then frame 3 —
-         while captions trade places. Ends armed on a live ATC. */
-      const pstory = document.querySelector('.pstory');
-      if (pstory && window.matchMedia('(min-width: 900px)').matches) {
-        const lines = gsap.utils.toArray('.ps-line');
-        gsap.set(lines, { opacity: 0, y: 30 });
-        gsap.timeline({
-          scrollTrigger: { trigger: pstory, start: 'top top', end: '+=250%', pin: true, scrub: 0.6 },
-        })
-          .fromTo('.ps-0', { clipPath: 'inset(18% 28% 18% 28%)' }, { clipPath: 'inset(0% 0% 0% 0%)', ease: 'none', duration: 0.2 }, 0)
-          .to(lines[0], { opacity: 1, y: 0, duration: 0.08, ease: 'none' }, 0.05)
-          .to(lines[0], { opacity: 0, y: -24, duration: 0.06, ease: 'none' }, 0.3)
-          .fromTo('.ps-1', { clipPath: 'inset(0 0 100% 0)', scale: 1.18 }, { clipPath: 'inset(0 0 0% 0)', scale: 1, ease: 'none', duration: 0.2 }, 0.32)
-          .to(lines[1], { opacity: 1, y: 0, duration: 0.08, ease: 'none' }, 0.4)
-          .to(lines[1], { opacity: 0, y: -24, duration: 0.06, ease: 'none' }, 0.62)
-          .fromTo('.ps-2', { clipPath: 'circle(0% at 70% 40%)' }, { clipPath: 'circle(120% at 70% 40%)', ease: 'none', duration: 0.2 }, 0.64)
-          .to(lines[2], { opacity: 1, y: 0, duration: 0.08, ease: 'none' }, 0.74)
-          .to('.ps-2 img', { scale: 1.12, ease: 'none', duration: 0.24 }, 0.76);
       }
 
       /* ---- PDP: gallery unveils, buy column cascades ---- */
