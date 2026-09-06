@@ -70,7 +70,7 @@ export default function Footer() {
         </div>
         <div className="foot-bottom">
           <span>© {new Date().getFullYear()} Dark Divine. All rights reserved.</span>
-          <span><Link to="/privacy">Privacy</Link> &nbsp;·&nbsp; <Link to="/refunds">Refunds</Link> &nbsp;·&nbsp; <Link to="/shipping">Shipping</Link></span>
+          <span><Link to="/privacy">Privacy</Link> &nbsp;·&nbsp; <Link to="/terms">Terms</Link> &nbsp;·&nbsp; <Link to="/refunds">Refunds</Link> &nbsp;·&nbsp; <Link to="/shipping">Shipping</Link></span>
         </div>
       </div>
     </footer>

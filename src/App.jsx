@@ -19,6 +19,7 @@ const NotFound = lazy(() => import('./pages/NotFound'));
 const ShippingPolicy = lazy(() => import('./pages/Policies').then((m) => ({ default: m.ShippingPolicy })));
 const RefundPolicy = lazy(() => import('./pages/Policies').then((m) => ({ default: m.RefundPolicy })));
 const PrivacyPolicy = lazy(() => import('./pages/Policies').then((m) => ({ default: m.PrivacyPolicy })));
+const TermsPolicy = lazy(() => import('./pages/Policies').then((m) => ({ default: m.TermsPolicy })));
 const SizeGuidePage = lazy(() => import('./pages/Policies').then((m) => ({ default: m.SizeGuidePage })));
 /* the whole admin panel is its own chunk — shoppers never download it */
 const AdminRoutes = lazy(() => import('./admin/AdminRoutes'));
@@ -47,6 +48,7 @@ export default function App() {
           <Route path="/shipping" element={<ShippingPolicy />} />
           <Route path="/refunds" element={<RefundPolicy />} />
           <Route path="/privacy" element={<PrivacyPolicy />} />
+          <Route path="/terms" element={<TermsPolicy />} />
           <Route path="/size-guide" element={<SizeGuidePage />} />
           <Route path="/thanks" element={<Thanks />} />
           <Route path="/order-status" element={<OrderStatus />} />

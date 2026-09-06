@@ -2,6 +2,13 @@
   command = "npm run build"
   publish = "dist"
 
+# Retire the legacy www storefront while preserving paths and query strings.
+[[redirects]]
+  from = "https://www.darkdivine.store/*"
+  to = "https://darkdivine.store/:splat"
+  status = 301
+  force = true
+
 # SPA fallback — React Router owns all routes
 [[redirects]]
   from = "/*"

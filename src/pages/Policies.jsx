@@ -97,19 +97,73 @@ export function PrivacyPolicy() {
   const { CONFIG } = useStore();
   return (
     <PageShell eyebrow="Policy" title="Privacy">
+      <p className="policy-effective"><b>Effective September 6, 2026.</b> This policy explains what Dark Divine collects, why we use it, and the choices available to you.</p>
       <h2 className="display">What We Collect</h2>
-      <p>Your name, email, shipping address, and order history — the minimum needed to get product to your door and answer support requests. Payment details are processed by Stripe; we never see or store your card number.</p>
+      <p>We collect the information you provide at checkout or through our forms: name, email, phone when supplied, shipping address, order history, support messages, size or product preferences, and marketing choices. We also receive basic device, browser, page-view, and referral information needed to operate and protect the store.</p>
       <h2 className="display">What We Do With It</h2>
       <ul>
-        <li>Fulfill and ship your orders</li>
-        <li>Send drop alerts and order updates you opted into</li>
-        <li>Answer support requests</li>
+        <li>Process, fulfill, ship, and support your orders</li>
+        <li>Operate private-access drops and preorder production updates</li>
+        <li>Send marketing only when you separately opt in</li>
+        <li>Prevent fraud, diagnose errors, and improve store performance</li>
       </ul>
       <p>We do not sell your data. Ever.</p>
+      <h2 className="display">Checkout &amp; Service Providers</h2>
+      <p>Stripe processes payments and receives the payment and delivery details required to complete checkout. We never see or store your full card number. Supabase stores the storefront catalog, settings, orders, consent records, and support data behind access controls. Our hosting provider delivers the website. When enabled, Resend delivers email and Twilio delivers requested SMS alerts.</p>
+      {CONFIG.metaPixelId && (
+        <p>Meta Pixel is enabled to measure visits and shopping actions associated with our advertising. Your browser controls can limit cookies and similar tracking, and you can contact us to exercise the rights described below.</p>
+      )}
+      <h2 className="display">Browser Storage</h2>
+      <p>We use local storage and session storage to keep your cart, saved products, access status, consent choices, and motion preference on your device. These tools are required for requested storefront features; clearing browser data removes them.</p>
       <h2 className="display">Email &amp; SMS</h2>
       <p>You only get marketing messages if you joined the list. Every email has a one-click unsubscribe. Reply STOP to any SMS to opt out.</p>
+      <h2 className="display">Retention</h2>
+      <p>We keep order and transaction records as long as reasonably needed for fulfillment, refunds, fraud prevention, tax, and accounting duties. Support requests are retained while an issue is active and for a reasonable recordkeeping period afterward. Marketing records remain until you unsubscribe or request deletion, subject to any legally required suppression record.</p>
       <h2 className="display">Your Rights</h2>
-      <p>Want your data exported or deleted? Email <a href={`mailto:${CONFIG.supportEmail}`}>{CONFIG.supportEmail}</a> and it's done within 30 days.</p>
+      <p>You may ask to access, correct, export, or delete your personal information and withdraw marketing consent. Send a request through <Link to="/contact">Contact &amp; Support</Link> or email <a href={`mailto:${CONFIG.supportEmail}`}>{CONFIG.supportEmail}</a>. We respond within 30 days unless the law allows additional time, and we may verify that the request is really yours.</p>
+      <h2 className="display">Children</h2>
+      <p>This store is not directed to children under 13, and we do not knowingly collect personal information from them. A parent or guardian who believes a child submitted information should contact us for removal.</p>
+      <h2 className="display">Security &amp; International Processing</h2>
+      <p>We use access controls and reputable service providers to protect information, but no online service can promise absolute security. Our providers may process information in the United States or other countries where they operate.</p>
+      <h2 className="display">Policy Changes</h2>
+      <p>We may update this policy when the store, providers, or legal requirements change. The effective date at the top shows the latest published version. Material changes will be communicated on the site or by email when appropriate.</p>
+    </PageShell>
+  );
+}
+
+export function TermsPolicy() {
+  const { CONFIG } = useStore();
+  const identity = CONFIG.legalBusinessName || CONFIG.brand || 'Dark Divine';
+  const jurisdiction = [CONFIG.businessCity, CONFIG.businessRegion].filter(Boolean).join(', ');
+  return (
+    <PageShell eyebrow="Legal" title="Terms of Service">
+      <p className="policy-effective"><b>Effective September 6, 2026.</b> These terms govern your use of {CONFIG.domain || 'darkdivine.store'} and purchases from {identity}.</p>
+      <h2 className="display">Agreement &amp; Eligibility</h2>
+      <p>By using the store or placing an order, you agree to these terms and our Privacy, Shipping, and Returns policies. You must be able to enter a binding purchase agreement in your location. If you do not agree, do not use checkout.</p>
+      <h2 className="display">Products, Availability &amp; Pricing</h2>
+      <p>We work to describe colors, sizing, materials, pricing, and availability accurately. Displays can vary, and genuine errors can happen. We may correct an error or cancel and refund an affected order rather than fulfill it on incorrect terms. Limited products can sell out without restock.</p>
+      <h2 className="display">Orders &amp; Payment</h2>
+      <p>Your cart is not a reservation. An order is accepted after payment authorization and confirmation. Stripe processes payment information. We may refuse or cancel orders reasonably suspected of fraud, resale abuse, technical error, or violation of these terms; any captured amount for a cancelled order is returned to the original payment method.</p>
+      <h2 className="display">Preorders &amp; Deposits</h2>
+      <p>A preorder is made after its campaign closes and does not ship immediately. The product and checkout pages show the amount due today, any later balance, the campaign window, and estimated shipping range. A later balance is not charged automatically unless checkout clearly says otherwise and you authorize it. You may cancel for a full refund before shipping by contacting support. If a production change materially affects the item or timeline, we will communicate the update and available options.</p>
+      <h2 className="display">Shipping, Customs &amp; Delivery</h2>
+      <p>Our <Link to="/shipping">Shipping Policy</Link> states current destinations, rates, processing estimates, tracking, customs responsibility, and lost-package help. Delivery dates are estimates rather than guarantees because carriers and customs are outside our control.</p>
+      <h2 className="display">Returns, Refunds &amp; Final Sale</h2>
+      <p>Our <Link to="/refunds">Returns &amp; Refunds Policy</Link> explains eligibility, timing, return shipping, exchanges, refunds, and clearly marked final-sale items. Your legal consumer rights are not limited where applicable law says they cannot be.</p>
+      <h2 className="display">Acceptable Use</h2>
+      <p>Do not misuse the store, interfere with security, attempt unauthorized access, submit malicious code, scrape protected customer information, impersonate another person, or use the service for unlawful activity.</p>
+      <h2 className="display">Intellectual Property</h2>
+      <p>Dark Divine names, artwork, product graphics, photography, video, writing, and site design are owned by or licensed to us. Personal shopping use does not grant permission to reproduce, sell, or exploit that work.</p>
+      <h2 className="display">Service Limits</h2>
+      <p>We provide the storefront with reasonable care, but it may occasionally be unavailable or contain errors. To the fullest extent permitted by law, we are not responsible for indirect or consequential loss arising from use of the site. Nothing here excludes liability or warranties that applicable law does not allow us to exclude.</p>
+      {jurisdiction && (
+        <>
+          <h2 className="display">Governing Location</h2>
+          <p>These terms are governed by the applicable laws of {jurisdiction}, without overriding consumer protections that apply where you live.</p>
+        </>
+      )}
+      <h2 className="display">Changes &amp; Contact</h2>
+      <p>We may update these terms for operational or legal reasons. The effective date identifies the current version; changes apply prospectively after publication. Questions can be sent through <Link to="/contact">Contact &amp; Support</Link> or to <a href={`mailto:${CONFIG.supportEmail}`}>{CONFIG.supportEmail}</a>.</p>
     </PageShell>
   );
 }

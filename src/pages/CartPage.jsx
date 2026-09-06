@@ -306,6 +306,9 @@ export default function CartPage() {
               <p className="form-note" style={{ display: 'flex', alignItems: 'center', gap: 7, justifyContent: 'center' }}>
                 <Lock style={{ width: 13, height: 13, color: 'var(--green)' }} /> Stripe secure checkout — card details never touch our servers
               </p>
+              <p className="checkout-legal">
+                By continuing, you agree to our <Link to="/terms">Terms</Link> and acknowledge our <Link to="/privacy">Privacy Policy</Link>.
+              </p>
               <ul className="cart-confidence" aria-label="Buy with confidence">
                 {guaranteePoints(CONFIG).map((g) => <li key={g.title}><b>{g.title}.</b> {g.text}</li>)}
               </ul>
