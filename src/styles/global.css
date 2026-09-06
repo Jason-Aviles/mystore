@@ -306,10 +306,14 @@ h1, h2, h3, .display {
 
 /* ---------- film strip (DARK DIVINE IN MOTION) ---------- */
 .filmstrip { overflow: hidden; }
-.fs-hint { font-size: 11px; letter-spacing: 0.3em; text-transform: uppercase; color: var(--silver); }
+.fs-hint {
+  display: grid; justify-items: end; gap: 8px;
+  font-size: 11px; letter-spacing: 0.3em; text-transform: uppercase; color: var(--silver);
+}
+.fs-hint-scroll, .fs-beat { display: none; }
 .fs-wrap { cursor: grab; }
 .fs-track {
-  display: flex; gap: clamp(12px, 2vw, 24px); width: max-content;
+  display: flex; align-items: center; gap: clamp(12px, 2vw, 24px); width: max-content;
   padding: 0 var(--gutter); will-change: transform;
 }
 .fs-card {
@@ -327,6 +331,47 @@ h1, h2, h3, .display {
 }
 .fs-progress { height: 2px; background: var(--card-2); margin-top: 26px; }
 .fs-progress span { display: block; height: 100%; width: 100%; background: var(--red); transform: scaleX(0.06); transform-origin: left center; }
+
+/* Wide desktop: the contact sheet becomes a four-beat vertical-scroll film reel. */
+@media (min-width: 1100px) and (hover: hover) and (pointer: fine) and (prefers-reduced-motion: no-preference) {
+  .filmstrip.is-scroll-reel {
+    box-sizing: border-box; height: 100vh; height: 100svh; min-height: 700px;
+    padding: clamp(34px, 5vh, 56px) 0;
+    display: grid; grid-template-rows: auto minmax(0, 1fr) auto;
+    isolation: isolate;
+  }
+  .filmstrip.is-scroll-reel > .wrap { width: 100%; }
+  .filmstrip.is-scroll-reel .section-head { margin-bottom: clamp(18px, 3vh, 30px); }
+  .filmstrip.is-scroll-reel .section-head h2 { font-size: clamp(42px, 5vw, 68px); line-height: 0.92; }
+  .filmstrip.is-scroll-reel .fs-hint-drag { display: none; }
+  .filmstrip.is-scroll-reel .fs-hint-scroll,
+  .filmstrip.is-scroll-reel .fs-beat { display: block; }
+  .filmstrip.is-scroll-reel .fs-beat {
+    color: var(--bone); font-family: ui-monospace, SFMono-Regular, Consolas, monospace; letter-spacing: 0.2em;
+  }
+  .filmstrip.is-scroll-reel .fs-wrap {
+    position: relative; align-self: center; width: 100%; min-width: 0; max-width: 100vw; cursor: default;
+  }
+  .filmstrip.is-scroll-reel .fs-wrap::before {
+    content: ''; position: absolute; z-index: 3; pointer-events: none;
+    left: 50%; top: -12px; bottom: -12px; width: 1px;
+    background: linear-gradient(transparent, rgba(232, 226, 212, 0.34) 16%, rgba(232, 226, 212, 0.34) 84%, transparent);
+  }
+  .filmstrip.is-scroll-reel .fs-card {
+    opacity: 0.3; filter: grayscale(0.72) brightness(0.64); transform: scale(0.9);
+    transform-origin: center; transition: opacity 0.45s ease, filter 0.45s ease, transform 0.55s cubic-bezier(0.22, 1, 0.36, 1);
+  }
+  .filmstrip.is-scroll-reel .fs-card.is-active {
+    opacity: 1; filter: grayscale(0) brightness(1); transform: scale(1);
+    border-color: rgba(232, 226, 212, 0.38);
+  }
+  .filmstrip.is-scroll-reel .fs-card video,
+  .filmstrip.is-scroll-reel .fs-card img { height: clamp(300px, 42vh, 400px); max-width: 78vw; }
+  .filmstrip.is-scroll-reel .fs-progress {
+    position: relative; margin-top: clamp(18px, 3vh, 28px);
+    background: repeating-linear-gradient(90deg, var(--card-2) 0, var(--card-2) calc(25% - 2px), transparent calc(25% - 2px), transparent 25%);
+  }
+}
 /* touch devices: native momentum scroll */
 @media (hover: none), (prefers-reduced-motion: reduce) {
   .fs-wrap { overflow-x: auto; cursor: auto; -webkit-overflow-scrolling: touch; scroll-snap-type: x mandatory; }

@@ -189,6 +189,100 @@ test('the ultrawide header tucks away and returns as one complete unit', async (
   await context.close();
 });
 
+test('the desktop film reel advances through four pinned scroll beats', async () => {
+  const { context, page } = await desktopPage({ viewport: { width: 1200, height: 900 } });
+  await page.goto(ORIGIN, { waitUntil: 'networkidle' });
+
+  const reel = page.locator('.filmstrip');
+  await page.waitForFunction(() => document.querySelector('.filmstrip')?.classList.contains('is-scroll-reel'));
+
+  const setup = await reel.evaluate((section) => ({
+    pinned: section.parentElement?.classList.contains('pin-spacer'),
+    activeCards: section.querySelectorAll('.fs-card.is-active').length,
+    beat: section.querySelector('.fs-beat')?.textContent.trim(),
+    viewport: window.innerWidth,
+    documentWidth: document.documentElement.scrollWidth,
+  }));
+  assert.equal(setup.pinned, true, 'the desktop reel must own a pin spacer');
+  assert.equal(setup.activeCards, 1, 'exactly one reel card must be active');
+  assert.equal(setup.beat, '01 / 04');
+  assert.equal(setup.documentWidth, setup.viewport, 'the reel must not create page overflow');
+
+  const pin = reel.locator('xpath=..');
+  const pinBox = await pin.evaluate((element) => ({ height: element.getBoundingClientRect().height }));
+  assert.ok(pinBox.height > 2700, `the pin must reserve four readable beats; received ${pinBox.height}px`);
+
+  const reachBeat = async (expectedBeat) => {
+    const expected = Number.parseInt(expectedBeat, 10);
+    for (let attempt = 0; attempt < 100; attempt += 1) {
+      const state = await reel.evaluate((section) => ({
+        beat: section.querySelector('.fs-beat')?.textContent.trim(),
+        top: section.getBoundingClientRect().top,
+      }));
+      if (state.beat === expectedBeat && Math.abs(state.top) < 2) {
+        await page.waitForTimeout(280);
+        const settledBeat = await reel.locator('.fs-beat').textContent();
+        if (settledBeat.trim() === expectedBeat) return;
+      }
+      const current = Number.parseInt(state.beat, 10);
+      const delta = state.top > 2
+        ? (state.top > 900 ? 600 : Math.max(35, state.top * 0.28))
+        : (current > expected ? -100 : 100);
+      await page.mouse.wheel(0, delta);
+      await page.waitForTimeout(90);
+    }
+    assert.fail(`wheel scrolling never reached reel beat ${expectedBeat}`);
+  };
+
+  const samples = [];
+  for (const beat of ['01 / 04', '02 / 04', '03 / 04', '04 / 04']) {
+    await reachBeat(beat);
+    await page.waitForTimeout(180);
+    samples.push(await reel.evaluate((section) => {
+      const active = section.querySelector('.fs-card.is-active');
+      const track = section.querySelector('.fs-track');
+      return {
+        beat: section.querySelector('.fs-beat')?.textContent.trim(),
+        activeCards: section.querySelectorAll('.fs-card.is-active').length,
+        activeVisible: active ? active.getBoundingClientRect().right > 0
+          && active.getBoundingClientRect().left < innerWidth : false,
+        trackX: new DOMMatrixReadOnly(getComputedStyle(track).transform).m41,
+      };
+    }));
+  }
+
+  assert.deepEqual(samples.map(({ beat }) => beat), ['01 / 04', '02 / 04', '03 / 04', '04 / 04']);
+  assert.ok(samples.every(({ activeCards, activeVisible }) => activeCards === 1 && activeVisible));
+  assert.ok(samples[1].trackX < samples[0].trackX - 100, 'second beat must move the reel');
+  assert.ok(samples[2].trackX < samples[1].trackX - 100, 'third beat must move the reel');
+  assert.ok(samples[3].trackX < samples[2].trackX - 100, 'fourth beat must reach the reel ending');
+
+  await context.close();
+});
+
+test('the film reel stays unpinned and swipeable with reduced motion', async () => {
+  const { context, page } = await desktopPage({
+    viewport: { width: 1200, height: 900 },
+    reducedMotion: 'reduce',
+  });
+  await page.goto(ORIGIN, { waitUntil: 'networkidle' });
+  await page.locator('.filmstrip').waitFor();
+
+  const state = await page.locator('.filmstrip').evaluate((section) => ({
+    enhanced: section.classList.contains('is-scroll-reel'),
+    pinned: section.parentElement?.classList.contains('pin-spacer'),
+    overflowX: getComputedStyle(section.querySelector('.fs-wrap')).overflowX,
+    documentWidth: document.documentElement.scrollWidth,
+    viewport: innerWidth,
+  }));
+  assert.equal(state.enhanced, false);
+  assert.equal(state.pinned, false);
+  assert.equal(state.overflowX, 'auto');
+  assert.equal(state.documentWidth, state.viewport);
+
+  await context.close();
+});
+
 test('client navigation renders a non-overlapping editorial product story at 1004px', async () => {
   const { context, page } = await desktopPage({ viewport: { width: 1004, height: 847 } });
   await navigateToBundle(page);
