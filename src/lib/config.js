@@ -46,6 +46,7 @@ export const DEFAULT_CONFIG = {
   heroTitle: 'The Darkness|Within', // "|" = line break
   heroSub: 'Limited-run streetwear cut in small numbers. Every piece is released once, in one drop — when a colorway sells through, it never comes back.',
   gateEnabled: true, // access-code gate on The Drop page
+  gateEntryEnabled: true, // independently hide code entry while preserving waitlist + policy access
   gateRemember: false, // remember unlock across visits — off: gate greets them again next visit (same tab stays open)
   gateGuestBypass: true, // false = code is the ONLY way in (no "browse as guest")
   preorderOnlyLock: false, // true = storefront routes redirect into the active private preorder

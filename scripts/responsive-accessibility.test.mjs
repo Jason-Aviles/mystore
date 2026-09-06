@@ -153,6 +153,40 @@ test('the phone access gate keeps an exit reachable above a short keyboard viewp
   await context.close();
 });
 
+test('locked visitors can open every trust route from the phone gate', async () => {
+  const { context, page } = await phonePage({ viewport: { width: 390, height: 520 } });
+  await page.goto(`${ORIGIN}/?gate`, { waitUntil: 'networkidle' });
+
+  const policyNav = page.getByRole('navigation', { name: /policies and support/i });
+  await policyNav.scrollIntoViewIfNeeded();
+  for (const name of ['Shipping', 'Returns', 'Privacy', 'Terms', 'Contact']) {
+    assert.equal(await policyNav.getByRole('button', { name }).count(), 1);
+  }
+  await policyNav.getByRole('button', { name: 'Terms' }).click();
+  await page.waitForURL('**/terms');
+  assert.equal(await page.locator('.gate').count(), 0);
+  const heading = page.getByRole('heading', { name: 'Terms of Service', level: 1 });
+  await heading.waitFor();
+  assert.equal(await heading.count(), 1);
+
+  await context.close();
+});
+
+test('admin can hide private entry while keeping waitlist and policy access', async () => {
+  const { context, page } = await phonePage({ viewport: { width: 390, height: 844 } });
+  await page.addInitScript(() => {
+    localStorage.setItem('dd_site_settings', JSON.stringify({ gateEntryEnabled: false }));
+  });
+  await page.goto(`${ORIGIN}/?gate`, { waitUntil: 'networkidle' });
+
+  assert.equal(await page.locator('input[name="access-code"]').count(), 0);
+  assert.equal(await page.getByRole('button', { name: /enter private preorder/i }).count(), 0);
+  assert.equal(await page.locator('.gate').getByRole('button', { name: /^join the list$/i }).count(), 1);
+  assert.equal(await page.getByRole('navigation', { name: /policies and support/i }).count(), 1);
+
+  await context.close();
+});
+
 test('the preorder-only admin setting redirects ordinary storefront routes', async () => {
   const { context, page } = await desktopPage();
   await page.addInitScript(() => {

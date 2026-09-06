@@ -1135,6 +1135,12 @@ input:focus-visible, textarea:focus-visible, select:focus-visible { outline: 2px
 .gate .alt button { color: var(--bone-dim); background: none; border: none; font-size: 12px; text-decoration: underline; text-underline-offset: 3px; }
 .gate .guest { margin-top: 28px; }
 .gate-mobile-exit { display: none; }
+.gate-utility { margin-top: 22px; padding-top: 16px; border-top: 1px solid var(--line); color: var(--silver); }
+.gate-utility > span { display: block; margin-bottom: 7px; font-size: 9px; letter-spacing: 0.22em; text-transform: uppercase; }
+.gate-utility > div { display: flex; flex-wrap: wrap; justify-content: center; gap: 2px 12px; }
+.gate-utility button { min-height: 44px; padding: 8px 2px; border: 0; background: none; color: var(--bone-dim); font: inherit; font-size: 11px; text-decoration: underline; text-underline-offset: 4px; cursor: pointer; }
+.gate-utility button:hover { color: var(--bone); }
+.gate-utility button:focus-visible { outline: 2px solid var(--pink); outline-offset: 2px; }
 @media (max-width: 640px) {
   .gate {
     align-items: flex-start;
@@ -1165,6 +1171,7 @@ input:focus-visible, textarea:focus-visible, select:focus-visible { outline: 2px
 }
 @media (max-width: 640px) and (max-height: 620px) {
   .gate .logo-mark.lg, .gate .script-line, .gate-tease { display: none; }
+  .gate-utility { margin-top: 12px; padding-bottom: max(8px, env(safe-area-inset-bottom)); }
   .gate .inner { padding-top: 48px; }
   .gate .logo-big { font-size: 26px; margin-bottom: 8px; }
   .gate-preorder-meta .gp-desc, .gate-preorder-meta .gp-note { display: none; }

@@ -29,3 +29,27 @@ test('privacy explains storage, providers, retention, rights, minors, and update
     assert.match(policies, new RegExp(phrase));
   }
 });
+
+test('the gate exposes policy and support links without requiring an unlock', async () => {
+  const [gate, layout] = await Promise.all([
+    read('src/components/Gate.jsx'),
+    read('src/components/Layout.jsx'),
+  ]);
+  for (const path of ['/shipping', '/refunds', '/privacy', '/terms', '/contact']) {
+    assert.match(gate, new RegExp(path.replace('/', '\\/')));
+    assert.match(layout, new RegExp(path.replace('/', '\\/')));
+  }
+  assert.match(gate, /onUtilityNavigate/);
+  assert.match(layout, /gateSuppressedForUtility/);
+});
+
+test('private entry visibility is controlled independently from the gate', async () => {
+  const [config, settings, gate] = await Promise.all([
+    read('src/lib/config.js'),
+    read('src/admin/Settings.jsx'),
+    read('src/components/Gate.jsx'),
+  ]);
+  assert.match(config, /gateEntryEnabled:\s*true/);
+  assert.match(settings, /Show private preorder entry/);
+  assert.match(gate, /CONFIG\.gateEntryEnabled/);
+});

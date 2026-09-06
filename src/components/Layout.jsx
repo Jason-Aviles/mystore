@@ -1,5 +1,5 @@
 import { useState, Suspense } from 'react';
-import { Navigate, Outlet, useLocation } from 'react-router-dom';
+import { Navigate, Outlet, useLocation, useNavigate } from 'react-router-dom';
 import { useStore } from '../context/StoreContext';
 import Header from './Header';
 import Footer from './Footer';
@@ -17,11 +17,14 @@ import usePageMotion from '../hooks/usePageMotion';
 export default function Layout() {
   const { unlocked, toast, loading, CONFIG, products, isPreorder } = useStore();
   const { pathname, search } = useLocation();
+  const navigate = useNavigate();
   // owner preview: darkdivine.store/?gate always shows the gate, even after
   // unlock; entering/guest-skipping dismisses the preview like a real visit
   const [preview, setPreview] = useState(() => new URLSearchParams(window.location.search).has('gate'));
   const forceGate = preview && new URLSearchParams(search).has('gate');
-  const preorderUtilityPaths = ['/drop', '/cart', '/thanks', '/order-status', '/shipping', '/refunds', '/privacy', '/size-guide', '/contact', '/unsubscribe'];
+  const gateUtilityPaths = ['/shipping', '/refunds', '/privacy', '/terms', '/contact'];
+  const gateSuppressedForUtility = gateUtilityPaths.includes(pathname);
+  const preorderUtilityPaths = ['/drop', '/cart', '/thanks', '/order-status', ...gateUtilityPaths, '/size-guide', '/unsubscribe'];
   const productHandle = pathname.startsWith('/product/') ? decodeURIComponent(pathname.slice('/product/'.length)) : '';
   const productAllowed = productHandle && products.some((product) => product.handle === productHandle && isPreorder(product));
   const preorderPathAllowed = preorderUtilityPaths.includes(pathname) || productAllowed;
@@ -34,7 +37,12 @@ export default function Layout() {
       <a className="skip-link" href="#main-content">Skip to main content</a>
       <Preloader />
       <Cursor />
-      {(!unlocked || forceGate) && CONFIG.gateEnabled && <Gate onDone={() => setPreview(false)} />}
+      {(!unlocked || forceGate) && CONFIG.gateEnabled && !gateSuppressedForUtility && (
+        <Gate
+          onDone={() => setPreview(false)}
+          onUtilityNavigate={(path) => { setPreview(false); navigate(path); }}
+        />
+      )}
       <Header />
       {/* ScrollSmoother owns everything inside #smooth-content; all fixed
           UI (header, drawers, overlays, toasts) lives outside the wrapper */}

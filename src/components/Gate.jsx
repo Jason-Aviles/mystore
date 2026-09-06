@@ -14,7 +14,15 @@ import Countdown from './Countdown';
    With no campaign configured it falls back to the original drop gate.
    Every date shown is the admin's own campaign data; consent is explicit
    checkboxes, never assumed. */
-export default function Gate({ onDone }) {
+const UTILITY_LINKS = [
+  ['/shipping', 'Shipping'],
+  ['/refunds', 'Returns'],
+  ['/privacy', 'Privacy'],
+  ['/terms', 'Terms'],
+  ['/contact', 'Contact'],
+];
+
+export default function Gate({ onDone, onUtilityNavigate }) {
   const { CONFIG, campaign, unlock, markSubscribed, showToast } = useStore();
   const navigate = useNavigate();
   const [email, setEmail] = useState('');
@@ -44,7 +52,7 @@ export default function Gate({ onDone }) {
     if (supportsDesktopFocus) el.querySelector('input[type="email"]')?.focus();
     const onKey = (e) => {
       if (e.key !== 'Tab') return;
-      const f = Array.from(el.querySelectorAll('input, button'));
+      const f = Array.from(el.querySelectorAll('input, button, a[href]'));
       const first = f[0]; const last = f[f.length - 1];
       if (e.shiftKey && document.activeElement === first) { e.preventDefault(); last.focus(); }
       else if (!e.shiftKey && document.activeElement === last) { e.preventDefault(); first.focus(); }
@@ -145,6 +153,13 @@ export default function Gate({ onDone }) {
   const countTarget = live
     ? campaign?.closes_at                       // live: count down to close
     : (campaign?.opens_at || CONFIG.dropDate);  // coming soon: count to open
+  const entryEnabled = CONFIG.gateEntryEnabled !== false;
+
+  function submitVisibleForm(e) {
+    if (entryEnabled || soon) return submit(e);
+    e.preventDefault();
+    return joinList();
+  }
 
   return (
     <div className="gate" role="dialog" aria-modal="true" aria-labelledby="gate-title" ref={root}>
@@ -192,7 +207,7 @@ export default function Gate({ onDone }) {
             <p><b>You’re on the list.</b> We’ll email you when the preorder opens{campaign?.opens_at ? ` (${opensText(campaign)})` : ''}.</p>
           </div>
         ) : (
-          <form onSubmit={submit}>
+          <form onSubmit={submitVisibleForm}>
             <input type="email" name="email" required placeholder="EMAIL ADDRESS" aria-label="Email address" autoComplete="email" spellCheck="false"
               value={email} onChange={(e) => setEmail(e.target.value)} />
             <label className="consent-row gate-consent">
@@ -207,22 +222,30 @@ export default function Gate({ onDone }) {
                 <span>I agree to receive automated SMS alerts from Dark Divine. Msg &amp; data rates may apply. Reply STOP to opt out.</span>
               </label>
             )}
-            {(live || !campaign) && (
+            {entryEnabled && (live || !campaign) && (
               <input className="code" type="text" name="access-code" required placeholder="ACCESS CODE" aria-label="Access code"
                 value={code} onChange={(e) => setCode(e.target.value)} autoComplete="off" autoCapitalize="characters" spellCheck="false" ref={codeRef} />
             )}
             <button className="btn" type="submit" disabled={busy}>
-              {busy ? 'Checking…' : (campaign ? (live ? 'Enter Private Preorder' : 'Notify Me When It Opens') : 'Enter')}
+              {busy ? (entryEnabled ? 'Checking…' : 'Joining…') : (!entryEnabled && !soon ? 'Join the list' : (campaign ? (live ? 'Enter Private Preorder' : 'Notify Me When It Opens') : 'Enter'))}
             </button>
           </form>
         )}
         <div className="err" role="status" aria-live="polite">{err}</div>
-        {(live || !campaign) && !joined && (
+        {entryEnabled && (live || !campaign) && !joined && (
           <div className="alt">No code? <button type="button" onClick={joinList} disabled={busy}>Join the list</button> — codes go out before every {campaign ? 'preorder' : 'drop'}.</div>
         )}
         {CONFIG.gateGuestBypass !== false && (
           <div className="guest"><button type="button" className="btn btn-ghost btn-sm" onClick={browseAsGuest}>Browse as guest</button></div>
         )}
+        <nav className="gate-utility" aria-label="Policies and support">
+          <span>Policies &amp; support</span>
+          <div>
+            {UTILITY_LINKS.map(([path, label]) => (
+              <button type="button" key={path} onClick={() => onUtilityNavigate?.(path)}>{label}</button>
+            ))}
+          </div>
+        </nav>
       </div>
     </div>
   );

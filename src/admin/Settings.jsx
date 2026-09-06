@@ -25,6 +25,7 @@ const FIELDS = [
   ]],
   ['Access', [
     ['gateEnabled', 'Access-code gate', 'toggle', 'The password page shown on entry. Preview it anytime at yoursite.com/?gate'],
+    ['gateEntryEnabled', 'Show private preorder entry', 'toggle', 'Off hides the access-code field and entry button while keeping the waitlist and policy links available'],
     ['gateRemember', 'Remember visitors', 'toggle', 'On: unlock once, never see the gate again on that device. Off: the gate greets them again on their next visit (it stays open while they browse)'],
     ['gateGuestBypass', '"Browse as guest" button', 'toggle', 'Off = an access code is the ONLY way into The Drop'],
     ['preorderOnlyLock', 'Preorder-only storefront', 'toggle', 'On = visitors can use only the private preorder, its products, cart, checkout, tracking, and policy pages'],
@@ -117,10 +118,10 @@ export default function Settings() {
      Live Drop      = gate off, store open — then send the LIVE campaign.
      Off-season     = no gate, no drop language anywhere. */
   const PHASES = [
-    ['Tease / Waitlist', { gateEnabled: true, gateGuestBypass: false, gateRemember: false, preorderOnlyLock: true, dropMode: true }],
-    ['Early Access', { gateEnabled: true, gateGuestBypass: false, gateRemember: true, preorderOnlyLock: true, dropMode: true }],
-    ['Live Drop', { gateEnabled: false, preorderOnlyLock: false, dropMode: true }],
-    ['Off-season', { gateEnabled: false, preorderOnlyLock: false, dropMode: false }],
+    ['Tease / Waitlist', { gateEnabled: true, gateEntryEnabled: false, gateGuestBypass: false, gateRemember: false, preorderOnlyLock: true, dropMode: true }],
+    ['Early Access', { gateEnabled: true, gateEntryEnabled: true, gateGuestBypass: false, gateRemember: true, preorderOnlyLock: true, dropMode: true }],
+    ['Live Drop', { gateEnabled: false, gateEntryEnabled: true, preorderOnlyLock: false, dropMode: true }],
+    ['Off-season', { gateEnabled: false, gateEntryEnabled: false, preorderOnlyLock: false, dropMode: false }],
   ];
   const applyPhase = (patch) => { setForm((f) => ({ ...f, ...patch })); setSaved(false); };
   const phaseActive = (patch) => Object.entries(patch).every(([k, v]) => (form[k] ?? DEFAULT_CONFIG[k]) === v);
