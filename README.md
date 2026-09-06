@@ -58,6 +58,7 @@ Demo mode = everything works, data stays in your browser. Connecting Supabase
    supabase link --project-ref YOUR_PROJECT_REF
    supabase functions deploy validate-access-code
    supabase functions deploy send-campaign
+   supabase functions deploy create-support-request
    supabase secrets set RESEND_API_KEY=re_xxx RESEND_FROM=drops@darkdivine.store
    ```
    Until `validate-access-code` is deployed, the gate falls back to a table lookup, and
@@ -176,6 +177,19 @@ There are two kinds of images and they live in different places:
 | Customers | Imported Shopify customers, spend, marketing consent, search |
 | Email List | Every signup with its source (gate/popup/footer/checkout/back-in-stock), CSV export |
 | Campaigns | Compose from templates, pick audience, send via Resend, history |
+
+### Storefront trust controls
+
+- Site Settings > Access independently controls the full gate, private-entry form,
+  guest browsing, and preorder-only storefront lock.
+- Site Settings > Founder & business proof accepts only information and photographs
+  you provide. Empty founder, location, production, and packaging fields stay hidden.
+- Contact submissions are stored as private support requests and return a `DD-...`
+  confirmation number. Deploy `create-support-request` before expecting live storage.
+- The homepage pause button stops its looping video and scroll animation, remembers the
+  visitor's choice, and automatically respects the device's reduced-motion setting.
+- Keep `www.darkdivine.store` attached to the same Netlify site. Netlify permanently
+  redirects every `www` path to its matching apex-domain path before the SPA fallback.
 
 ## Drop-day runbook
 
