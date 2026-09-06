@@ -17,12 +17,12 @@ gsap.registerPlugin(ScrollTrigger, MotionPathPlugin);
    variant="quiet" (Shop/PDP): half amplitude, dimmer.
    ============================================================ */
 
-export default function ScrollSerpent({ variant = 'full' }) {
+export default function ScrollSerpent({ variant = 'full', paused = false }) {
   const svgRef = useRef(null);
 
   useGSAP(() => {
     const svg = svgRef.current;
-    if (!svg) return;
+    if (!svg || paused) return;
     if (reducedMotion() || !window.matchMedia('(min-width: 900px) and (hover: hover)').matches) return;
     const quiet = variant === 'quiet';
     const path = svg.querySelector('.ss-path');
@@ -150,7 +150,9 @@ export default function ScrollSerpent({ variant = 'full' }) {
       document.removeEventListener('click', onStrike);
       tongueCall?.kill();
     };
-  }, { scope: svgRef, dependencies: [variant] });
+  }, { scope: svgRef, dependencies: [variant, paused] });
+
+  if (paused) return null;
 
   return (
     <svg className="scroll-serpent" ref={svgRef} aria-hidden="true" preserveAspectRatio="none">

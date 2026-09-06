@@ -4,6 +4,7 @@ import { DEFAULT_CONFIG, fetchSiteSettings } from '../lib/config';
 import { mergeHomepage } from '../lib/homeContent';
 import { initMetaPixel, metaTrack } from '../lib/meta';
 import { fetchCurrentCampaign, readUnlock, saveUnlock, isPreorderProduct } from '../lib/preorder';
+import { MOTION_STORAGE_KEY, readSavedMotionPause, resolveMotionPaused } from '../lib/motionPreference';
 
 const Ctx = createContext(null);
 export const useStore = () => useContext(Ctx);
@@ -32,6 +33,9 @@ export function StoreProvider({ children }) {
   const [quickView, setQuickView] = useState(null); // product handle or null
   const [toast, setToast] = useState('');
   const [settings, setSettings] = useState({});
+  const [userMotionPaused, setUserMotionPaused] = useState(readSavedMotionPause);
+  const [systemReducedMotion, setSystemReducedMotion] = useState(() => window.matchMedia('(prefers-reduced-motion: reduce)').matches);
+  const motionPaused = resolveMotionPaused(userMotionPaused, systemReducedMotion);
 
   // admin-saved overrides merge over the shipped defaults
   const CONFIG = useMemo(() => ({
@@ -41,6 +45,17 @@ export function StoreProvider({ children }) {
   }), [settings]);
 
   useEffect(() => { fetchSiteSettings().then(setSettings).catch(() => {}); }, []);
+  useEffect(() => {
+    const query = window.matchMedia('(prefers-reduced-motion: reduce)');
+    const update = () => setSystemReducedMotion(query.matches);
+    query.addEventListener?.('change', update);
+    return () => query.removeEventListener?.('change', update);
+  }, []);
+  useEffect(() => {
+    document.documentElement.classList.toggle('motion-paused', motionPaused);
+    if (motionPaused) document.querySelectorAll('video').forEach((video) => video.pause());
+    return () => document.documentElement.classList.remove('motion-paused');
+  }, [motionPaused]);
   useEffect(() => { fetchCurrentCampaign().then(setCampaign).catch(() => {}); }, []);
   /* remember OFF: purge any permanent unlock left over from when remember
      was on — the gate must greet this browser again on its next visit
@@ -133,6 +148,13 @@ export function StoreProvider({ children }) {
     window.clearTimeout(showToast._t);
     showToast._t = window.setTimeout(() => setToast(''), 2600);
   }, []);
+  const toggleMotion = useCallback(() => {
+    setUserMotionPaused((current) => {
+      const next = !current;
+      ls.set(MOTION_STORAGE_KEY, next);
+      return next;
+    });
+  }, []);
 
   const value = useMemo(() => ({
     products, loading, reloadProducts, byHandle, money, CONFIG,
@@ -141,9 +163,10 @@ export function StoreProvider({ children }) {
     unlocked, unlock, subscribed, markSubscribed,
     campaign, isPreorder,
     cartOpen, setCartOpen, quickView, setQuickView, toast, showToast,
-  }), [products, loading, CONFIG, cart, wishlist, recent, unlocked, subscribed, cartOpen, quickView, toast,
+    motionPaused, systemReducedMotion, toggleMotion,
+  }), [products, loading, CONFIG, cart, wishlist, recent, unlocked, subscribed, cartOpen, quickView, toast, motionPaused, systemReducedMotion,
        byHandle, addToCart, setQty, removeLine, cartCount, cartTotal, toggleWish, markViewed,
-       unlock, markSubscribed, showToast, reloadProducts, campaign, isPreorder]);
+       unlock, markSubscribed, showToast, reloadProducts, campaign, isPreorder, toggleMotion]);
 
   return <Ctx.Provider value={value}>{children}</Ctx.Provider>;
 }

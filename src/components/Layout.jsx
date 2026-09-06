@@ -10,12 +10,13 @@ import SocialProof from './SocialProof';
 import QuickView from './QuickView';
 import { Preloader, Cursor } from './MotionLayer';
 import usePageMotion from '../hooks/usePageMotion';
+import MotionControl from './MotionControl';
 
 /* Owner's call: the gate greets every FIRST visit to the site (any page),
    then never again — unlock persists in localStorage. The admin Site
    Settings control whether it shows at all and whether guests can skip it. */
 export default function Layout() {
-  const { unlocked, toast, loading, CONFIG, products, isPreorder } = useStore();
+  const { unlocked, toast, loading, CONFIG, products, isPreorder, motionPaused } = useStore();
   const { pathname, search } = useLocation();
   const navigate = useNavigate();
   // owner preview: darkdivine.store/?gate always shows the gate, even after
@@ -31,12 +32,13 @@ export default function Layout() {
   const preorderRouteBlocked = CONFIG.preorderOnlyLock === true
     && !preorderPathAllowed
     && !(loading && Boolean(productHandle));
-  usePageMotion(!loading);
+  usePageMotion(!loading, motionPaused);
   return (
     <>
       <a className="skip-link" href="#main-content">Skip to main content</a>
-      <Preloader />
-      <Cursor />
+      <Preloader paused={motionPaused} />
+      {!motionPaused && <Cursor />}
+      {pathname === '/' && <MotionControl />}
       {(!unlocked || forceGate) && CONFIG.gateEnabled && !gateSuppressedForUtility && (
         <Gate
           onDone={() => setPreview(false)}

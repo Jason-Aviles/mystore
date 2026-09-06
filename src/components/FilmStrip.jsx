@@ -9,7 +9,7 @@ gsap.registerPlugin(Draggable, InertiaPlugin, ScrollTrigger, useGSAP);
 
 /* Homepage film strip. Content is supplied by the Supabase-backed homepage
    settings; ratios keep card dimensions stable before media metadata loads. */
-export default function FilmStrip({ content }) {
+export default function FilmStrip({ content, paused = false }) {
   const sectionRef = useRef(null);
   const wrapRef = useRef(null);
   const trackRef = useRef(null);
@@ -21,6 +21,7 @@ export default function FilmStrip({ content }) {
   useEffect(() => {
     const videos = Array.from(wrapRef.current?.querySelectorAll('video') || []);
     if (!videos.length) return undefined;
+    if (paused) { videos.forEach((video) => video.pause()); return undefined; }
     const observer = new IntersectionObserver((entries) => {
       entries.forEach((entry) => {
         const video = entry.target;
@@ -31,13 +32,13 @@ export default function FilmStrip({ content }) {
     }, { threshold: 0.25 });
     videos.forEach((video) => observer.observe(video));
     return () => observer.disconnect();
-  }, [items]);
+  }, [items, paused]);
 
   useGSAP(() => {
     const section = sectionRef.current;
     const wrap = wrapRef.current;
     const track = trackRef.current;
-    if (!section || !wrap || !track) return undefined;
+    if (!section || !wrap || !track || paused) return undefined;
 
     const cards = gsap.utils.toArray('.fs-card', section);
     const videos = gsap.utils.toArray('video', section);
@@ -133,7 +134,7 @@ export default function FilmStrip({ content }) {
     });
 
     return () => mm.revert();
-  }, { scope: sectionRef, dependencies: [items], revertOnUpdate: true });
+  }, { scope: sectionRef, dependencies: [items, paused], revertOnUpdate: true });
 
   return (
     <section className="filmstrip section" ref={sectionRef} aria-label={content?.reelTitle || 'Brand film reel'}>

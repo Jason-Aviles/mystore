@@ -799,6 +799,27 @@ test('keyboard focus remains visibly outlined on form fields', async () => {
   await context.close();
 });
 
+test('homepage motion control pauses videos and persists across reloads', async () => {
+  const { context, page } = await desktopPage();
+  await page.goto(ORIGIN, { waitUntil: 'networkidle' });
+  const pause = page.getByRole('button', { name: /pause site motion/i });
+  await pause.click();
+  assert.equal(await page.evaluate(() => localStorage.getItem('dd_motion_paused')), 'true');
+  assert.equal(await page.locator('html').evaluate((element) => element.classList.contains('motion-paused')), true);
+  assert.equal(await page.locator('.hero-cine2 video').evaluateAll((videos) => videos.every((video) => video.paused)), true);
+
+  await page.reload({ waitUntil: 'networkidle' });
+  const control = page.locator('.motion-control');
+  await control.waitFor({ state: 'attached' });
+  assert.equal(await control.getAttribute('aria-label'), 'Play site motion');
+  const play = page.getByRole('button', { name: /play site motion/i });
+  assert.equal(await play.getAttribute('aria-pressed'), 'true');
+  await play.click();
+  assert.equal(await page.evaluate(() => localStorage.getItem('dd_motion_paused')), 'false');
+  assert.equal(await control.getAttribute('aria-pressed'), 'false');
+  await context.close();
+});
+
 test('support form saves a request and returns a reference without opening email', async () => {
   const { context, page } = await phonePage({ reducedMotion: 'reduce' });
   await page.goto(`${ORIGIN}/contact`, { waitUntil: 'networkidle' });

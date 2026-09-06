@@ -9,12 +9,12 @@ import { useGSAP } from '@gsap/react';
    Both respect prefers-reduced-motion and skip touch devices.
    ============================================================ */
 
-export function Preloader() {
-  const [show, setShow] = useState(() => !sessionStorage.getItem('dd_loaded'));
+export function Preloader({ paused = false }) {
+  const [show, setShow] = useState(() => !paused && !sessionStorage.getItem('dd_loaded'));
   const root = useRef(null);
 
   useGSAP(() => {
-    if (!show) return;
+    if (!show || paused) return;
     if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
       sessionStorage.setItem('dd_loaded', '1');
       setShow(false);
@@ -94,7 +94,7 @@ export function Preloader() {
       .call(handoff, [], 2.62)
       .to(slats, { yPercent: -103, duration: 0.6, stagger: 0.055, ease: 'power4.inOut' }, 2.72)
       .set(root.current, { backgroundColor: 'transparent' }, 2.72);
-  }, { scope: root, dependencies: [show] });
+  }, { scope: root, dependencies: [show, paused] });
 
   if (!show) return null;
   return (

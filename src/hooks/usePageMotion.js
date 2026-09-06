@@ -48,13 +48,18 @@ function armTabFx() {
   });
 }
 
-export default function usePageMotion(ready) {
+export default function usePageMotion(ready, motionPaused = false) {
   const { pathname } = useLocation();
 
   useGSAP(() => {
     if (!ready) return;
     armTabFx();
     metaPageView();
+    if (motionPaused) {
+      gsap.set('main, main *', { clearProps: 'transform,opacity,visibility,clipPath,filter' });
+      document.querySelectorAll('.reveal').forEach((element) => element.classList.add('in'));
+      return;
+    }
     const mm = gsap.matchMedia();
 
     mm.add({
@@ -994,5 +999,5 @@ export default function usePageMotion(ready) {
     });
 
     return () => mm.revert();
-  }, { dependencies: [pathname, ready] });
+  }, { dependencies: [pathname, ready, motionPaused] });
 }

@@ -43,7 +43,7 @@ function RichText({ text }) {
 }
 
 export default function Home() {
-  const { products, CONFIG, money, markSubscribed, showToast } = useStore();
+  const { products, CONFIG, money, markSubscribed, showToast, motionPaused } = useStore();
   const HOME = useMemo(() => mergeHomepage(CONFIG.homepage), [CONFIG.homepage]);
   const homeText = (value, extra = {}) => formatHomepageText(value, { ...CONFIG, ...extra });
   const [liveReviews, setLiveReviews] = useState([]);
@@ -65,6 +65,10 @@ export default function Home() {
      the browser goes idle we upgrade preload + start playback — muted and
      decorative, so a blocked play() just leaves the poster frame showing. */
   useEffect(() => {
+    if (motionPaused) {
+      document.querySelectorAll('.hero-cine2 video, .ambient-video').forEach((video) => video.pause());
+      return undefined;
+    }
     let done = false;
     const start = () => {
       if (done) return; done = true;
@@ -77,7 +81,7 @@ export default function Home() {
     const ric = window.requestIdleCallback;
     const id = ric ? ric(start, { timeout: 2500 }) : window.setTimeout(start, 1200);
     return () => { if (window.cancelIdleCallback) window.cancelIdleCallback(id); else window.clearTimeout(id); };
-  }, []);
+  }, [motionPaused]);
 
   async function submitSignup(e) {
     e.preventDefault();
@@ -91,7 +95,7 @@ export default function Home() {
   return (
     <>
       {/* the serpent rides the whole page — drawn by scroll, behind everything */}
-      <ScrollSerpent />
+      <ScrollSerpent paused={motionPaused} />
 
       {/* HERO v3 "THE BROADCAST" — Scene A plays under VHS chrome; scroll
           opens a luminous diagonal splice into the full-bleed second film. */}
@@ -295,7 +299,7 @@ export default function Home() {
       </section>
 
       {/* THE REEL — draggable film strip of real campaign motion */}
-      <FilmStrip content={HOME} />
+      <FilmStrip content={HOME} paused={motionPaused} />
 
       {/* LOOKBOOK */}
       <section className="section" style={{ paddingTop: 0 }}>
@@ -331,7 +335,7 @@ export default function Home() {
       <section className="section" id="signup">
         <div className="wrap">
           <Reveal className="signup-box mesh">
-            <video className="ambient-video" src={HOME.signupVideo} poster={HOME.signupVideoPoster || undefined} autoPlay muted loop playsInline preload="none" aria-hidden="true" />
+            <video className="ambient-video" src={HOME.signupVideo} poster={HOME.signupVideoPoster || undefined} autoPlay={!motionPaused} muted loop playsInline preload="none" aria-hidden="true" />
             <span className="eyebrow" style={{ justifyContent: 'center' }}>{HOME.signupEyebrow}</span>
             <h2 data-fx="charOrbit">{HOME.signupTitle}</h2>
             <p>{HOME.signupBody}</p>

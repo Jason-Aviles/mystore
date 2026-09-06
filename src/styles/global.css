@@ -1029,6 +1029,12 @@ input:focus-visible, textarea:focus-visible, select:focus-visible { outline: 2px
 .checkout-legal { margin: 0; color: var(--silver); font-size: 11px; line-height: 1.6; text-align: center; }
 .checkout-legal a { color: var(--bone); text-decoration: underline; text-underline-offset: 3px; }
 .checkout-legal a:focus-visible { outline: 2px solid var(--pink); outline-offset: 3px; }
+.motion-control { position: fixed; right: 16px; bottom: 16px; z-index: 900; display: inline-flex; align-items: center; justify-content: center; gap: 8px; min-height: 44px; padding: 0 14px; border: 1px solid var(--line-strong); background: rgba(10,10,11,.9); color: var(--bone); font: 600 10px/1 var(--font-body); letter-spacing: .12em; text-transform: uppercase; backdrop-filter: blur(12px); cursor: pointer; }
+.motion-control:hover, .motion-control:focus-visible { border-color: var(--pink); }
+.motion-control:focus-visible { outline: 2px solid var(--pink); outline-offset: 3px; }
+.motion-control:disabled { opacity: .78; cursor: default; }
+.motion-paused *, .motion-paused *::before, .motion-paused *::after { animation-play-state: paused !important; }
+@media (max-width: 600px) { .motion-control { right: 10px; bottom: 10px; } }
 
 .support-page { padding-top: 10px; }
 .support-form { display: grid; gap: 10px; max-width: 520px; }
