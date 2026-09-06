@@ -233,6 +233,20 @@ export async function adminSaveSettings(patch) {
   saveLocalSettings(patch);
 }
 
+/** Replace the complete override snapshot from Site Settings.
+    Unlike merge-save (used by focused controls such as Flows), replacement
+    removes values that were reset to their shipped defaults. */
+export async function adminReplaceSettings(overrides) {
+  if (isLive) {
+    const { error } = await supabase.from('site_settings')
+      .upsert({ id: 1, data: overrides, updated_at: new Date().toISOString() });
+    if (error) throw error;
+    return;
+  }
+  const { replaceLocalSettings } = await import('../lib/config');
+  replaceLocalSettings(overrides);
+}
+
 /** How many consented, subscribed addresses a campaign audience reaches. */
 export async function adminAudienceCount(audience) {
   if (isLive) {

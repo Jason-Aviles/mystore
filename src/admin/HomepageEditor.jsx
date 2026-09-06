@@ -29,7 +29,7 @@ function MediaField({ value, kind, itemType, label, busy, onChange, onUpload }) 
         </label>
         {value && <button type="button" className="btn btn-ghost btn-sm" onClick={() => onChange('')}>Remove</button>}
       </span>
-      <input type="url" aria-label={`${label} URL`} placeholder="…or paste a media URL" value={value || ''} onChange={(event) => onChange(event.target.value)} />
+      <input type="text" inputMode="url" aria-label={`${label} URL`} placeholder="…or paste a media URL" value={value || ''} onChange={(event) => onChange(event.target.value)} />
     </span>
   );
 }

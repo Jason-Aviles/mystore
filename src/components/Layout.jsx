@@ -1,5 +1,5 @@
 import { useState, Suspense } from 'react';
-import { Outlet, useLocation } from 'react-router-dom';
+import { Navigate, Outlet, useLocation } from 'react-router-dom';
 import { useStore } from '../context/StoreContext';
 import Header from './Header';
 import Footer from './Footer';
@@ -15,12 +15,19 @@ import usePageMotion from '../hooks/usePageMotion';
    then never again — unlock persists in localStorage. The admin Site
    Settings control whether it shows at all and whether guests can skip it. */
 export default function Layout() {
-  const { unlocked, toast, loading, CONFIG } = useStore();
+  const { unlocked, toast, loading, CONFIG, products, isPreorder } = useStore();
   const { pathname, search } = useLocation();
   // owner preview: darkdivine.store/?gate always shows the gate, even after
   // unlock; entering/guest-skipping dismisses the preview like a real visit
   const [preview, setPreview] = useState(() => new URLSearchParams(window.location.search).has('gate'));
   const forceGate = preview && new URLSearchParams(search).has('gate');
+  const preorderUtilityPaths = ['/drop', '/cart', '/thanks', '/order-status', '/shipping', '/refunds', '/privacy', '/size-guide', '/contact', '/unsubscribe'];
+  const productHandle = pathname.startsWith('/product/') ? decodeURIComponent(pathname.slice('/product/'.length)) : '';
+  const productAllowed = productHandle && products.some((product) => product.handle === productHandle && isPreorder(product));
+  const preorderPathAllowed = preorderUtilityPaths.includes(pathname) || productAllowed;
+  const preorderRouteBlocked = CONFIG.preorderOnlyLock === true
+    && !preorderPathAllowed
+    && !(loading && Boolean(productHandle));
   usePageMotion(!loading);
   return (
     <>
@@ -40,7 +47,7 @@ export default function Layout() {
           {/* Suspense sits INSIDE the keyed page-root so code-split routes
               load on navigation without disturbing the single-wrapper rule
               the GSAP pin/unmount fix depends on */}
-          <main id="main-content" tabIndex="-1"><div className="page-root" key={pathname}><Suspense fallback={null}><Outlet /></Suspense></div></main>
+          <main id="main-content" tabIndex="-1"><div className="page-root" key={pathname}><Suspense fallback={null}>{preorderRouteBlocked ? <Navigate to="/drop" replace /> : <Outlet />}</Suspense></div></main>
           <Footer />
         </div>
       </div>

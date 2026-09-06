@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { DEFAULT_CONFIG } from '../lib/config';
 import { mergeHomepage } from '../lib/homeContent';
-import { adminGetSettings, adminSaveSettings, uploadProductImage, uploadMedia, isLive } from './adminData';
+import { adminGetSettings, adminReplaceSettings, uploadProductImage, uploadMedia, isLive } from './adminData';
 import HomepageEditor from './HomepageEditor';
 import { HOMEPAGE_FIELD_GROUPS } from './homepageFields';
 
@@ -27,6 +27,7 @@ const FIELDS = [
     ['gateEnabled', 'Access-code gate', 'toggle', 'The password page shown on entry. Preview it anytime at yoursite.com/?gate'],
     ['gateRemember', 'Remember visitors', 'toggle', 'On: unlock once, never see the gate again on that device. Off: the gate greets them again on their next visit (it stays open while they browse)'],
     ['gateGuestBypass', '"Browse as guest" button', 'toggle', 'Off = an access code is the ONLY way into The Drop'],
+    ['preorderOnlyLock', 'Preorder-only storefront', 'toggle', 'On = visitors can use only the private preorder, its products, cart, checkout, tracking, and policy pages'],
   ]],
   ['Store', [
     ['freeShipThreshold', 'Free shipping threshold ($)', 'number', 'US orders over this amount ship free. Set 0 to turn the free-shipping meter off everywhere'],
@@ -116,10 +117,10 @@ export default function Settings() {
      Live Drop      = gate off, store open — then send the LIVE campaign.
      Off-season     = no gate, no drop language anywhere. */
   const PHASES = [
-    ['Tease / Waitlist', { gateEnabled: true, gateGuestBypass: false, gateRemember: false, dropMode: true }],
-    ['Early Access', { gateEnabled: true, gateGuestBypass: false, gateRemember: true, dropMode: true }],
-    ['Live Drop', { gateEnabled: false, dropMode: true }],
-    ['Off-season', { gateEnabled: false, dropMode: false }],
+    ['Tease / Waitlist', { gateEnabled: true, gateGuestBypass: false, gateRemember: false, preorderOnlyLock: true, dropMode: true }],
+    ['Early Access', { gateEnabled: true, gateGuestBypass: false, gateRemember: true, preorderOnlyLock: true, dropMode: true }],
+    ['Live Drop', { gateEnabled: false, preorderOnlyLock: false, dropMode: true }],
+    ['Off-season', { gateEnabled: false, preorderOnlyLock: false, dropMode: false }],
   ];
   const applyPhase = (patch) => { setForm((f) => ({ ...f, ...patch })); setSaved(false); };
   const phaseActive = (patch) => Object.entries(patch).every(([k, v]) => (form[k] ?? DEFAULT_CONFIG[k]) === v);
@@ -133,7 +134,7 @@ export default function Settings() {
       Object.keys(form).forEach((k) => {
         if (JSON.stringify(form[k]) !== JSON.stringify(DEFAULT_CONFIG[k])) patch[k] = form[k];
       });
-      await adminSaveSettings(patch);
+      await adminReplaceSettings(patch);
       setSaved(true);
     } catch (ex) {
       setErr(ex.message || 'Save failed');
@@ -215,7 +216,7 @@ export default function Settings() {
                       </label>
                       {form[key] && <button type="button" className="btn btn-ghost btn-sm" onClick={() => set(key, '')}>Reset to built-in</button>}
                     </span>
-                    <input type="url" placeholder="…or paste a video URL" value={form[key] ?? ''}
+                    <input type="text" inputMode="url" placeholder="…or paste a video URL" value={form[key] ?? ''}
                       onChange={(e) => set(key, e.target.value)} style={{ marginTop: 6 }} />
                   </span>
                 ) : type === 'toggle' ? (

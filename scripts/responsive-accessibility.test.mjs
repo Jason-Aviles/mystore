@@ -123,6 +123,104 @@ test('the access image preserves its upper focal area on a phone', async () => {
   await context.close();
 });
 
+test('the phone access gate keeps an exit reachable above a short keyboard viewport', async () => {
+  const { context, page } = await phonePage({ viewport: { width: 390, height: 520 } });
+  await page.goto(`${ORIGIN}/?gate`, { waitUntil: 'networkidle' });
+
+  const gate = page.locator('.gate');
+  const exit = page.getByRole('button', { name: /browse site/i });
+  await exit.waitFor();
+  const activeField = await page.evaluate(() => document.activeElement?.getAttribute('name'));
+  assert.notEqual(activeField, 'email', 'the phone gate must not open the keyboard before the visitor asks for it');
+  const layout = await gate.evaluate((element) => {
+    const button = element.querySelector('.gate-mobile-exit');
+    const rect = button.getBoundingClientRect();
+    return {
+      buttonTop: rect.top,
+      buttonRight: rect.right,
+      buttonBottom: rect.bottom,
+      viewportWidth: visualViewport.width,
+      viewportHeight: visualViewport.height,
+      horizontalOffset: visualViewport.offsetLeft,
+    };
+  });
+  assert.ok(layout.buttonTop >= 0 && layout.buttonBottom <= layout.viewportHeight);
+  assert.ok(layout.buttonRight <= layout.viewportWidth);
+  assert.equal(layout.horizontalOffset, 0, 'focused gate fields must not pan the phone viewport sideways');
+
+  await exit.click();
+  await gate.waitFor({ state: 'detached' });
+  await context.close();
+});
+
+test('the preorder-only admin setting redirects ordinary storefront routes', async () => {
+  const { context, page } = await desktopPage();
+  await page.addInitScript(() => {
+    localStorage.setItem('dd_site_settings', JSON.stringify({
+      preorderOnlyLock: true,
+      gateEnabled: true,
+      gateGuestBypass: false,
+    }));
+  });
+
+  await page.goto(`${ORIGIN}/shop`, { waitUntil: 'networkidle' });
+  await page.waitForURL('**/drop');
+  assert.equal(new URL(page.url()).pathname, '/drop');
+
+  await page.goto(`${ORIGIN}/cart`, { waitUntil: 'networkidle' });
+  assert.equal(new URL(page.url()).pathname, '/cart');
+  await page.goto(`${ORIGIN}/privacy`, { waitUntil: 'networkidle' });
+  assert.equal(new URL(page.url()).pathname, '/privacy');
+
+  await context.close();
+});
+
+test('site settings save while built-in relative media is selected', async () => {
+  const { context, page } = await desktopPage();
+  await page.addInitScript(() => sessionStorage.setItem('dd_admin', '1'));
+
+  await page.goto(`${ORIGIN}/admin/settings`, { waitUntil: 'networkidle' });
+  const setting = page.locator('.settings-field').filter({ hasText: 'Preorder-only storefront' });
+  await setting.locator('input[type="checkbox"]').check();
+  await page.getByRole('button', { name: 'Save Settings' }).click();
+  await page.locator('.pill.ok').waitFor();
+
+  const stored = await page.evaluate(() => JSON.parse(localStorage.getItem('dd_site_settings') || '{}'));
+  assert.equal(stored.preorderOnlyLock, true);
+  await context.close();
+});
+
+test('turning preorder-only mode off removes the saved backend override', async () => {
+  const { context, page } = await desktopPage();
+  await page.addInitScript(() => {
+    sessionStorage.setItem('dd_admin', '1');
+    if (!sessionStorage.getItem('dd_settings_seeded')) {
+      localStorage.setItem('dd_site_settings', JSON.stringify({
+        preorderOnlyLock: true,
+        heroVideoA: 'https://example.com/a.mp4',
+        heroVideoB: 'https://example.com/b.mp4',
+      }));
+      sessionStorage.setItem('dd_settings_seeded', '1');
+    }
+  });
+
+  await page.goto(`${ORIGIN}/admin/settings`, { waitUntil: 'networkidle' });
+  const setting = page.locator('.settings-field').filter({ hasText: 'Preorder-only storefront' });
+  const toggle = setting.locator('input[type="checkbox"]');
+  await toggle.waitFor();
+  assert.equal(await toggle.isChecked(), true);
+
+  await toggle.uncheck();
+  await page.getByRole('button', { name: 'Save Settings' }).click();
+  await page.locator('.pill.ok').waitFor();
+  await page.reload({ waitUntil: 'networkidle' });
+
+  assert.equal(await setting.locator('input[type="checkbox"]').isChecked(), false);
+  const stored = await page.evaluate(() => JSON.parse(localStorage.getItem('dd_site_settings') || '{}'));
+  assert.equal(stored.preorderOnlyLock, undefined);
+  await context.close();
+});
+
 test('the phone header and page content do not overflow horizontally', async () => {
   const { context, page } = await phonePage();
   await page.goto(`${ORIGIN}/shop`, { waitUntil: 'networkidle' });

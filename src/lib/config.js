@@ -48,6 +48,7 @@ export const DEFAULT_CONFIG = {
   gateEnabled: true, // access-code gate on The Drop page
   gateRemember: false, // remember unlock across visits — off: gate greets them again next visit (same tab stays open)
   gateGuestBypass: true, // false = code is the ONLY way in (no "browse as guest")
+  preorderOnlyLock: false, // true = storefront routes redirect into the active private preorder
   dropImage: '',
   // Hero background videos + their poster stills. Blank falls back to the
   // built-in clips. Admin can upload/replace these in Site Settings.
@@ -79,6 +80,9 @@ export function localSettings() {
 }
 export function saveLocalSettings(patch) {
   localStorage.setItem(LS_KEY, JSON.stringify(normalizeSiteSettings({ ...localSettings(), ...patch })));
+}
+export function replaceLocalSettings(overrides) {
+  localStorage.setItem(LS_KEY, JSON.stringify(normalizeSiteSettings(overrides)));
 }
 
 /** Fetch admin overrides. Live → site_settings table; demo → localStorage. */

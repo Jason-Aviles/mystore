@@ -32,6 +32,7 @@ export default function Gate({ onDone }) {
   const live = campaignLive(campaign);
   const soon = Boolean(campaign) && !live; // coming_soon, or live-but-not-yet-open
   const shipWin = shipWindowText(campaign);
+  const browseAsGuest = () => { unlock(); onDone?.(); };
 
   /* modal semantics: initial focus + Tab trap while the gate is up */
   useEffect(() => {
@@ -39,7 +40,8 @@ export default function Gate({ onDone }) {
     if (!el) return;
     const background = [document.querySelector('.site-top'), document.querySelector('#smooth-wrapper')].filter(Boolean);
     background.forEach((node) => node.setAttribute('inert', ''));
-    el.querySelector('input[type="email"]')?.focus();
+    const supportsDesktopFocus = window.matchMedia('(hover: hover) and (pointer: fine)').matches;
+    if (supportsDesktopFocus) el.querySelector('input[type="email"]')?.focus();
     const onKey = (e) => {
       if (e.key !== 'Tab') return;
       const f = Array.from(el.querySelectorAll('input, button'));
@@ -146,6 +148,11 @@ export default function Gate({ onDone }) {
 
   return (
     <div className="gate" role="dialog" aria-modal="true" aria-labelledby="gate-title" ref={root}>
+      {CONFIG.gateGuestBypass !== false && (
+        <button type="button" className="gate-mobile-exit" onClick={browseAsGuest} aria-label="Browse site">
+          Browse site <span aria-hidden="true">&times;</span>
+        </button>
+      )}
       <div className="gate-shutter top" aria-hidden="true" />
       <div className="gate-shutter bottom" aria-hidden="true" />
       <div className="inner">
@@ -214,7 +221,7 @@ export default function Gate({ onDone }) {
           <div className="alt">No code? <button type="button" onClick={joinList} disabled={busy}>Join the list</button> — codes go out before every {campaign ? 'preorder' : 'drop'}.</div>
         )}
         {CONFIG.gateGuestBypass !== false && (
-          <div className="guest"><button type="button" className="btn btn-ghost btn-sm" onClick={() => { unlock(); onDone?.(); }}>Browse as guest</button></div>
+          <div className="guest"><button type="button" className="btn btn-ghost btn-sm" onClick={browseAsGuest}>Browse as guest</button></div>
         )}
       </div>
     </div>
