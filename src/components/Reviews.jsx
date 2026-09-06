@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
-import { fetchReviews, submitReview, avgStars } from '../lib/reviews';
+import { fetchReviews, submitReview, avgStars, REVIEW_PROVENANCE } from '../lib/reviews';
 import { Check } from './Icons';
 
 export function Stars({ n, size = 13 }) {
@@ -168,6 +168,7 @@ export function ProductReviews({ p }) {
           </button>
         </div>
         {reviews.length > 0 && <Histogram reviews={reviews} />}
+        {reviews.length > 0 && <p className="review-provenance">{REVIEW_PROVENANCE}</p>}
         {showForm && <div style={{ maxWidth: 560, marginBottom: 30 }}><ReviewForm productHandle={p.handle} product={p} onDone={load} /></div>}
         {reviews.length > 0 ? (
           <>

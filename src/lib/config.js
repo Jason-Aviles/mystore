@@ -17,6 +17,16 @@ export const DEFAULT_CONFIG = {
   dropName: 'CITY OF SINS — DROP 002',
   dropDate: '2026-07-24T19:00:00-04:00', // update per drop
   supportEmail: 'contact@darkdivine.store', // the brand's only mailbox
+  founderName: '',
+  founderRole: '',
+  founderStatement: '',
+  legalBusinessName: '',
+  businessCity: '',
+  businessRegion: '',
+  supportPhone: '',
+  founderImage: '',
+  productionImages: [],
+  packagingImages: [],
   instagram: 'https://instagram.com/darkdivine.official',
   instagramHandle: '@darkdivine.official',
   // Fallback codes used ONLY when Supabase isn't configured.

@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useStore } from '../context/StoreContext';
 import { saveEmailSignup } from '../lib/marketing';
-import { RATING_AVG, TOTAL_SHOPIFY_RATINGS } from '../lib/reviews';
+import { RATING_AVG, TOTAL_SHOPIFY_RATINGS, REVIEW_PROVENANCE } from '../lib/reviews';
 import { payMethodList } from '../lib/trust';
 import { Lock } from './Icons';
 
@@ -58,7 +58,7 @@ export default function Footer() {
             <Link to="/about">Our story</Link>
             <a href={CONFIG.instagram} target="_blank" rel="noopener noreferrer">Instagram</a>
             <a href={`mailto:${CONFIG.supportEmail}`}>{CONFIG.supportEmail}</a>
-            <p className="foot-human">Real humans, real replies — {CONFIG.supportResponse}. US-based.</p>
+            <p className="foot-human">Real humans, real replies — {CONFIG.supportResponse}.{[CONFIG.businessCity, CONFIG.businessRegion].filter(Boolean).length > 0 && ` Based in ${[CONFIG.businessCity, CONFIG.businessRegion].filter(Boolean).join(', ')}.`}</p>
           </div>
         </div>
         <div className="trust-row">
@@ -68,6 +68,7 @@ export default function Footer() {
             {payMethodList(CONFIG).map((p) => <span key={p} className="pay">{p.toUpperCase()}</span>)}
           </div>
         </div>
+        <p className="footer-review-source">{REVIEW_PROVENANCE}</p>
         <div className="foot-bottom">
           <span>© {new Date().getFullYear()} Dark Divine. All rights reserved.</span>
           <span><Link to="/privacy">Privacy</Link> &nbsp;·&nbsp; <Link to="/terms">Terms</Link> &nbsp;·&nbsp; <Link to="/refunds">Refunds</Link> &nbsp;·&nbsp; <Link to="/shipping">Shipping</Link></span>

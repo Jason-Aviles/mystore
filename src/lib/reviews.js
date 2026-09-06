@@ -7,6 +7,8 @@
 import imported from '../data/imported-reviews.json';
 import { supabase, hasSupabase } from './supabase';
 
+export const REVIEW_PROVENANCE = 'Reviews marked Verified buyer were imported from the former Dark Divine Shopify store through Judge.me, or matched to a paid order placed here. Imported reviewer emails and IP addresses are not published.';
+
 const SEED = imported.map((r, i) => ({
   id: `import-${i}`,
   ...r,

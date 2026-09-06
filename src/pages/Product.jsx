@@ -13,7 +13,7 @@ import ProductStory from '../components/ProductStory';
 import ScrollSerpent from '../components/ScrollSerpent';
 import { Lock, Truck, Swap, Shield, Crown, VenomDrop } from '../components/Icons';
 import { ProductReviews, Stars } from '../components/Reviews';
-import { SHOPIFY_RATING_COUNTS, productAvg } from '../lib/reviews';
+import { SHOPIFY_RATING_COUNTS, productAvg, REVIEW_PROVENANCE } from '../lib/reviews';
 import { saveEmailSignup } from '../lib/marketing';
 import { metaTrack } from '../lib/meta';
 import { fetchDemand, MIN_SHOW } from '../lib/demand';
@@ -326,6 +326,7 @@ export default function Product() {
               <Stars n={Math.round(productAvg(p.handle))} /> {productAvg(p.handle)} · {SHOPIFY_RATING_COUNTS[p.handle]} verified reviews
             </a>
           )}
+          {SHOPIFY_RATING_COUNTS[p.handle] > 0 && <p className="product-review-source">{REVIEW_PROVENANCE}</p>}
           <div className="price">
             {money(p.price)}
             {off > 0 && <><s>{money(p.compare)}</s><span className="off">Save {off}%</span></>}

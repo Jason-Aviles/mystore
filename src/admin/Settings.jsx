@@ -46,6 +46,18 @@ const FIELDS = [
     ['payMethods', 'Accepted payment methods', 'text', 'Comma-separated, shown at cart + footer. List ONLY methods enabled in Stripe Dashboard → Payment methods (PayPal appears automatically when connected)'],
     ['payLaterNote', 'Klarna pay-in-4 note', 'toggle', 'The "4 interest-free payments" line on product + cart. Keep on only while Klarna is enabled in your Stripe dashboard'],
   ]],
+  ['Founder & business proof', [
+    ['founderName', 'Founder name', 'text', 'Shown only after you enter the real public-facing name.'],
+    ['founderRole', 'Founder role', 'text', 'For example: Founder & Creative Director.'],
+    ['founderStatement', 'Founder statement', 'textarea', 'A genuine first-person note about the brand and how the pieces are made.'],
+    ['founderImage', 'Founder photograph', 'image', 'Upload a genuine founder or studio portrait.'],
+    ['legalBusinessName', 'Legal business name', 'text', 'Your registered business name, shown only when entered.'],
+    ['businessCity', 'Business city', 'text', 'Public city only; do not enter a home address.'],
+    ['businessRegion', 'State / region', 'text', 'Public state, province, or region.'],
+    ['supportPhone', 'Support phone (optional)', 'text', 'Shown only when entered and staffed.'],
+    ['productionImages', 'Production photographs', 'image-list', 'Real sampling, printing, embroidery, or production photographs.'],
+    ['packagingImages', 'Packaging photographs', 'image-list', 'Real packing, labels, mailers, or fulfilled-order photographs.'],
+  ]],
   ['Email popup', [
     ['popupEnabled', 'Email popup', 'toggle', 'The 10%-off capture popup'],
     ['popupDelaySec', 'Popup delay (seconds)', 'number', 'How long a visitor browses before it shows'],
@@ -94,6 +106,20 @@ export default function Settings() {
     try {
       const url = await uploadMedia(file);
       set(key, url);
+    } catch (ex) {
+      setErr(ex.message || 'Upload failed');
+    }
+    setUploading(false);
+  }
+
+  async function addImage(key, file) {
+    if (!file) return;
+    setUploading(true);
+    setErr('');
+    try {
+      const url = await uploadProductImage(file);
+      setForm((current) => ({ ...current, [key]: [...(current[key] || []), url] }));
+      setSaved(false);
     } catch (ex) {
       setErr(ex.message || 'Upload failed');
     }
@@ -203,6 +229,21 @@ export default function Settings() {
                       </label>
                       {form[key] && <button type="button" className="btn btn-ghost btn-sm" onClick={() => set(key, '')}>Remove</button>}
                     </span>
+                  </span>
+                ) : type === 'image-list' ? (
+                  <span className="image-list-field">
+                    {(form[key] || []).length > 0 && <span className="image-list-previews">
+                      {(form[key] || []).map((url, index) => (
+                        <span className="image-list-item" key={`${url}-${index}`}>
+                          <img src={url} alt="" />
+                          <button type="button" className="btn btn-ghost btn-sm" onClick={() => set(key, form[key].filter((_, i) => i !== index))}>Remove</button>
+                        </span>
+                      ))}
+                    </span>}
+                    <label className="btn btn-ghost btn-sm" style={{ cursor: 'pointer', width: 'fit-content' }}>
+                      {uploading ? 'Uploading…' : 'Add photograph'}
+                      <input type="file" accept="image/*" hidden onChange={(e) => addImage(key, e.target.files?.[0])} />
+                    </label>
                   </span>
                 ) : type === 'video' ? (
                   <span className="img-field">
