@@ -19,6 +19,20 @@ const IGNORED_DIRECTORIES = new Set([
   '.git', 'dist', 'node_modules',
 ]);
 
+function mp4DurationSeconds(buffer) {
+  const marker = buffer.indexOf(Buffer.from('mvhd'));
+  assert.notEqual(marker, -1, 'MP4 movie header is missing');
+  const version = buffer.readUInt8(marker + 4);
+  if (version === 1) {
+    const timescale = buffer.readUInt32BE(marker + 24);
+    const duration = Number(buffer.readBigUInt64BE(marker + 28));
+    return duration / timescale;
+  }
+  const timescale = buffer.readUInt32BE(marker + 16);
+  const duration = buffer.readUInt32BE(marker + 20);
+  return duration / timescale;
+}
+
 async function walk(directory) {
   const entries = await readdir(directory, { withFileTypes: true });
   const files = [];
@@ -87,4 +101,10 @@ test('every local media reference resolves to a public file', async () => {
   }
 
   assert.deepEqual(missing, [], `Missing referenced media:\n${missing.join('\n')}`);
+});
+
+test('the serpent tee reel omits the distorted arm interval', async () => {
+  const clip = await readFile(path.join(MEDIA_ROOT, 'editorial', 'LTX_2.0_i2v_00019_-web.mp4'));
+  const duration = mp4DurationSeconds(clip);
+  assert.ok(duration >= 8.8 && duration <= 9.2, `Expected an approximately 9-second corrected clip, received ${duration}s`);
 });
