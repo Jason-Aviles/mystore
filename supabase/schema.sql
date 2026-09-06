@@ -79,6 +79,25 @@ create table if not exists sms_subscribers (
   created_at timestamptz default now()
 );
 
+-- Support requests contain private customer correspondence. Anonymous clients
+-- cannot touch this table directly; the validated Edge Function is the only
+-- public creation path and returns only an opaque reference.
+create table if not exists support_requests (
+  id uuid primary key default gen_random_uuid(),
+  reference text unique not null check (reference ~ '^DD-[0-9]{6}-[A-F0-9]{12}$'),
+  kind text not null check (kind in ('message','tracking','return','order_issue')),
+  name text not null check (char_length(name) between 1 and 100),
+  email text not null check (char_length(email) between 5 and 320),
+  order_number text check (order_number is null or char_length(order_number) <= 80),
+  subject text check (subject is null or char_length(subject) <= 160),
+  message text not null check (char_length(message) between 1 and 4000),
+  status text not null default 'new'
+    check (status in ('new','in_progress','waiting_customer','resolved','closed')),
+  internal_note text check (internal_note is null or char_length(internal_note) <= 4000),
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now()
+);
+
 -- ---------- commerce ----------
 create table if not exists orders (
   id uuid primary key default gen_random_uuid(),
@@ -164,6 +183,13 @@ alter table order_items enable row level security;
 alter table campaigns enable row level security;
 alter table access_codes enable row level security;
 alter table reviews enable row level security;
+alter table support_requests enable row level security;
+
+-- Explicit grants and RLS are both required. The Edge Function uses the
+-- server-only service role; signed-out visitors receive no table privileges.
+revoke all on table support_requests from anon;
+revoke all on table support_requests from authenticated;
+grant select, update on table support_requests to authenticated;
 
 -- reviews: anyone can read approved ones and submit new ones (pending approval)
 create policy "public read approved reviews" on reviews for select using (approved = true);
@@ -217,6 +243,7 @@ create policy "admin all orders" on orders for all to authenticated using (true)
 create policy "admin all order items" on order_items for all to authenticated using (true) with check (true);
 create policy "admin all campaigns" on campaigns for all to authenticated using (true) with check (true);
 create policy "admin all codes" on access_codes for all to authenticated using (true) with check (true);
+create policy "admin all support requests" on support_requests for all to authenticated using (true) with check (true);
 
 -- ---------- signup write paths (SECURITY DEFINER — safe upserts) ----------
 -- consent can only ratchet UP; an active signup clears unsubscribed

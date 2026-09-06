@@ -9,6 +9,41 @@ import { localOverlay, normalizeProductMedia, saveLocalOverlay } from '../lib/ca
 
 export const isLive = hasSupabase;
 
+const DEMO_SUPPORT_KEY = 'dd_demo_support_requests';
+
+function demoSupportRequests() {
+  try { return JSON.parse(localStorage.getItem(DEMO_SUPPORT_KEY)) || []; } catch { return []; }
+}
+
+export async function adminListSupportRequests(filters = {}) {
+  if (isLive) {
+    let query = supabase.from('support_requests').select('*').order('created_at', { ascending: false });
+    if (filters.status) query = query.eq('status', filters.status);
+    if (filters.kind) query = query.eq('kind', filters.kind);
+    const { data, error } = await query;
+    if (error) throw error;
+    return data || [];
+  }
+  return demoSupportRequests()
+    .filter((row) => !filters.status || row.status === filters.status)
+    .filter((row) => !filters.kind || row.kind === filters.kind)
+    .sort((a, b) => String(b.created_at).localeCompare(String(a.created_at)));
+}
+
+export async function adminUpdateSupportRequest(id, patch) {
+  const allowed = {};
+  if ('status' in patch) allowed.status = patch.status;
+  if ('internal_note' in patch) allowed.internal_note = String(patch.internal_note ?? '').slice(0, 4000);
+  allowed.updated_at = new Date().toISOString();
+  if (isLive) {
+    const { error } = await supabase.from('support_requests').update(allowed).eq('id', id);
+    if (error) throw error;
+    return;
+  }
+  const next = demoSupportRequests().map((row) => (row.id === id ? { ...row, ...allowed } : row));
+  localStorage.setItem(DEMO_SUPPORT_KEY, JSON.stringify(next));
+}
+
 /* ---------- products ---------- */
 export async function adminListProducts() {
   if (isLive) {
