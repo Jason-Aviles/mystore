@@ -304,7 +304,7 @@ export async function adminAudienceCount(audience) {
     invoice, reviews to approve, plus info (new signups, low-stock sizes).
     `total` is the "needs your action" number shown on the badge. */
 export async function adminNotifications() {
-  const empty = { total: 0, orders: 0, balances: 0, reviews: 0, newSignups: 0, soldOut: 0, items: [] };
+  const empty = { total: 0, orders: 0, support: 0, balances: 0, reviews: 0, newSignups: 0, soldOut: 0, items: [] };
   if (!isLive) return empty;
   const since = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString();
   const head = { count: 'exact', head: true };
@@ -312,22 +312,24 @@ export async function adminNotifications() {
     // NOTE: no "low stock" alert on purpose — this is a limited-run brand,
     // small quantities are intentional, so low stock is normal, not news.
     // Fully SOLD-OUT sizes are shown instead (restock/retire decision).
-    const [o, b, r, s, so] = await Promise.all([
+    const [o, supportRows, b, r, s, so] = await Promise.all([
       supabase.from('orders').select('id', head).eq('status', 'paid'), // paid but not yet shipped
+      supabase.from('support_requests').select('id', head).eq('status', 'new'),
       supabase.from('orders').select('id', head).eq('balance_status', 'pending').in('status', ['paid', 'shipped', 'delivered']),
       supabase.from('reviews').select('id', head).eq('approved', false),
       supabase.from('email_signups').select('id', head).gt('created_at', since),
       supabase.from('product_variants').select('id', head).eq('inventory_qty', 0),
     ]);
-    const orders = o.count ?? 0, balances = b.count ?? 0, reviews = r.count ?? 0, newSignups = s.count ?? 0, soldOut = so.count ?? 0;
+    const orders = o.count ?? 0, support = supportRows.count ?? 0, balances = b.count ?? 0, reviews = r.count ?? 0, newSignups = s.count ?? 0, soldOut = so.count ?? 0;
     const items = [];
     const plural = (n, one, many) => (n === 1 ? one : many);
     if (orders) items.push({ key: 'orders', count: orders, label: plural(orders, 'order to fulfill', 'orders to fulfill'), to: '/admin/orders' });
+    if (support) items.push({ key: 'support', count: support, label: plural(support, 'support request to answer', 'support requests to answer'), to: '/admin/support' });
     if (balances) items.push({ key: 'balances', count: balances, label: plural(balances, 'preorder balance to invoice', 'preorder balances to invoice'), to: '/admin/preorders' });
     if (reviews) items.push({ key: 'reviews', count: reviews, label: plural(reviews, 'review to approve', 'reviews to approve'), to: '/admin/reviews' });
     if (newSignups) items.push({ key: 'signups', count: newSignups, label: 'new signups (24h)', to: '/admin/signups', info: true });
     if (soldOut) items.push({ key: 'soldout', count: soldOut, label: plural(soldOut, 'sold-out size', 'sold-out sizes'), to: '/admin/products', info: true });
-    return { total: orders + balances + reviews, orders, balances, reviews, newSignups, soldOut, items };
+    return { total: orders + support + balances + reviews, orders, support, balances, reviews, newSignups, soldOut, items };
   } catch {
     return empty;
   }

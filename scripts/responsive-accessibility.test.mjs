@@ -799,6 +799,31 @@ test('keyboard focus remains visibly outlined on form fields', async () => {
   await context.close();
 });
 
+test('support form saves a request and returns a reference without opening email', async () => {
+  const { context, page } = await phonePage({ reducedMotion: 'reduce' });
+  await page.goto(`${ORIGIN}/contact`, { waitUntil: 'networkidle' });
+
+  await page.locator('form[data-support-form="message"] input[name="name"]').fill('Jamie Buyer');
+  await page.locator('form[data-support-form="message"] input[name="email"]').fill('jamie@example.com');
+  await page.locator('form[data-support-form="message"] textarea[name="message"]').fill('I need help choosing the right size.');
+  await page.locator('form[data-support-form="message"]').getByRole('button', { name: /send message/i }).click();
+
+  const confirmation = page.locator('[data-support-reference]');
+  await confirmation.waitFor();
+  const reference = await confirmation.getAttribute('data-support-reference');
+  assert.match(reference, /^DD-\d{6}-[A-F0-9]{12}$/);
+  assert.match(await confirmation.textContent(), new RegExp(`Request ${reference} received`));
+  assert.equal(await page.locator('form[data-support-form="message"] textarea[name="message"]').inputValue(), '');
+  assert.equal(new URL(page.url()).protocol, 'http:');
+
+  const stored = await page.evaluate(() => JSON.parse(localStorage.getItem('dd_demo_support_requests') || '[]'));
+  assert.equal(stored.length, 1);
+  assert.equal(stored[0].reference, reference);
+  assert.equal(stored[0].email, 'jamie@example.com');
+
+  await context.close();
+});
+
 test('search and review interfaces give every form control a stable name', async () => {
   const { context, page } = await phonePage({ reducedMotion: 'reduce' });
   await page.goto(`${ORIGIN}/shop`, { waitUntil: 'networkidle' });

@@ -53,3 +53,25 @@ test('private entry visibility is controlled independently from the gate', async
   assert.match(settings, /Show private preorder entry/);
   assert.match(gate, /CONFIG\.gateEntryEnabled/);
 });
+
+test('contact forms create durable requests without forced mail-app navigation', async () => {
+  const contact = await read('src/pages/Contact.jsx');
+  assert.match(contact, /createSupportRequest/);
+  assert.match(contact, /data-support-reference/);
+  assert.doesNotMatch(contact, /window\.location\.href\s*=\s*`mailto:/);
+});
+
+test('authenticated admin has a support inbox and notification count', async () => {
+  const [routes, support, data] = await Promise.all([
+    read('src/admin/AdminRoutes.jsx'),
+    read('src/admin/Support.jsx'),
+    read('src/admin/adminData.js'),
+  ]);
+  assert.match(routes, /\/admin\/support/);
+  assert.match(routes, /path="support"/);
+  assert.match(routes, /notif\.support/);
+  for (const status of ['new', 'in_progress', 'waiting_customer', 'resolved', 'closed']) {
+    assert.match(support, new RegExp(status));
+  }
+  assert.match(data, /support requests? to answer/i);
+});

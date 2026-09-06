@@ -7,6 +7,7 @@ import Dashboard from './Dashboard';
 import Products from './Products';
 import ProductEdit from './ProductEdit';
 import Orders from './Orders';
+import Support from './Support';
 import Customers from './Customers';
 import Signups from './Signups';
 import Campaigns from './Campaigns';
@@ -86,6 +87,7 @@ const NAV = [
   ['/admin', 'Dashboard', true],
   ['/admin/products', 'Products', false],
   ['/admin/orders', 'Orders', false],
+  ['/admin/support', 'Support', false],
   ['/admin/preorders', 'Preorders', false],
   ['/admin/customers', 'Customers', false],
   ['/admin/reviews', 'Reviews', false],
@@ -114,7 +116,7 @@ export default function AdminRoutes() {
   if (!authed) return <Login setAuthed={setAuthed} />;
 
   // per-nav badges pull from the same counts
-  const navCount = { '/admin/orders': notif.orders, '/admin/preorders': notif.balances, '/admin/reviews': notif.reviews };
+  const navCount = { '/admin/orders': notif.orders, '/admin/support': notif.support, '/admin/preorders': notif.balances, '/admin/reviews': notif.reviews };
 
   async function signOut() {
     sessionStorage.removeItem('dd_admin');
@@ -165,6 +167,7 @@ export default function AdminRoutes() {
           <Route path="products/new" element={<ProductEdit />} />
           <Route path="products/:handle" element={<ProductEdit />} />
           <Route path="orders" element={<Orders />} />
+          <Route path="support" element={<Support />} />
           <Route path="preorders" element={<Preorders />} />
           <Route path="customers" element={<Customers />} />
           <Route path="reviews" element={<ReviewsAdmin />} />
