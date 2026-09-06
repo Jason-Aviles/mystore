@@ -93,9 +93,8 @@ export default function Home() {
       {/* the serpent rides the whole page — drawn by scroll, behind everything */}
       <ScrollSerpent />
 
-      {/* HERO v3 "THE BROADCAST" — Scene A: the real ad plays under VHS
-          chrome (live timecode, REC pulse, scanlines), title burning
-          through. Scroll TEARS the screen into five slats → Scene B. */}
+      {/* HERO v3 "THE BROADCAST" — Scene A plays under VHS chrome; scroll
+          opens a luminous diagonal splice into the full-bleed second film. */}
       <section className="hero-cine2">
         <div className="hs-a">
           <video className="hs-video hs-broadcast" src={CONFIG.heroVideoA} poster={CONFIG.heroPosterA}
@@ -115,18 +114,16 @@ export default function Home() {
           </div>
           <div className="hs-cue" aria-hidden="true"><span /></div>
         </div>
-        <div className="hs-slats" aria-hidden="true">
-          {[0, 1, 2, 3, 4].map((i) => <span className="hs-slat" key={i} />)}
-        </div>
-        <span className="hs-burn" aria-hidden="true" />
         <div className="hs-b hero">
-          <div className="hs-stage" aria-hidden="true">
-            <div className="hs-monolith">
-              <video src={CONFIG.heroVideoB} poster={CONFIG.heroPosterB}
-                muted loop playsInline preload="none" />
-              <span className="hs-mono-glow" />
-            </div>
-            <span className="hs-floor" />
+          <div className="hs-film-b" data-hero-secondary-film aria-hidden="true">
+            <video src={CONFIG.heroVideoB} poster={CONFIG.heroPosterB}
+              muted loop playsInline preload="none" />
+          </div>
+          <div className="hs-splice-chrome" aria-hidden="true">
+            <span className="hs-splice-bloom" />
+            <span className="hs-splice-echo hs-splice-echo-a" />
+            <span className="hs-splice-echo hs-splice-echo-b" />
+            <span className="hs-splice-blade" />
           </div>
           <div className="wrap hero-inner">
             <span className="script" data-hero-script>{CONFIG.heroScript}</span>

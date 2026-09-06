@@ -252,8 +252,8 @@ export default function usePageMotion(ready) {
          Scene A (the void): 3D logo film resolves from blur, kinetic type
          rises with 3D flips, then the whole type group tilts in 3D space
          following the cursor. Scrolling pins the frame: the lines shear
-         apart, the film dives forward, and Scene B (the photo world)
-         irises open through the void; the copy then rises inside it. */
+         apart and a luminous diagonal splice exposes the full-bleed second
+         film without shrinking either scene; the copy then rises over it. */
       const hero2 = document.querySelector('.hero-cine2');
       if (hero2) {
         const phone = ctx.conditions.phone;
@@ -329,52 +329,32 @@ export default function usePageMotion(ready) {
           cleanups.push(() => gsap.ticker.remove(tick));
         }
 
-        /* THE TEAR: five slats sweep up covering the broadcast, film-burn
-           flash at the crossover, slats exit revealing the film world */
-        const monolithMidAt = phone ? 0.52 : 0.58;
-        const monolithFillAt = phone ? 0.64 : 0.76;
-        const heroScriptAt = phone ? 0.6 : 0.76;
-        const heroTitleAt = phone ? 0.64 : 0.82;
-        const heroSubAt = phone ? 0.72 : 0.94;
-        const heroCtasAt = phone ? 0.79 : 1.04;
-        const heroMetaAt = phone ? 0.88 : 1.16;
-        const slats = gsap.utils.toArray('.hs-slat');
+        /* THE SPLICE: Scene B is already full-screen beneath the broadcast.
+           The luminous cut reveals it without ever exposing an empty stage. */
+        const spliceLines = gsap.utils.toArray('.hs-splice-echo, .hs-splice-blade');
         gsap.timeline({
-          scrollTrigger: { trigger: '.hero-cine2', start: 'top top', end: phone ? '+=165%' : '+=300%', pin: true, scrub: phone ? 0.35 : 0.6, invalidateOnRefresh: true },
+          scrollTrigger: { trigger: '.hero-cine2', start: 'top top', end: phone ? '+=165%' : '+=220%', pin: true, scrub: phone ? 0.4 : 0.75, invalidateOnRefresh: true },
         })
-          .to('.hs-title .line:first-child .w', { xPercent: -20, ease: 'none', duration: 0.4 }, 0)
-          .to('.hs-title .line:last-child .w', { xPercent: 20, ease: 'none', duration: 0.4 }, 0)
-          /* zoom pivots near the model's head so the push-in never crops it */
-          .to('.hs-video', { scale: phone ? 1.12 : 1.22, transformOrigin: '50% 18%', ease: 'none', duration: 0.45 }, 0)
-          .fromTo(slats, { yPercent: 103 }, { yPercent: 0, ease: 'none', duration: 0.14, stagger: 0.03 }, 0.24)
-          .fromTo('.hs-burn', { opacity: 0 }, { opacity: 1, ease: 'none', duration: 0.03 }, 0.4)
-          .to('.hs-burn', { opacity: 0, ease: 'none', duration: 0.05 }, 0.44)
-          .to('.hs-a', { autoAlpha: 0, ease: 'none', duration: phone ? 0.08 : 0.001 }, phone ? 0.36 : 0.42)
-          .to('.hs-b', { autoAlpha: 1, ease: 'none', duration: phone ? 0.08 : 0.001 }, phone ? 0.36 : 0.42)
-          .to(slats, { yPercent: -103, ease: 'none', duration: 0.14, stagger: 0.03 }, 0.44)
-          /* THE MONOLITH: the film floats in as a tilted 3D slab hovering
-             over its own reflection, straightens, then flies forward and
-             LOCKS at cinema width — contain-scale with letterbox bars, so
-             the full frame stays visible and the model's head never crops. */
-          .fromTo('.hs-monolith',
-            { rotationX: phone ? 7 : 11, rotationY: phone ? -3 : -6, scale: phone ? 0.82 : 0.78, y: phone ? '7vh' : '8vh', autoAlpha: 0 },
-            { rotationX: phone ? 4 : 7, rotationY: phone ? -1 : -3, scale: phone ? 0.9 : 0.84, y: phone ? '3vh' : '4vh', autoAlpha: 1, ease: 'none', duration: phone ? 0.1 : 0.16 }, 0.42)
-          .to('.hs-monolith', { rotationX: phone ? 2 : 3, rotationY: phone ? 0 : -1, scale: phone ? 0.98 : 0.92, y: phone ? '1vh' : '2vh', ease: 'none', duration: phone ? 0.12 : 0.18 }, monolithMidAt)
-          .to('.hs-monolith', {
-            rotationX: 0, rotationY: 0, y: 0, ease: 'none', duration: phone ? 0.16 : 0.28,
-            scale: () => {
-              const m = document.querySelector('.hs-monolith');
-              if (phone) return 1;
-              if (!m) return 1.3;
-              return Math.min(window.innerWidth / m.offsetWidth, window.innerHeight / m.offsetHeight);
-            },
-          }, monolithFillAt)
-          .to('.hs-floor, .hs-mono-glow', { autoAlpha: 0, ease: 'none', duration: 0.08 }, monolithFillAt)
-          .fromTo('[data-hero-script]', { opacity: 0, y: 34 }, { opacity: 0.9, y: 0, ease: 'none', duration: phone ? 0.1 : 0.14 }, heroScriptAt)
-          .fromTo('[data-hero-title]', { opacity: 0, y: 56 }, { opacity: 1, y: 0, ease: 'none', duration: phone ? 0.14 : 0.18 }, heroTitleAt)
-          .fromTo('[data-hero-sub]', { opacity: 0, y: 30 }, { opacity: 1, y: 0, ease: 'none', duration: phone ? 0.11 : 0.14 }, heroSubAt)
-          .fromTo('[data-hero-ctas]', { opacity: 0, y: 28 }, { opacity: 1, y: 0, ease: 'none', duration: phone ? 0.11 : 0.14 }, heroCtasAt)
-          .fromTo('[data-hero-meta]', { opacity: 0 }, { opacity: 1, ease: 'none', duration: phone ? 0.09 : 0.12 }, heroMetaAt)
+          .to('.hs-title .line:first-child .w', { xPercent: -24, rotationZ: -1.2, ease: 'none', duration: 0.42 }, 0)
+          .to('.hs-title .line:last-child .w', { xPercent: 24, rotationZ: 1.2, ease: 'none', duration: 0.42 }, 0)
+          .to('.hs-video', { scale: phone ? 1.045 : 1.065, transformOrigin: '50% 18%', ease: 'none', duration: 0.68 }, 0)
+          .to('.hs-b', { autoAlpha: 1, ease: 'none', duration: 0.01 }, 0.19)
+          .fromTo('.hs-film-b',
+            { clipPath: 'polygon(0 0, 0 0, 0 100%, 0 100%)' },
+            { clipPath: 'polygon(0 0, 112% 0, 100% 100%, 0 100%)', ease: 'none', duration: 0.49 }, 0.2)
+          .fromTo('.hs-film-b video', { scale: 1.02 }, { scale: phone ? 1.045 : 1.075, ease: 'none', duration: 0.94 }, 0.2)
+          .fromTo(spliceLines,
+            { x: '0vw', autoAlpha: 0 },
+            { x: '124vw', autoAlpha: 1, ease: 'none', duration: 0.49, stagger: 0.012 }, 0.2)
+          .to(spliceLines, { autoAlpha: 0, ease: 'none', duration: 0.07 }, 0.63)
+          .fromTo('.hs-splice-bloom', { opacity: 0 }, { opacity: 1, ease: 'none', duration: 0.1 }, 0.33)
+          .to('.hs-splice-bloom', { opacity: 0, ease: 'none', duration: 0.18 }, 0.43)
+          .to('.hs-a', { autoAlpha: 0, ease: 'none', duration: 0.13 }, 0.56)
+          .fromTo('[data-hero-script]', { opacity: 0, y: 34 }, { opacity: 0.9, y: 0, ease: 'none', duration: 0.15 }, 0.55)
+          .fromTo('[data-hero-title]', { opacity: 0, y: 56 }, { opacity: 1, y: 0, ease: 'none', duration: 0.18 }, 0.62)
+          .fromTo('[data-hero-sub]', { opacity: 0, y: 30 }, { opacity: 1, y: 0, ease: 'none', duration: 0.14 }, 0.76)
+          .fromTo('[data-hero-ctas]', { opacity: 0, y: 28 }, { opacity: 1, y: 0, ease: 'none', duration: 0.14 }, 0.86)
+          .fromTo('[data-hero-meta]', { opacity: 0 }, { opacity: 1, ease: 'none', duration: 0.12 }, 0.96)
           .to('.hs-cue', { opacity: 0, ease: 'none', duration: 0.08 }, 0.28);
       }
 

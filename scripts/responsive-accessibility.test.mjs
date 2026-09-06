@@ -428,47 +428,37 @@ test('the duplicate product story stays out of the phone layout', async () => {
   await context.close();
 });
 
-test('the phone cinematic transition keeps the second video visually substantial', async () => {
+test('the phone cinematic transition keeps the second video full-bleed', async () => {
   const { context, page } = await phonePage();
   await page.goto(ORIGIN, { waitUntil: 'networkidle' });
   await page.evaluate(() => window.scrollTo(0, window.innerHeight * 1.25));
   await page.waitForTimeout(900);
 
-  const frame = await page.locator('.hs-monolith').boundingBox();
+  const frame = await page.locator('[data-hero-secondary-film]').boundingBox();
   assert.ok(frame, 'second hero frame must be rendered');
-  assert.ok(frame.width >= 390 * 0.78, `second hero frame is only ${Math.round(frame.width)}px wide`);
-  assert.ok(frame.height >= 844 * 0.52, `second hero frame is only ${Math.round(frame.height)}px tall`);
-  const coveredWidth = await page.locator('.hs-slat').evaluateAll((slats) => {
-    const middle = window.innerHeight / 2;
-    return slats.reduce((total, slat) => {
-      const style = getComputedStyle(slat);
-      const rect = slat.getBoundingClientRect();
-      const coversMiddle = style.display !== 'none' && style.visibility !== 'hidden'
-        && Number(style.opacity) > 0 && rect.top <= middle && rect.bottom >= middle;
-      return total + (coversMiddle ? rect.width : 0);
-    }, 0);
-  });
-  assert.ok(coveredWidth <= 390 * 0.25, `hero shutters obscure ${Math.round(coveredWidth)}px of the phone frame`);
+  assert.ok(frame.width >= 390, `second hero frame is only ${Math.round(frame.width)}px wide`);
+  assert.ok(frame.height >= 844, `second hero frame is only ${Math.round(frame.height)}px tall`);
+  assert.equal(await page.locator('.hs-slat, .hs-monolith').count(), 0);
 
   await context.close();
 });
 
-test('the tablet cinematic transition also fills the available frame', async () => {
+test('the tablet cinematic transition also remains full-bleed', async () => {
   const viewport = { width: 768, height: 1024 };
   const { context, page } = await phonePage({ viewport });
   await page.goto(ORIGIN, { waitUntil: 'networkidle' });
   await page.evaluate(() => window.scrollTo(0, window.innerHeight * 1.25));
   await page.waitForTimeout(900);
 
-  const frame = await page.locator('.hs-monolith').boundingBox();
+  const frame = await page.locator('[data-hero-secondary-film]').boundingBox();
   assert.ok(frame, 'tablet hero frame must be rendered');
-  assert.ok(frame.width >= viewport.width * 0.78, `tablet hero frame is only ${Math.round(frame.width)}px wide`);
-  assert.ok(frame.height >= viewport.height * 0.52, `tablet hero frame is only ${Math.round(frame.height)}px tall`);
+  assert.ok(frame.width >= viewport.width, `tablet hero frame is only ${Math.round(frame.width)}px wide`);
+  assert.ok(frame.height >= viewport.height, `tablet hero frame is only ${Math.round(frame.height)}px tall`);
 
   await context.close();
 });
 
-test('the ultrawide cinematic transition reveals a substantial frame and grows progressively', async () => {
+test('the ultrawide cinematic transition keeps both films full-bleed through the splice', async () => {
   const viewport = { width: 3790, height: 1742 };
   const { context, page } = await desktopPage({ viewport });
   await page.goto(ORIGIN, { waitUntil: 'networkidle' });
@@ -481,27 +471,39 @@ test('the ultrawide cinematic transition reveals a substantial frame and grows p
       distance: spacer.offsetHeight - hero.offsetHeight,
     };
   });
-  const samples = [];
-  for (const progress of [0.46, 0.54, 0.62, 0.70, 0.78]) {
+  assert.ok(
+    heroRange.distance >= viewport.height * 2.15 && heroRange.distance <= viewport.height * 2.25,
+    `desktop hero pins for ${Math.round(heroRange.distance / viewport.height * 100)}vh instead of the 220vh splice`,
+  );
+  assert.equal(await page.locator('.hs-monolith, .hs-floor').count(), 0);
+
+  for (const progress of [0.25, 0.4, 0.55, 0.7, 0.9]) {
     await page.evaluate(({ top, distance, progress: point }) => {
       window.scrollTo(0, top + distance * point);
     }, { ...heroRange, progress });
     await page.waitForTimeout(900);
-    const frame = await page.locator('.hs-monolith').boundingBox();
-    assert.ok(frame, `second hero frame must render at ${progress} progress`);
-    samples.push(frame.width);
+    const state = await page.evaluate(() => {
+      const firstFilm = document.querySelector('.hs-video');
+      const secondFilm = document.querySelector('[data-hero-secondary-film]');
+      const firstScene = document.querySelector('.hs-a');
+      const secondScene = document.querySelector('.hs-b');
+      const firstRect = firstFilm?.getBoundingClientRect();
+      const secondRect = secondFilm?.getBoundingClientRect();
+      return {
+        firstRect: firstRect && { width: firstRect.width, height: firstRect.height },
+        secondRect: secondRect && { width: secondRect.width, height: secondRect.height },
+        firstOpacity: Number(getComputedStyle(firstScene).opacity),
+        secondOpacity: Number(getComputedStyle(secondScene).opacity),
+        overflow: document.documentElement.scrollWidth - window.innerWidth,
+      };
+    });
+    assert.ok(state.firstRect, `first film must render at ${progress} progress`);
+    assert.ok(state.secondRect, `second film must render at ${progress} progress`);
+    assert.ok(state.firstRect.width >= viewport.width - 1 && state.firstRect.height >= viewport.height - 1);
+    assert.ok(state.secondRect.width >= viewport.width - 1 && state.secondRect.height >= viewport.height - 1);
+    assert.ok(state.firstOpacity + state.secondOpacity >= 0.95, `film coverage fades out at ${progress} progress`);
+    assert.equal(state.overflow, 0);
   }
-
-  const minimumWidth = Math.min(...samples);
-  assert.ok(
-    minimumWidth >= viewport.width * 0.48,
-    `ultrawide hero shrinks to ${Math.round(minimumWidth)}px (${Math.round((minimumWidth / viewport.width) * 100)}% of the viewport)`,
-  );
-  const largestStep = Math.max(...samples.slice(1).map((width, index) => width - samples[index]));
-  assert.ok(
-    largestStep <= viewport.width * 0.14,
-    `ultrawide hero grows ${Math.round(largestStep)}px between adjacent samples`,
-  );
 
   await context.close();
 });

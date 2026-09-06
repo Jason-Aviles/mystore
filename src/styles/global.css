@@ -629,34 +629,33 @@ h1, h2, h3, .display {
 }
 .hs-broadcast { filter: saturate(0.8) contrast(1.05); }
 
-/* the tear: five vertical slats + the burn frame */
-.hs-slats { position: absolute; inset: 0; z-index: 4; pointer-events: none; display: flex; }
-.hs-slat { flex: 1; background: var(--void); transform: translateY(103%); will-change: transform; border-right: 1px solid rgba(232,226,212,0.04); }
-.hs-burn {
-  position: absolute; inset: 0; z-index: 5; pointer-events: none; opacity: 0;
-  background: #fffdf6;
-  mix-blend-mode: screen;
+/* Scene B stays full-bleed. A diagonal splice reveals it over Scene A, so
+   there is never a miniature frame or an empty stage between the films. */
+.hs-film-b {
+  position: absolute; inset: 0; z-index: -2; overflow: hidden;
+  clip-path: polygon(0 0, 0 0, 0 100%, 0 100%);
+  will-change: clip-path;
 }
-.hs-b .hero-media { position: absolute; inset: 0; z-index: -2; }
-.hs-b .hero-media img, .hs-b .hero-media video {
+.hs-film-b video {
   width: 100%; height: 100%; object-fit: cover; object-position: center 28%;
-  filter: saturate(0.85); /* film grade so hero copy holds against the footage */
+  filter: saturate(0.82) contrast(1.04); transform: scale(1.02);
+  will-change: transform;
+}
+.hs-film-b::after {
+  content: ''; position: absolute; inset: 0; pointer-events: none;
+  background:
+    radial-gradient(120% 90% at 50% 30%, transparent 38%, rgba(10, 10, 11, 0.52) 100%),
+    linear-gradient(180deg, rgba(10,10,11,0.38) 0%, rgba(10,10,11,0.08) 38%, rgba(10,10,11,0.9) 90%);
 }
 @media (prefers-reduced-motion: reduce) {
   /* poster only, no motion: swap the video for its still */
-  .hs-b .hero-media video { display: none; }
-  .hs-b .hero-media { background: url('/media/editorial/hero-film-poster.jpg') center 28% / cover no-repeat; }
-}
-.hs-b::after {
-  content: ''; position: absolute; inset: 0; z-index: -1;
-  background:
-    radial-gradient(120% 90% at 50% 30%, transparent 40%, rgba(10, 10, 11, 0.55) 100%),
-    linear-gradient(180deg, rgba(10,10,11,0.55) 0%, rgba(10,10,11,0.18) 40%, rgba(10,10,11,0.94) 88%);
+  .hs-film-b video { display: none; }
+  .hs-film-b { clip-path: none; background: url('/media/editorial/hero-film-poster.jpg') center 28% / cover no-repeat; }
 }
 [data-hero-script], [data-hero-title], [data-hero-sub], [data-hero-ctas], [data-hero-meta] { opacity: 0; }
 @media (prefers-reduced-motion: reduce) {
   .hero-cine2 { height: auto; }
-  .hs-a, .hs-slats, .hs-burn { display: none; }
+  .hs-a, .hs-splice-chrome { display: none; }
   .hs-b { position: relative; opacity: 1; visibility: visible; min-height: 88vh; }
   [data-hero-script], [data-hero-title], [data-hero-sub], [data-hero-ctas], [data-hero-meta] { opacity: 1; }
 }
@@ -1757,42 +1756,30 @@ input, textarea { caret-color: var(--red); }
 .pl-char { will-change: transform; display: inline-block; }
 .pl-line { background: linear-gradient(90deg, var(--red), var(--green)); height: 2px; }
 
-/* ---------- HERO MONOLITH — 3D floating film slab ---------- */
-.hs-stage {
-  position: absolute; inset: 0; z-index: -1;
-  perspective: 1100px; overflow: hidden;
-  display: flex; align-items: center; justify-content: center;
+/* ---------- HERO FILM SPLICE ---------- */
+.hs-splice-chrome { position: absolute; inset: 0; z-index: 5; overflow: hidden; pointer-events: none; }
+.hs-splice-blade,
+.hs-splice-echo {
+  position: absolute; left: -12vw; top: -25vh; width: 2px; height: 150vh;
+  transform: rotate(13deg); transform-origin: center;
+  background: rgba(255, 244, 236, 0.94); opacity: 0; will-change: transform, opacity;
 }
-.hs-monolith {
-  position: relative; width: min(82vw, 145.8vh); aspect-ratio: 16 / 9;
-  transform-style: preserve-3d; border: 1px solid var(--line-strong);
-  overflow: hidden; will-change: transform;
-  box-shadow: 0 40px 80px -30px rgba(0, 0, 0, 0.8);
+.hs-splice-blade { box-shadow: 0 0 8px #fff, 0 0 26px var(--red), 0 0 70px rgba(239, 182, 196, 0.7); }
+.hs-splice-echo { width: 1px; background: rgba(239, 182, 196, 0.5); }
+.hs-splice-echo-a { margin-left: -18px; }
+.hs-splice-echo-b { margin-left: 22px; }
+.hs-splice-bloom {
+  position: absolute; inset: -20%; opacity: 0; will-change: opacity;
+  background: radial-gradient(ellipse at 50% 48%, rgba(255, 246, 237, 0.2), rgba(239, 182, 196, 0.08) 25%, transparent 58%);
+  mix-blend-mode: screen;
 }
-.hs-monolith video { width: 100%; height: 100%; object-fit: cover; filter: saturate(0.85); }
-.hs-mono-glow {
-  position: absolute; inset: -40px; z-index: -1; pointer-events: none;
-  background: radial-gradient(closest-side, rgba(239, 182, 196, 0.16), transparent 70%);
-  filter: blur(30px);
-}
-.hs-floor {
-  position: absolute; left: 50%; bottom: 6vh; transform: translateX(-50%) scaleY(-1);
-  width: min(82vw, 145.8vh); height: 18vh; pointer-events: none;
-  background: linear-gradient(180deg, rgba(242, 241, 238, 0.07), transparent 70%);
-  -webkit-mask: linear-gradient(0deg, black, transparent);
-  mask: linear-gradient(0deg, black, transparent);
-}
-@media (max-width: 899px) { .hs-monolith, .hs-floor { width: 92vw; } }
 @media (max-width: 899px) {
   .hero-cine2 { height: 100dvh; min-height: 100svh; }
-  .hs-monolith { width: 100vw; height: 100dvh; aspect-ratio: auto; border: 0; }
-  .hs-monolith video { object-position: center 28%; }
-  .hs-floor, .hs-mono-glow, .hs-slats, .hs-burn { display: none; }
+  .hs-film-b video { object-position: center 28%; }
+  .hs-splice-echo { display: none; }
 }
 @media (prefers-reduced-motion: reduce) {
-  .hs-stage { position: absolute; perspective: none; }
-  .hs-monolith { width: 100%; height: 100%; aspect-ratio: auto; border: none; }
-  .hs-floor, .hs-mono-glow { display: none; }
+  .hs-splice-chrome { display: none; }
 }
 
 /* ---------- DIVINE VENOM SIGNATURES ---------- */
