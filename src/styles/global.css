@@ -912,7 +912,7 @@ h1, h2, h3, .display {
 .badge {
   font-size: 9px; font-weight: 700; letter-spacing: 0.2em; text-transform: uppercase;
   padding: 5px 9px; background: rgba(10, 10, 11, 0.85); border: 1px solid var(--line-strong); color: var(--bone);
-  backdrop-filter: blur(4px); width: max-content;
+  -webkit-backdrop-filter: blur(4px); backdrop-filter: blur(4px); width: max-content;
 }
 .badge.red { background: var(--red); border-color: var(--red); color: var(--void); }
 .badge.stock { color: #e8a0a3; border-color: rgba(239, 182, 196, 0.5); }
@@ -974,7 +974,7 @@ h1, h2, h3, .display {
 .look .tag {
   position: absolute; left: 10px; bottom: 10px; font-size: 10px; letter-spacing: 0.14em;
   background: rgba(10, 10, 11, 0.75); padding: 5px 9px; border: 1px solid var(--line);
-  backdrop-filter: blur(4px);
+  -webkit-backdrop-filter: blur(4px); backdrop-filter: blur(4px);
 }
 
 /* ---------- FAQ ---------- */
@@ -1029,7 +1029,7 @@ input:focus-visible, textarea:focus-visible, select:focus-visible { outline: 2px
 .checkout-legal { margin: 0; color: var(--silver); font-size: 11px; line-height: 1.6; text-align: center; }
 .checkout-legal a { color: var(--bone); text-decoration: underline; text-underline-offset: 3px; }
 .checkout-legal a:focus-visible { outline: 2px solid var(--pink); outline-offset: 3px; }
-.motion-control { position: fixed; right: 16px; bottom: 16px; z-index: 900; display: inline-flex; align-items: center; justify-content: center; gap: 8px; min-height: 44px; padding: 0 14px; border: 1px solid var(--line-strong); background: rgba(10,10,11,.9); color: var(--bone); font: 600 10px/1 var(--font-body); letter-spacing: .12em; text-transform: uppercase; backdrop-filter: blur(12px); cursor: pointer; }
+.motion-control { position: fixed; right: 16px; bottom: 16px; z-index: 900; display: inline-flex; align-items: center; justify-content: center; gap: 8px; min-height: 44px; padding: 0 14px; border: 1px solid var(--line-strong); background: rgba(10,10,11,.9); color: var(--bone); font: 600 10px/1 var(--font-body); letter-spacing: .12em; text-transform: uppercase; -webkit-backdrop-filter: blur(12px); backdrop-filter: blur(12px); cursor: pointer; }
 .motion-control:hover, .motion-control:focus-visible { border-color: var(--pink); }
 .motion-control:focus-visible { outline: 2px solid var(--pink); outline-offset: 3px; }
 .motion-control:disabled { opacity: .78; cursor: default; }
@@ -1067,7 +1067,7 @@ input:focus-visible, textarea:focus-visible, select:focus-visible { outline: 2px
 }
 
 /* ---------- cart drawer ---------- */
-.overlay { position: fixed; inset: 0; background: rgba(0, 0, 0, 0.6); z-index: 95; opacity: 0; visibility: hidden; transition: opacity 0.3s, visibility 0.3s; backdrop-filter: blur(2px); }
+.overlay { position: fixed; inset: 0; background: rgba(0, 0, 0, 0.6); z-index: 95; opacity: 0; visibility: hidden; transition: opacity 0.3s, visibility 0.3s; -webkit-backdrop-filter: blur(2px); backdrop-filter: blur(2px); }
 .overlay.show { opacity: 1; visibility: visible; }
 .drawer {
   position: fixed; top: 0; right: 0; bottom: 0; width: min(430px, 100%); z-index: 100;
@@ -1108,7 +1108,7 @@ input:focus-visible, textarea:focus-visible, select:focus-visible { outline: 2px
 /* ---------- modals & popups ---------- */
 .modal {
   position: fixed; inset: 0; z-index: 110; display: flex; align-items: center; justify-content: center;
-  padding: 18px; background: rgba(0, 0, 0, 0.6); backdrop-filter: blur(2px);
+  padding: 18px; background: rgba(0, 0, 0, 0.6); -webkit-backdrop-filter: blur(2px); backdrop-filter: blur(2px);
 }
 .modal .panel {
   background: var(--ink); border: 1px solid var(--line-strong); width: min(920px, 100%);
@@ -1262,7 +1262,7 @@ input:focus-visible, textarea:focus-visible, select:focus-visible { outline: 2px
 /* sticky mobile add-to-cart */
 .sticky-atc {
   position: fixed; left: 0; right: 0; bottom: 0; z-index: 55;
-  background: rgba(10, 10, 11, 0.94); backdrop-filter: blur(10px);
+  background: rgba(10, 10, 11, 0.94); -webkit-backdrop-filter: blur(10px); backdrop-filter: blur(10px);
   border-top: 1px solid var(--line-strong); padding: 10px var(--gutter);
   padding-bottom: calc(10px + env(safe-area-inset-bottom));
   display: flex; align-items: center; gap: 12px;
@@ -1283,7 +1283,7 @@ input:focus-visible, textarea:focus-visible, select:focus-visible { outline: 2px
 /* full-opacity bar so page text can never ghost through it, even where
    backdrop-filter is unsupported */
 .sticky-atc { background: var(--ink, #0a0a0b); }
-@supports (backdrop-filter: blur(10px)) { .sticky-atc { background: rgba(10, 10, 11, 0.92); } }
+@supports (backdrop-filter: blur(10px)) or (-webkit-backdrop-filter: blur(10px)) { .sticky-atc { background: rgba(10, 10, 11, 0.92); } }
 
 /* size guide table */
 .sg-table { width: 100%; border-collapse: collapse; font-size: 13px; margin: 14px 0 6px; }
@@ -1452,7 +1452,7 @@ input:focus-visible, textarea:focus-visible, select:focus-visible { outline: 2px
 /* ============================================================
    ADMIN PANEL
    ============================================================ */
-.admin-shell { display: flex; min-height: 100vh; }
+.admin-shell { display: flex; min-height: 100vh; min-height: 100dvh; }
 .admin-side {
   width: 230px; flex-shrink: 0; background: var(--ink); border-right: 1px solid var(--line);
   padding: 22px 0; display: flex; flex-direction: column; position: sticky; top: 0; height: 100vh;
@@ -1508,7 +1508,7 @@ input:focus-visible, textarea:focus-visible, select:focus-visible { outline: 2px
 .inv-cell .k { font-size: 10px; letter-spacing: 0.12em; text-transform: uppercase; color: var(--silver); margin-bottom: 6px; }
 .inv-cell input { padding: 8px 10px; }
 
-.admin-login { min-height: 100vh; display: flex; align-items: center; justify-content: center; padding: 24px; }
+.admin-login { min-height: 100vh; min-height: 100dvh; display: flex; align-items: center; justify-content: center; padding: 24px; }
 .admin-login .box { width: min(400px, 100%); border: 1px solid var(--line-strong); background: var(--card); padding: 36px; text-align: center; }
 .admin-login form { display: grid; gap: 10px; margin-top: 22px; }
 
@@ -1963,7 +1963,7 @@ input, textarea { caret-color: var(--red); }
 }
 
 /* ---------- 3D coronation layer inside the gate ---------- */
-.gate .gate-shutter { background: rgba(5, 5, 5, 0.72); backdrop-filter: blur(2px); }
+.gate .gate-shutter { background: rgba(5, 5, 5, 0.72); -webkit-backdrop-filter: blur(2px); backdrop-filter: blur(2px); }
 
 /* ============================================================
    ADMIN POLISH — the control room gets the storefront's craft
@@ -2145,7 +2145,7 @@ input, textarea { caret-color: var(--red); }
 /* in-page size guide modal */
 .sg-modal {
   position: fixed; inset: 0; z-index: 120; display: flex; align-items: center; justify-content: center;
-  padding: 18px; background: rgba(0, 0, 0, 0.66); backdrop-filter: blur(3px);
+  padding: 18px; background: rgba(0, 0, 0, 0.66); -webkit-backdrop-filter: blur(3px); backdrop-filter: blur(3px);
 }
 .sg-panel {
   background: var(--ink); border: 1px solid var(--line-strong);
@@ -2327,3 +2327,38 @@ input, textarea { caret-color: var(--red); }
     rgba(239,182,196,0.16) 51%, rgba(169,220,196,0.10) 55%, transparent 68%);
 }
 @media (prefers-reduced-motion: reduce) { .hover-sheen { display: none; } }
+
+/* ---------- touch targets ----------
+   Small standalone links/controls were only 12-27px tall on phones, under the
+   24px WCAG 2.5.8 minimum and well under the 44px comfortable-tap size. The
+   transparent ::after expands the tap area WITHOUT changing layout, so the
+   footer and header look identical. Links that sit inside a sentence are
+   deliberately left alone (WCAG exempts inline targets), as are product-card
+   titles, which sit against a large image link to the same page. */
+@media (pointer: coarse) {
+  .foot-bottom a,
+  .logo,
+  .info-card p > a[href^="mailto:"] {
+    position: relative;
+  }
+  .foot-bottom a::after,
+  .logo::after,
+  .info-card p > a[href^="mailto:"]::after {
+    content: '';
+    position: absolute;
+    left: 0;
+    right: 0;
+    top: 50%;
+    transform: translateY(-50%);
+    height: 44px;
+    /* No z-index: a negative one would paint behind the footer's own
+       background and stop receiving taps. Transparent and only as wide as its
+       own link, so it never swallows a neighbouring link's taps. */
+  }
+  /* real height here: these are standalone controls, not inline text */
+  .sg-units button {
+    min-height: 44px;
+    padding-top: 0;
+    padding-bottom: 0;
+  }
+}
