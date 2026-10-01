@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { adminListProducts, adminSaveProduct, uploadProductImage, isLive } from './adminData';
+import LoadError from './LoadError';
 
 /* Photo manager: upload from your computer, paste a URL, reorder, remove.
    First image = main image everywhere on the store. */
@@ -89,15 +90,18 @@ export default function ProductEdit() {
   const [p, setP] = useState(isNew ? BLANK : null);
   const [msg, setMsg] = useState('');
   const [busy, setBusy] = useState(false);
+  const [loadError, setLoadError] = useState('');
 
   useEffect(() => {
     if (isNew) return;
     adminListProducts().then((list) => {
       const found = list.find((x) => x.handle === handle);
       setP(found || BLANK);
-    });
+    }).catch((e) => setLoadError(e.message));
   }, [handle]);
 
+  // Without this the editor would sit on "Loading…" forever when the read fails.
+  if (loadError) return <LoadError error={loadError} />;
   if (!p) return <p style={{ color: 'var(--silver)' }}>Loading…</p>;
 
   const set = (k, v) => setP((prev) => ({ ...prev, [k]: v }));

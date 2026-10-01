@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { adminListReviews, adminSetApproved, adminDeleteReview, adminAddReview } from '../lib/reviews';
 import { isLive, adminListProducts } from './adminData';
+import LoadError from './LoadError';
 
 const EMPTY = { product_handle: '', name: '', email: '', stars: 5, size: '', body: '', approved: true };
 
@@ -12,8 +13,14 @@ export default function ReviewsAdmin() {
   const [form, setForm] = useState(EMPTY);
   const [msg, setMsg] = useState('');
   const [busy, setBusy] = useState(false);
-  const load = () => adminListReviews().then(setRows);
-  useEffect(() => { load(); adminListProducts().then(setProducts).catch(() => {}); }, []);
+  const [loadError, setLoadError] = useState('');
+  const load = () => adminListReviews()
+    .then((list) => { setRows(list); setLoadError(''); })
+    .catch((e) => setLoadError(e.message));
+  useEffect(() => {
+    load();
+    adminListProducts().then(setProducts).catch((e) => setLoadError(e.message));
+  }, []);
 
   const setF = (k, v) => setForm((f) => ({ ...f, [k]: v }));
   async function submitReview(e) {
@@ -81,6 +88,7 @@ export default function ReviewsAdmin() {
           </div>
         </form>
       )}
+      <LoadError error={loadError} />
       {!isLive && (
         <div className="note-banner">
           <b>Demo mode.</b> Reviews submitted in this browser show here. Once Supabase is connected:

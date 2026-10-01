@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { adminListProducts, adminListOrders, adminListSignups, adminListSms, isLive } from './adminData';
+import LoadError from './LoadError';
 import { totalStock } from '../lib/catalog';
 import reviewSeed from '../data/imported-reviews.json';
 
@@ -46,12 +47,14 @@ export default function Dashboard() {
   const [orders, setOrders] = useState([]);
   const [signups, setSignups] = useState([]);
   const [sms, setSms] = useState([]);
+  const [loadError, setLoadError] = useState('');
 
   useEffect(() => {
-    adminListProducts().then(setProducts);
-    adminListOrders().then(setOrders);
-    adminListSignups().then(setSignups);
-    adminListSms().then(setSms);
+    const fail = (e) => setLoadError(e.message);
+    adminListProducts().then(setProducts).catch(fail);
+    adminListOrders().then(setOrders).catch(fail);
+    adminListSignups().then(setSignups).catch(fail);
+    adminListSms().then(setSms).catch(fail);
   }, []);
 
   /* 14-day revenue pulse: paid orders bucketed per day → inline SVG sparkline */
@@ -108,6 +111,8 @@ export default function Dashboard() {
         <h1 className="display">Dashboard</h1>
         <span className={`admin-mode ${isLive ? 'live' : ''}`}>{isLive ? 'LIVE — Supabase connected' : 'DEMO MODE — data is local to this browser'}</span>
       </div>
+
+      <LoadError error={loadError} />
 
       {typeof window !== 'undefined' && window.matchMedia('(prefers-reduced-motion: reduce)').matches && (
         <div className="note-banner warn">

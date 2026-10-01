@@ -9,10 +9,13 @@ environment variables. Proof, taken from the deployed bundle:
   URL or key. Vite bakes `VITE_*` values into the JS **at build time**, so if
   Netlify doesn't have them when it builds, they are simply absent forever.
 - `darkdivine.store/admin` therefore renders the demo login (a single
-  **Passcode** box) plus the notice
-  *"Demo mode — set VITE_ADMIN_PASSCODE in .env. Connect Supabase for real accounts."*
+  **Passcode** box) plus a notice saying this build has no Supabase connection.
 - The same build made locally, with `.env` present, renders the real
   **Email + Password** form backed by Supabase Auth.
+- Vite also dead-code-eliminates `createClient` entirely in that build: with
+  both values `undefined`, `url && key` folds to a constant false, so
+  `@supabase/supabase-js` never even ships. Absence of a supabase chunk in the
+  deployed assets is the quickest way to confirm this.
 
 So the code is fine and your Supabase project is fine — I confirmed the project
 is awake and the key is valid. Only the Netlify build config is missing.
@@ -20,7 +23,10 @@ is awake and the key is valid. Only the Netlify build config is missing.
 Two consequences today:
 
 1. You cannot log into admin at all. Supabase Auth is unavailable, and the demo
-   passcode fallback also has no value set, so neither path works.
+   passcode has no value in the production build, so neither path works. (The
+   built-in `darkdivine-admin` fallback was removed deliberately — a default
+   compiled into the public bundle let anyone who read the JS sign into
+   `/admin` on any deploy missing its Supabase vars.)
 2. The live storefront is serving bundled demo/seed data, not your real
    database. Orders, signups, and reviews on the live site are not reaching
    Supabase.

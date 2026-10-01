@@ -1,10 +1,14 @@
 import { useEffect, useState } from 'react';
 import { adminListCustomers, isLive } from './adminData';
+import LoadError from './LoadError';
 
 export default function Customers() {
   const [customers, setCustomers] = useState([]);
   const [q, setQ] = useState('');
-  useEffect(() => { adminListCustomers().then(setCustomers); }, []);
+  const [loadError, setLoadError] = useState('');
+  useEffect(() => {
+    adminListCustomers().then(setCustomers).catch((e) => setLoadError(e.message));
+  }, []);
 
   const visible = customers.filter((c) =>
     !q || (c.email || '').includes(q.toLowerCase()) || (c.name || '').toLowerCase().includes(q.toLowerCase()));
@@ -16,6 +20,7 @@ export default function Customers() {
         <input type="text" placeholder="Search email or name" value={q} onChange={(e) => setQ(e.target.value)}
           style={{ maxWidth: 280 }} aria-label="Search customers" />
       </div>
+      <LoadError error={loadError} />
       {!isLive && (
         <div className="note-banner">
           <b>Demo mode.</b> Run <b>npm run import:shopify</b> after connecting Supabase to pull your

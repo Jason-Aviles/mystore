@@ -20,8 +20,12 @@ import '../styles/global.css';
 /* Admin auth:
    LIVE — Supabase email/password auth (create the owner account in the
           Supabase dashboard; RLS policies gate writes to authenticated users).
-   DEMO — VITE_ADMIN_PASSCODE from .env (default below for local preview). */
-const DEMO_PASSCODE = import.meta.env.VITE_ADMIN_PASSCODE || 'darkdivine-admin';
+   DEMO — VITE_ADMIN_PASSCODE from .env, and ONLY from .env. There is
+          deliberately no built-in fallback: a default baked in here ships in
+          the public JS bundle, so anyone who reads it can sign into /admin on
+          any deploy that is missing its Supabase vars. Unset = demo admin is
+          locked, which is the safe failure. */
+const DEMO_PASSCODE = import.meta.env.VITE_ADMIN_PASSCODE || '';
 
 function useAdminAuth() {
   const [authed, setAuthed] = useState(() => sessionStorage.getItem('dd_admin') === '1');
@@ -52,9 +56,13 @@ function Login({ setAuthed }) {
       const { error } = await supabase.auth.signInWithPassword({ email, password: pass });
       if (error) { setErr(error.message); return; }
       setAuthed(true);
+    } else if (!DEMO_PASSCODE) {
+      setErr('Demo admin is locked — no VITE_ADMIN_PASSCODE is set in this build.');
+    } else if (pass === DEMO_PASSCODE) {
+      sessionStorage.setItem('dd_admin', '1');
+      setAuthed(true);
     } else {
-      if (pass === DEMO_PASSCODE) { sessionStorage.setItem('dd_admin', '1'); setAuthed(true); }
-      else setErr('Wrong passcode.');
+      setErr('Wrong passcode.');
     }
   }
 
@@ -75,7 +83,12 @@ function Login({ setAuthed }) {
         <p style={{ color: '#e8a0a3', fontSize: 12, minHeight: 18, marginTop: 10 }}>{err}</p>
         {!hasSupabase && (
           <p style={{ color: 'var(--silver)', fontSize: 11, marginTop: 6 }}>
-            Demo mode — set <b>VITE_ADMIN_PASSCODE</b> in .env. Connect Supabase for real accounts.
+            <b>This build has no Supabase connection</b> — <b>VITE_SUPABASE_URL</b> and{' '}
+            <b>VITE_SUPABASE_ANON_KEY</b> were missing when it was compiled, so the whole
+            panel runs on local demo data.
+            {DEMO_PASSCODE
+              ? ' Sign in with the demo passcode to preview it.'
+              : ' Demo sign-in is disabled because no VITE_ADMIN_PASSCODE is set.'}
           </p>
         )}
       </div>

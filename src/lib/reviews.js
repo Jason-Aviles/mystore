@@ -103,7 +103,9 @@ export function avgStars(reviews) {
 /* ---- admin (live submissions only — the import is read-only seed) ---- */
 export async function adminListReviews() {
   if (hasSupabase) {
-    const { data } = await supabase.from('reviews').select('*').order('created_at', { ascending: false });
+    // A failed read must not look like "no reviews yet" — surface the reason.
+    const { data, error } = await supabase.from('reviews').select('*').order('created_at', { ascending: false });
+    if (error) throw new Error(`Reviews could not be loaded from Supabase — ${error.message}`);
     return data || [];
   }
   return localReviews();

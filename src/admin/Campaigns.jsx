@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { adminListCampaigns, adminSaveCampaign, adminSendCampaign, adminAudienceCount, isLive } from './adminData';
+import LoadError from './LoadError';
 import { useStore } from '../context/StoreContext';
 
 /* client-side twin of the send-campaign HTML shell — keeps the preview honest */
@@ -70,9 +71,14 @@ export default function Campaigns() {
   const [draft, setDraft] = useState({ subject: '', body: '', audience: 'all', status: 'draft' });
   const [msg, setMsg] = useState('');
   const [reach, setReach] = useState(null);
-  const load = () => adminListCampaigns().then(setCampaigns);
+  const [loadError, setLoadError] = useState('');
+  const load = () => adminListCampaigns()
+    .then((list) => { setCampaigns(list); setLoadError(''); })
+    .catch((e) => setLoadError(e.message));
   useEffect(() => { load(); }, []);
-  useEffect(() => { adminAudienceCount(draft.audience).then(setReach); }, [draft.audience]);
+  useEffect(() => {
+    adminAudienceCount(draft.audience).then(setReach).catch((e) => setLoadError(e.message));
+  }, [draft.audience]);
 
   async function testSend(c) {
     const to = window.prompt('Send a test of this campaign to which email?');
@@ -100,6 +106,7 @@ export default function Campaigns() {
     <>
       <div className="admin-head"><h1 className="display">Campaigns</h1></div>
 
+      <LoadError error={loadError} />
       {!isLive && (
         <div className="note-banner">
           <b>Demo mode.</b> Drafts save locally. To send for real: connect Supabase, add your

@@ -2,10 +2,14 @@ import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { adminListProducts, adminDeleteProduct } from './adminData';
 import { totalStock } from '../lib/catalog';
+import LoadError from './LoadError';
 
 export default function Products() {
   const [products, setProducts] = useState([]);
-  const load = () => adminListProducts().then(setProducts);
+  const [loadError, setLoadError] = useState('');
+  const load = () => adminListProducts()
+    .then((list) => { setProducts(list); setLoadError(''); })
+    .catch((e) => setLoadError(e.message));
   useEffect(() => { load(); }, []);
 
   async function remove(handle, title) {
@@ -22,6 +26,7 @@ export default function Products() {
         <h1 className="display">Products</h1>
         <Link className="btn btn-sm" to="/admin/products/new">+ Add Product</Link>
       </div>
+      <LoadError error={loadError} />
       <div className="table-scroll">
         <table className="admin-table">
           <thead><tr><th></th><th>Product</th><th>Price</th><th>Stock</th><th>Flags</th><th>Actions</th></tr></thead>

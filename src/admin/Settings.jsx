@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { DEFAULT_CONFIG } from '../lib/config';
 import { mergeHomepage } from '../lib/homeContent';
 import { adminGetSettings, adminReplaceSettings, uploadProductImage, uploadMedia, isLive } from './adminData';
+import LoadError from './LoadError';
 import HomepageEditor from './HomepageEditor';
 import { HOMEPAGE_FIELD_GROUPS } from './homepageFields';
 
@@ -84,6 +85,7 @@ export default function Settings() {
   const [form, setForm] = useState(null);
   const [saved, setSaved] = useState(false);
   const [err, setErr] = useState('');
+  const [loadError, setLoadError] = useState('');
   const [uploading, setUploading] = useState(false);
 
   async function pickImage(key, file) {
@@ -131,9 +133,12 @@ export default function Settings() {
       ...DEFAULT_CONFIG,
       ...overrides,
       homepage: mergeHomepage(overrides.homepage),
-    }));
+    })).catch((ex) => setLoadError(ex.message));
   }, []);
 
+  /* Never open the editor on a failed read: saving writes the whole snapshot
+     back, so editing defaults here would overwrite the real saved settings. */
+  if (loadError) return <LoadError error={loadError} />;
   if (!form) return <p style={{ color: 'var(--silver)' }}>Loading…</p>;
 
   const set = (k, v) => { setForm((f) => ({ ...f, [k]: v })); setSaved(false); };

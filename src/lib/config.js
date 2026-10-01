@@ -96,11 +96,16 @@ export function replaceLocalSettings(overrides) {
   localStorage.setItem(LS_KEY, JSON.stringify(normalizeSiteSettings(overrides)));
 }
 
-/** Fetch admin overrides. Live → site_settings table; demo → localStorage. */
+/** Fetch admin overrides. Live → site_settings table; demo → localStorage.
+    Throws if a live read fails. The storefront (StoreContext) catches that and
+    falls back to the shipped defaults, but adminSaveSettings MUST see the
+    failure: it merges the current row with your patch, so a silently-empty
+    read would upsert the patch alone and wipe every other saved setting. */
 export async function fetchSiteSettings() {
   const { supabase, hasSupabase } = await import('./supabase');
   if (hasSupabase) {
-    const { data } = await supabase.from('site_settings').select('data').eq('id', 1).maybeSingle();
+    const { data, error } = await supabase.from('site_settings').select('data').eq('id', 1).maybeSingle();
+    if (error) throw new Error(`Site settings could not be loaded from Supabase — ${error.message}`);
     return normalizeSiteSettings(data?.data || {});
   }
   return localSettings();

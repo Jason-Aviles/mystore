@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { supabase } from '../lib/supabase';
 import { adminGetSettings, adminSaveSettings, isLive } from './adminData';
+import LoadError from './LoadError';
 
 /* Flows — the automation control room. One card per automated email:
    what triggers it, when it sends, on/off, and how many it has sent.
@@ -20,9 +21,11 @@ export default function Flows() {
   const [flows, setFlows] = useState(null); // { welcome: true, ... }
   const [counts, setCounts] = useState({});
   const [saving, setSaving] = useState('');
+  const [loadError, setLoadError] = useState('');
 
   useEffect(() => {
-    adminGetSettings().then((s) => setFlows({ ...(s.flows || {}) }));
+    adminGetSettings().then((s) => setFlows({ ...(s.flows || {}) }))
+      .catch((e) => setLoadError(e.message));
     if (isLive) {
       supabase.from('flow_sends').select('flow').then(({ data }) => {
         const c = {};
@@ -32,6 +35,9 @@ export default function Flows() {
     }
   }, []);
 
+  // Toggling writes a merge-patch over the saved settings, so a failed read
+  // must block the editor rather than show defaults as if they were saved.
+  if (loadError) return <LoadError error={loadError} />;
   if (!flows) return <p style={{ color: 'var(--silver)' }}>Loading…</p>;
 
   async function toggle(key) {

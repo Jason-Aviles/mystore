@@ -9,6 +9,17 @@ import { localOverlay, normalizeProductMedia, saveLocalOverlay } from '../lib/ca
 
 export const isLive = hasSupabase;
 
+/* A failed live read must NEVER masquerade as demo data. Before this helper,
+   `data || []` and `if (data)` quietly swallowed errors, so a broken RLS
+   policy or a missing table looked identical to an empty table — or, worse,
+   dropped the panel back to the bundled seed catalog while the header still
+   read "LIVE — Supabase connected". Every list reader routes through here and
+   throws; the pages catch it and show the reason. */
+function liveRows(label, { data, error }) {
+  if (error) throw new Error(`${label} could not be loaded from Supabase — ${error.message}`);
+  return data || [];
+}
+
 const DEMO_SUPPORT_KEY = 'dd_demo_support_requests';
 
 function demoSupportRequests() {
@@ -47,29 +58,29 @@ export async function adminUpdateSupportRequest(id, patch) {
 /* ---------- products ---------- */
 export async function adminListProducts() {
   if (isLive) {
-    const [{ data: prods }, { data: vars }] = await Promise.all([
+    const [prodRes, varRes] = await Promise.all([
       supabase.from('products').select('*').order('created_at'),
       supabase.from('product_variants').select('*'),
     ]);
-    if (prods) {
-      return prods.map((row) => normalizeProductMedia({
-        ...row.data,
-        handle: row.handle,
-        title: row.title,
-        price: Number(row.price),
-        compare: row.compare_at ? Number(row.compare_at) : null,
-        category: row.category,
-        collection: row.collection,
-        featured: row.featured,
-        bestseller: row.bestseller,
-        newArrival: row.new_arrival,
-        stripeLink: row.stripe_link || '',
-        status: row.status || 'active',
-        images: row.images?.length ? row.images : row.data?.images || [],
-        variants: (vars || []).filter((v) => v.product_handle === row.handle)
-          .map((v) => [v.option1, v.option2 || '', v.inventory_qty]),
-      }));
-    }
+    const prods = liveRows('Products', prodRes);
+    const vars = liveRows('Product variants', varRes);
+    return prods.map((row) => normalizeProductMedia({
+      ...row.data,
+      handle: row.handle,
+      title: row.title,
+      price: Number(row.price),
+      compare: row.compare_at ? Number(row.compare_at) : null,
+      category: row.category,
+      collection: row.collection,
+      featured: row.featured,
+      bestseller: row.bestseller,
+      newArrival: row.new_arrival,
+      stripeLink: row.stripe_link || '',
+      status: row.status || 'active',
+      images: row.images?.length ? row.images : row.data?.images || [],
+      variants: vars.filter((v) => v.product_handle === row.handle)
+        .map((v) => [v.option1, v.option2 || '', v.inventory_qty]),
+    }));
   }
   return (localOverlay() ?? seed).map((p) => normalizeProductMedia({ status: 'active', ...p }));
 }
@@ -186,9 +197,8 @@ function demoOrders() {
 
 export async function adminListOrders() {
   if (isLive) {
-    const { data } = await supabase.from('orders')
-      .select('*, order_items(*)').order('created_at', { ascending: false });
-    return data || [];
+    return liveRows('Orders', await supabase.from('orders')
+      .select('*, order_items(*)').order('created_at', { ascending: false }));
   }
   return demoOrders();
 }
@@ -206,8 +216,8 @@ export async function adminUpdateOrder(id, patch) {
 /* ---------- customers ---------- */
 export async function adminListCustomers() {
   if (isLive) {
-    const { data } = await supabase.from('customers').select('*').order('created_at', { ascending: false });
-    return data || [];
+    return liveRows('Customers', await supabase.from('customers')
+      .select('*').order('created_at', { ascending: false }));
   }
   try { return JSON.parse(localStorage.getItem('dd_demo_customers')) || []; } catch { return []; }
 }
@@ -216,16 +226,16 @@ export async function adminListCustomers() {
 export async function adminListSms() {
   if (isLive) {
     // table is sms_subscribers (matches schema.sql — 'sms_signups' never existed)
-    const { data } = await supabase.from('sms_subscribers').select('*').order('created_at', { ascending: false });
-    return data || [];
+    return liveRows('SMS subscribers', await supabase.from('sms_subscribers')
+      .select('*').order('created_at', { ascending: false }));
   }
   try { return JSON.parse(localStorage.getItem('dd_sms_queue')) || []; } catch { return []; }
 }
 
 export async function adminListSignups() {
   if (isLive) {
-    const { data } = await supabase.from('email_signups').select('*').order('created_at', { ascending: false });
-    return data || [];
+    return liveRows('Email signups', await supabase.from('email_signups')
+      .select('*').order('created_at', { ascending: false }));
   }
   try { return JSON.parse(localStorage.getItem('dd_email_queue')) || []; } catch { return []; }
 }
@@ -233,8 +243,8 @@ export async function adminListSignups() {
 /* ---------- campaigns ---------- */
 export async function adminListCampaigns() {
   if (isLive) {
-    const { data } = await supabase.from('campaigns').select('*').order('created_at', { ascending: false });
-    return data || [];
+    return liveRows('Campaigns', await supabase.from('campaigns')
+      .select('*').order('created_at', { ascending: false }));
   }
   try { return JSON.parse(localStorage.getItem('dd_demo_campaigns')) || []; } catch { return []; }
 }
@@ -289,7 +299,8 @@ export async function adminAudienceCount(audience) {
       .select('email', { count: 'exact', head: true })
       .eq('consent', true).eq('unsubscribed', false);
     if (audience !== 'all') q = q.eq('source', audience);
-    const { count } = await q;
+    const { count, error } = await q;
+    if (error) throw new Error(`Audience size could not be counted — ${error.message}`);
     return count ?? 0;
   }
   try {

@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { adminListSignups, adminListSms, isLive } from './adminData';
+import LoadError from './LoadError';
 
 /* The list is the business: every email and phone number the site has
    collected — gate, popup, footer, checkout — filterable and exportable.
@@ -9,9 +10,11 @@ export default function Signups() {
   const [rows, setRows] = useState([]);
   const [sms, setSms] = useState([]);
   const [filter, setFilter] = useState('all');
+  const [loadError, setLoadError] = useState('');
   useEffect(() => {
-    adminListSignups().then(setRows);
-    adminListSms().then(setSms);
+    const fail = (e) => setLoadError(e.message);
+    adminListSignups().then(setRows).catch(fail);
+    adminListSms().then(setSms).catch(fail);
   }, []);
 
   const sources = ['all', ...new Set(rows.map((r) => r.source).filter(Boolean))];
@@ -36,6 +39,7 @@ export default function Signups() {
         <h1 className="display">The List</h1>
         <button className="btn btn-sm" onClick={tab === 'emails' ? exportEmails : exportSms}>Export CSV</button>
       </div>
+      <LoadError error={loadError} />
       {!isLive && (
         <div className="note-banner">
           <b>Demo mode.</b> Showing signups captured in this browser. Connect Supabase and every gate,

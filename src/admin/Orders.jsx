@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { adminListOrders, adminUpdateOrder, isLive } from './adminData';
+import LoadError from './LoadError';
 import { supabase } from '../lib/supabase';
 
 /* Order lifecycle: pending → paid → shipped → delivered
@@ -25,7 +26,10 @@ function csv(name, head, rows) {
 export default function Orders() {
   const [orders, setOrders] = useState([]);
   const [filter, setFilter] = useState('all');
-  const load = () => adminListOrders().then(setOrders);
+  const [loadError, setLoadError] = useState('');
+  const load = () => adminListOrders()
+    .then((list) => { setOrders(list); setLoadError(''); })
+    .catch((e) => setLoadError(e.message));
   useEffect(() => { load(); }, []);
 
   async function setStatus(o, status) {
@@ -86,6 +90,7 @@ export default function Orders() {
         <button className="btn btn-sm" onClick={exportCsv} disabled={visible.length === 0}>Export CSV</button>
       </div>
 
+      <LoadError error={loadError} />
       {!isLive && (
         <div className="note-banner">
           <b>Demo mode.</b> Orders appear here once Supabase is connected — every checkout writes a
