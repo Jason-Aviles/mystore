@@ -199,8 +199,8 @@ h1, h2, h3, .display {
 .logo-mark {
   display: inline-block; width: 26px; height: 26px; flex-shrink: 0;
   background: var(--bone);
-  -webkit-mask: url('/media/brand/favicon.svg') center / contain no-repeat;
-  mask: url('/media/brand/favicon.svg') center / contain no-repeat;
+  -webkit-mask: url('/media/brand/emblem-mask.png') center / contain no-repeat;
+  mask: url('/media/brand/emblem-mask.png') center / contain no-repeat;
 }
 .logo-mark.lg { width: 74px; height: 74px; }
 .pl-mark { display: block; margin: 0 auto 20px; }
@@ -1197,6 +1197,7 @@ input:focus-visible, textarea:focus-visible, select:focus-visible { outline: 2px
   }
   .gate-mobile-exit span { color: var(--red); font-size: 18px; line-height: 1; }
   .gate .logo-mark.lg { width: 54px; height: 54px; margin-bottom: 8px !important; }
+  .gate .gate-emblem { --efx: 76px !important; margin-bottom: 6px; }
   .gate .logo-big { font-size: clamp(27px, 8vw, 34px); letter-spacing: 0.09em; }
   .gate .script-line { font-size: 22px; margin: 2px 0 16px; }
   .gate-tease { width: clamp(156px, 48vw, 190px); margin-bottom: 18px; }
@@ -1206,7 +1207,7 @@ input:focus-visible, textarea:focus-visible, select:focus-visible { outline: 2px
   .gate .guest { margin-top: 18px; }
 }
 @media (max-width: 640px) and (max-height: 620px) {
-  .gate .logo-mark.lg, .gate .script-line, .gate-tease { display: none; }
+  .gate .logo-mark.lg, .gate .gate-emblem, .gate .script-line, .gate-tease { display: none; }
   .gate-utility { margin-top: 12px; padding-bottom: max(8px, env(safe-area-inset-bottom)); }
   .gate .inner { padding-top: 48px; }
   .gate .logo-big { font-size: 26px; margin-bottom: 8px; }
@@ -1980,8 +1981,8 @@ input, textarea { caret-color: var(--red); }
   content: ''; position: absolute; left: 50%; top: -37px; width: 74px; height: 74px;
   transform: translateX(-50%);
   background: var(--bone);
-  -webkit-mask: url('/media/brand/favicon.svg') center / contain no-repeat;
-  mask: url('/media/brand/favicon.svg') center / contain no-repeat;
+  -webkit-mask: url('/media/brand/emblem-mask.png') center / contain no-repeat;
+  mask: url('/media/brand/emblem-mask.png') center / contain no-repeat;
   filter: drop-shadow(0 6px 24px rgba(239, 182, 196, 0.35));
 }
 .admin-login .box::after {
@@ -2362,3 +2363,110 @@ input, textarea { caret-color: var(--red); }
     padding-bottom: 0;
   }
 }
+
+/* ---- Oct 2026 rebrand: gothic metal wordmark + spiked D emblem ----
+   Both are alpha masks, so they take any color/gradient and stay crisp. */
+.logo-word {
+  display: inline-block; height: 30px; aspect-ratio: 3 / 1; flex-shrink: 0;
+  background: linear-gradient(100deg, var(--bone) 0 38%, #fff 46%, var(--red) 50%, #fff 54%, var(--bone) 62% 100%);
+  background-size: 300% 100%; background-position: 100% 0;
+  -webkit-mask: url('/media/brand/wordmark-mask.png') center / contain no-repeat;
+  mask: url('/media/brand/wordmark-mask.png') center / contain no-repeat;
+  transition: background-position 1.1s cubic-bezier(.2,.7,.2,1);
+}
+.logo:hover .logo-word, .logo:focus-visible .logo-word { background-position: 0 0; }
+.logo .logo-mark { transition: transform .6s cubic-bezier(.2,.7,.2,1), filter .6s; }
+.logo:hover .logo-mark { transform: rotate(-8deg) scale(1.08); filter: drop-shadow(0 0 8px rgba(239,182,196,.55)); }
+.foot-brand .logo .logo-word { height: 40px; }
+.gate .logo-big { margin: 0; line-height: 0; }
+.gate .logo-big .logo-word { height: clamp(52px, 11vw, 84px); background: var(--bone); filter: drop-shadow(0 0 18px rgba(239,182,196,.28)); }
+@media (max-width: 899px) { .logo-word { height: 26px; } }
+@media (max-width: 420px) {
+  .logo-word { height: 22px; }
+  .gate .logo-big .logo-word { height: 46px; }
+}
+@media (prefers-reduced-motion: reduce) { .logo-word, .logo .logo-mark { transition: none; } }
+
+/* ---- EmblemFX: the live GSAP emblem ---- */
+.efx {
+  position: relative; display: inline-grid; place-items: center;
+  width: calc(var(--efx) * 0.887); height: var(--efx);
+  cursor: pointer; -webkit-tap-highlight-color: transparent; isolation: isolate;
+}
+.efx .ember { position: absolute; left: 50%; top: 55%; }
+.efx-stage { position: absolute; inset: 0; transform-style: preserve-3d; }
+.efx-slice, .efx-ghost, .efx-chrome, .efx-sheen { position: absolute; inset: 0; display: block; }
+.efx-slice, .efx-ghost {
+  -webkit-mask: url('/media/brand/emblem-mask.png') center / contain no-repeat;
+  mask: url('/media/brand/emblem-mask.png') center / contain no-repeat;
+}
+.efx-chrome {
+  background:
+    linear-gradient(180deg, #fff 0%, #b9b6bd 18%, #f4f2f6 34%, #6f6c74 50%, #e9e6ec 63%, #9a97a0 80%, #fbfafc 100%);
+}
+.efx-sheen {
+  background: linear-gradient(105deg, transparent 0 40%, rgba(255,255,255,.95) 47%, rgba(239,182,196,.9) 50%, rgba(169,220,196,.8) 53%, transparent 60% 100%);
+  background-size: 300% 100%; background-position: 160% 0; mix-blend-mode: screen;
+}
+.efx-ghost { opacity: 0; mix-blend-mode: screen; }
+.efx-ghost.pink { background: var(--red); }
+.efx-ghost.mint { background: var(--green); }
+.efx-glow {
+  position: absolute; inset: -18%; border-radius: 50%; z-index: -1; opacity: .55; pointer-events: none;
+  background: radial-gradient(closest-side, rgba(239,182,196,.42), rgba(169,220,196,.16) 55%, transparent 75%);
+  filter: blur(10px);
+}
+.efx-ring {
+  position: absolute; width: 70%; aspect-ratio: 1; border-radius: 50%; opacity: 0; pointer-events: none;
+  border: 0 solid var(--red); box-shadow: 0 0 24px rgba(239,182,196,.6), inset 0 0 18px rgba(169,220,196,.4);
+}
+.motion-paused .efx-sheen, .motion-paused .efx-ghost, .motion-paused .efx-ring { display: none; }
+@media (prefers-reduced-motion: reduce) { .efx-sheen, .efx-ghost, .efx-ring { display: none; } }
+
+.gate .gate-emblem { margin-bottom: 14px; }
+
+/* admin product editor: colors & sizes builder */
+.opt-builder { border: 1px solid var(--line); padding: 16px 18px 18px; display: grid; gap: 14px; margin: 0; }
+.opt-builder legend { padding: 0 8px; font-size: 11px; letter-spacing: .16em; text-transform: uppercase; color: var(--silver); }
+.size-presets { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px; }
+.color-photos { display: grid; gap: 8px; }
+.color-photo { display: grid; grid-template-columns: minmax(70px, 120px) minmax(0, 220px) 44px; gap: 10px; align-items: center; }
+.color-photo .k { font-size: 13px; color: var(--bone); }
+.color-photo img { width: 44px; height: 44px; object-fit: cover; border: 1px solid var(--line); }
+.inv-fill { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin: 6px 0 10px; font-size: 13px; color: var(--bone-dim); }
+.inv-fill input { width: 90px; }
+
+/* ---- "Up next" drop teaser ---- */
+.next-drop { position: relative; overflow-x: clip; }
+.nd-grid { display: grid; grid-template-columns: minmax(0, 0.9fr) minmax(0, 1.1fr); gap: clamp(28px, 5vw, 72px); align-items: center; }
+.nd-copy h2 { font-family: var(--font-display); font-size: clamp(28px, 4.4vw, 54px); line-height: 1.02; margin: 10px 0 14px; }
+.nd-copy p { color: var(--bone-dim); max-width: 46ch; }
+.nd-emblem { margin-bottom: 18px; }
+.nd-form { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 22px; max-width: 460px; }
+.nd-form input { flex: 1 1 200px; min-width: 0; }
+.nd-done { color: var(--green) !important; margin-top: 18px; }
+.nd-err { color: #e8a0a3 !important; font-size: 13px; }
+.nd-pics { position: relative; display: grid; grid-template-columns: 1.15fr 0.85fr; gap: 14px; align-items: end; }
+.nd-pic { overflow: hidden; border: 1px solid var(--line); }
+.nd-pic img { display: block; width: 100%; aspect-ratio: 4 / 5; object-fit: cover; object-position: center 22%; transition: transform 1.2s cubic-bezier(.2,.7,.2,1); }
+.nd-pic-0 img { aspect-ratio: 3 / 4.4; }
+.nd-pic-1 { margin-bottom: 12%; }
+.nd-pic:hover img { transform: scale(1.05); }
+@media (max-width: 899px) {
+  .nd-grid { grid-template-columns: 1fr; }
+  .nd-pics { order: -1; }
+}
+
+/* 320px phones: 1fr has an implicit min-width:auto, so the photo + label in
+   each proof tile pushed the grid 14px past the screen (Safari then let the
+   page slide sideways). minmax(0,1fr) lets the tiles shrink. */
+.proof-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+@media (min-width: 760px) { .proof-grid { grid-template-columns: repeat(4, minmax(0, 1fr)); } }
+.proof-cell { min-width: 0; }
+.proof-cell > div { min-width: 0; overflow-wrap: anywhere; }
+@media (max-width: 380px) {
+  .proof-cell { padding: 12px; gap: 10px; }
+  .proof-cell img { width: 44px; height: 54px; }
+}
+/* iOS < 16 has no overflow:clip — fall back so nothing can drag sideways */
+@supports not (overflow: clip) { html, body { overflow-x: hidden; } }

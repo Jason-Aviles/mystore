@@ -1,5 +1,6 @@
 import { Link } from 'react-router-dom';
 import Reveal from '../components/Reveal';
+import EmblemFX from '../components/EmblemFX';
 import { useStore } from '../context/StoreContext';
 
 export default function About() {
@@ -15,7 +16,7 @@ export default function About() {
     <>
       <section className="page-head mesh">
         <div className="wrap" style={{ display: 'flex', alignItems: 'center', gap: 28, flexWrap: 'wrap' }}>
-          <span className="logo-mark serpent-reveal" aria-hidden="true" data-serpent />
+          <EmblemFX size={150} />
           <div><span className="eyebrow">The Brand</span><h1 data-fx="venetian">Our Story</h1></div>
         </div>
       </section>

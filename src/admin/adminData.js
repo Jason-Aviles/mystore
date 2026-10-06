@@ -77,6 +77,10 @@ export async function adminListProducts() {
       newArrival: row.new_arrival,
       stripeLink: row.stripe_link || '',
       status: row.status || 'active',
+      campaignId: row.campaign_id || null,
+      perCustomerLimit: row.per_customer_limit ?? null,
+      maxPreorderUnits: row.max_preorder_units ?? null,
+      deposit: row.deposit != null ? Number(row.deposit) : null,
       images: row.images?.length ? row.images : row.data?.images || [],
       variants: vars.filter((v) => v.product_handle === row.handle)
         .map((v) => [v.option1, v.option2 || '', v.inventory_qty]),
@@ -102,6 +106,11 @@ export async function adminSaveProduct(product) {
       stripe_link: p.stripeLink || null,
       status: p.status || 'active',
       images: p.images || [],
+      campaign_id: p.campaignId || null,
+      per_customer_limit: p.perCustomerLimit ?? null,
+      max_preorder_units: p.maxPreorderUnits ?? null,
+      deposit: p.deposit ?? null,
+      updated_at: new Date().toISOString(),
       data: p, // full JSON blob keeps desc/fit/care/etc without schema churn
     };
     const { error } = await supabase.from('products').upsert(row, { onConflict: 'handle' });

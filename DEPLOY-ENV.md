@@ -31,28 +31,24 @@ Two consequences today:
    database. Orders, signups, and reviews on the live site are not reaching
    Supabase.
 
-## The fix
+## The fix (done in code — Oct 2026)
 
-Add exactly these two variables in Netlify, then redeploy.
+The two public values now live in **`.env.production`**, which is committed.
+Vite reads it on every `vite build`, so Netlify's next build bakes Supabase in
+without anyone touching the Netlify dashboard.
 
 | Key | Value |
 | --- | --- |
 | `VITE_SUPABASE_URL` | `https://ryympmijyisupsfyfgaw.supabase.co` |
-| `VITE_SUPABASE_ANON_KEY` | `sb_publishable_mNYpNxYTO7O7-S0-HyATvA_d1MoEsyA` |
+| `VITE_SUPABASE_ANON_KEY` | the `sb_publishable_…` key |
+| `VITE_META_PIXEL_ID` | Meta Ads pixel (public by design) |
 
-Both are safe to expose in the browser — the anon/publishable key is designed
-for client-side use and is constrained by row-level security.
+All three are safe in public JavaScript — the publishable key is built for
+the browser and is constrained by row-level security. Values set in the
+Netlify dashboard would override this file, if you ever want to.
 
-### Steps
-
-1. Netlify → your site → **Site configuration** → **Environment variables**.
-2. **Add a variable** → key `VITE_SUPABASE_URL` → value above. Scope: all
-   contexts (Production, Deploy previews, Branch deploys).
-3. Repeat for `VITE_SUPABASE_ANON_KEY`.
-4. Go to **Deploys** → **Trigger deploy** → **Clear cache and deploy site**.
-   Clearing the cache matters: a plain redeploy can reuse the cached build.
-5. When it finishes, open `darkdivine.store/admin`. You should now see an
-   **Email** and **Password** field instead of a single Passcode box.
+After a push, confirm: open `darkdivine.store/admin` → you should see
+**Email** + **Password** fields, not a single Passcode box.
 
 ### Do NOT add these to Netlify
 

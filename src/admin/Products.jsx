@@ -41,6 +41,8 @@ export default function Products() {
                 <td>${Number(p.price).toFixed(2)}</td>
                 <td>{totalStock(p)}</td>
                 <td>
+                  {p.status === 'draft' && <span className="pill">Draft — hidden</span>}{' '}
+                  {p.campaignId && <span className="pill info">Preorder</span>}{' '}
                   {p.featured && <span className="pill info">Featured</span>}{' '}
                   {p.bestseller && <span className="pill">Best seller</span>}{' '}
                   {p.newArrival && <span className="pill ok">New</span>}

@@ -1,7 +1,23 @@
 import { useEffect, useRef, useState } from 'react';
-import { useNavigate, useParams } from 'react-router-dom';
+import { useNavigate, useParams, useSearchParams } from 'react-router-dom';
 import { adminListProducts, adminSaveProduct, uploadProductImage, isLive } from './adminData';
+import { supabase } from '../lib/supabase';
 import LoadError from './LoadError';
+
+const SIZE_PRESETS = [
+  ['S–XL', 'S, M, L, XL'],
+  ['XS–XL', 'XS, S, M, L, XL'],
+  ['S–2XL', 'S, M, L, XL, 2XL'],
+  ['XS–2XL', 'XS, S, M, L, XL, 2XL'],
+  ['One size', 'One Size'],
+];
+
+/** color = Color/Size pair, size = sizes only, custom = anything else (bundles) */
+function optionMode(p) {
+  if (p.optionNames?.[0] === 'Color') return 'color';
+  if (!p.options2) return 'size';
+  return 'custom';
+}
 
 /* Photo manager: upload from your computer, paste a URL, reorder, remove.
    First image = main image everywhere on the store. */
@@ -92,19 +108,82 @@ export default function ProductEdit() {
   const [busy, setBusy] = useState(false);
   const [loadError, setLoadError] = useState('');
 
+  const [search] = useSearchParams();
+  const [campaigns, setCampaigns] = useState([]);
+  const [colorsText, setColorsText] = useState('');
+  const [sizesText, setSizesText] = useState('');
+  const [customOptions, setCustomOptions] = useState(false);
+  const [fillQty, setFillQty] = useState('');
+  const seeded = useRef(false);
+
   useEffect(() => {
-    if (isNew) return;
+    if (isNew) {
+      // "+ New product" from a preorder campaign arrives with ?campaign=<id>
+      const campaign = search.get('campaign');
+      if (campaign) setP((prev) => ({ ...prev, campaignId: campaign, status: 'draft', newArrival: true }));
+      return;
+    }
     adminListProducts().then((list) => {
       const found = list.find((x) => x.handle === handle);
       setP(found || BLANK);
     }).catch((e) => setLoadError(e.message));
   }, [handle]);
 
+  useEffect(() => {
+    if (!isLive) return;
+    supabase.from('preorder_campaigns').select('id, name, status').order('created_at', { ascending: false })
+      .then(({ data }) => setCampaigns(data || []));
+  }, []);
+
+  // seed the simple colors/sizes fields once the product is in hand
+  useEffect(() => {
+    if (!p || seeded.current) return;
+    seeded.current = true;
+    const mode = optionMode(p);
+    if (mode === 'custom') { setCustomOptions(true); return; }
+    setColorsText(mode === 'color' ? p.options1.join(', ') : '');
+    setSizesText(mode === 'color' ? (p.options2 || []).join(', ') : p.options1.join(', '));
+  }, [p]);
+
   // Without this the editor would sit on "Loading…" forever when the read fails.
   if (loadError) return <LoadError error={loadError} />;
   if (!p) return <p style={{ color: 'var(--silver)' }}>Loading…</p>;
 
   const set = (k, v) => setP((prev) => ({ ...prev, [k]: v }));
+  const isPreorder = Boolean(p.campaignId);
+  const colors = optionMode(p) === 'color' ? p.options1 : [];
+
+  /* simple mode: colors become option 1 (so the photo can follow the color
+     pick on the product page) and sizes option 2; no colors = sizes only */
+  function applyOptions(colorsRaw, sizesRaw) {
+    const list = (t) => [...new Set(t.split(',').map((s) => s.trim()).filter(Boolean))];
+    const cs = list(colorsRaw);
+    const ss = list(sizesRaw);
+    setP((prev) => {
+      const options1 = cs.length ? cs : (ss.length ? ss : ['One Size']);
+      const options2 = cs.length && ss.length ? ss : null;
+      const optionNames = cs.length ? ['Color', ss.length ? 'Size' : null] : ['Size', null];
+      const colorImages = cs.length
+        ? Object.fromEntries(cs.filter((c) => prev.colorImages?.[c]).map((c) => [c, prev.colorImages[c]]))
+        : null;
+      const keep = new Map(prev.variants.map((v) => [`${v[0]}|${v[1]}`, v[2]]));
+      const variants = [];
+      for (const o1 of options1) {
+        for (const o2 of options2 || ['']) variants.push([o1, o2, keep.get(`${o1}|${o2}`) ?? 0]);
+      }
+      return { ...prev, options1, options2, optionNames, colorImages: colorImages && Object.keys(colorImages).length ? colorImages : (cs.length ? {} : null), variants };
+    });
+  }
+  function setColorImage(color, src) {
+    setP((prev) => {
+      const next = { ...(prev.colorImages || {}) };
+      if (src) next[color] = src; else delete next[color];
+      return { ...prev, colorImages: next };
+    });
+  }
+  function fillAll(qty) {
+    setP((prev) => ({ ...prev, variants: prev.variants.map((v) => [v[0], v[1], Math.max(0, qty)]) }));
+  }
 
   /* variants are rebuilt from options whenever options change */
   function rebuildVariants(options1, options2) {
@@ -156,7 +235,7 @@ export default function ProductEdit() {
       };
       await adminSaveProduct(clean);
       setMsg('Saved.');
-      setTimeout(() => nav('/admin/products'), 600);
+      setTimeout(() => nav(search.get('campaign') ? '/admin/preorders' : '/admin/products'), 600);
     } catch (err) {
       setMsg('Save failed: ' + (err.message || err));
     } finally {
@@ -254,31 +333,79 @@ export default function ProductEdit() {
           </div>
         </div>
         <ImageManager images={p.images} onChange={(images) => set('images', images)} />
-        <div className="row two">
-          <div>
-            <label>{p.optionNames[0] || 'Option 1'} values (comma-separated)</label>
-            <input type="text" value={p.options1.join(', ')} onChange={(e) => setOptions1(e.target.value)} />
-            <div className="hint">e.g. S, M, L, XL — or colors: Black, Olive, Gray</div>
-          </div>
-          <div>
-            <label>{p.optionNames[1] || 'Option 2'} values (blank = single option)</label>
-            <input type="text" value={p.options2 ? p.options2.join(', ') : ''} onChange={(e) => setOptions2(e.target.value)} />
-          </div>
-        </div>
-        <div className="row two">
-          <div>
-            <label>Option 1 name</label>
-            <input type="text" value={p.optionNames[0] || ''} onChange={(e) => set('optionNames', [e.target.value, p.optionNames[1]])} />
-          </div>
-          {p.options2 && (
+        {customOptions ? (
+          <>
+            <div className="row two">
+              <div>
+                <label>{p.optionNames[0] || 'Option 1'} values (comma-separated)</label>
+                <input type="text" value={p.options1.join(', ')} onChange={(e) => setOptions1(e.target.value)} />
+              </div>
+              <div>
+                <label>{p.optionNames[1] || 'Option 2'} values (blank = single option)</label>
+                <input type="text" value={p.options2 ? p.options2.join(', ') : ''} onChange={(e) => setOptions2(e.target.value)} />
+              </div>
+            </div>
+            <div className="row two">
+              <div>
+                <label>Option 1 name</label>
+                <input type="text" value={p.optionNames[0] || ''} onChange={(e) => set('optionNames', [e.target.value, p.optionNames[1]])} />
+              </div>
+              {p.options2 && (
+                <div>
+                  <label>Option 2 name</label>
+                  <input type="text" value={p.optionNames[1] || ''} onChange={(e) => set('optionNames', [p.optionNames[0], e.target.value])} />
+                </div>
+              )}
+            </div>
+            <button type="button" className="link-btn" onClick={() => setCustomOptions(false)}>← Back to simple colors &amp; sizes</button>
+          </>
+        ) : (
+          <fieldset className="opt-builder">
+            <legend>Colors &amp; sizes</legend>
             <div>
-              <label>Option 2 name</label>
-              <input type="text" value={p.optionNames[1] || ''} onChange={(e) => set('optionNames', [p.optionNames[0], e.target.value])} />
+              <label>Colors (comma-separated — leave blank if it comes in one color)</label>
+              <input type="text" value={colorsText} placeholder="e.g. Black, Bone, Blush"
+                onChange={(e) => setColorsText(e.target.value)} onBlur={() => applyOptions(colorsText, sizesText)} />
+            </div>
+            {colors.length > 0 && (
+              <div className="color-photos">
+                {colors.map((c) => (
+                  <div className="color-photo" key={c}>
+                    <span className="k">{c}</span>
+                    <select value={p.colorImages?.[c] || ''} aria-label={`Photo shown when ${c} is picked`}
+                      onChange={(e) => setColorImage(c, e.target.value)}>
+                      <option value="">Photo: main image</option>
+                      {p.images.map((src, i) => <option key={src.slice(0, 80) + i} value={src}>Photo {i + 1}</option>)}
+                    </select>
+                    {p.colorImages?.[c] && <img src={p.colorImages[c]} alt="" />}
+                  </div>
+                ))}
+                <div className="hint">Pick which photo the product page switches to when a customer taps that color.</div>
+              </div>
+            )}
+            <div>
+              <label>Sizes (comma-separated)</label>
+              <input type="text" value={sizesText} placeholder="S, M, L, XL"
+                onChange={(e) => setSizesText(e.target.value)} onBlur={() => applyOptions(colorsText, sizesText)} />
+              <div className="size-presets">
+                {SIZE_PRESETS.map(([label, list]) => (
+                  <button type="button" key={label} className="btn btn-ghost btn-sm"
+                    onClick={() => { setSizesText(list); applyOptions(colorsText, list); }}>{label}</button>
+                ))}
+              </div>
+            </div>
+            <button type="button" className="link-btn" onClick={() => setCustomOptions(true)}>Advanced: custom option names (bundles)</button>
+          </fieldset>
+        )}
+        <div>
+          <label>Inventory per variant {isPreorder && <span style={{ textTransform: 'none', letterSpacing: 0 }}>— for a preorder this is how many of each you will make</span>}</label>
+          {p.variants.length > 1 && (
+            <div className="inv-fill">
+              <span>Set every variant to</span>
+              <input type="number" min="0" value={fillQty} onChange={(e) => setFillQty(e.target.value)} aria-label="Quantity for every variant" />
+              <button type="button" className="btn btn-ghost btn-sm" onClick={() => fillAll(Number(fillQty) || 0)}>Apply</button>
             </div>
           )}
-        </div>
-        <div>
-          <label>Inventory per variant</label>
           <div className="inv-grid">
             {p.variants.map((v, i) => (
               <div className="inv-cell" key={`${v[0]}|${v[1]}`}>
@@ -289,6 +416,49 @@ export default function ProductEdit() {
           </div>
           {p.variants.length === 0 && <div className="hint">Set option values above — variant cells appear here.</div>}
         </div>
+        <fieldset className="opt-builder">
+          <legend>Visibility &amp; preorder</legend>
+          <div className="row two">
+            <div>
+              <label>Visibility</label>
+              <select value={p.status || 'active'} onChange={(e) => set('status', e.target.value)}>
+                <option value="active">Live — shown on the store</option>
+                <option value="draft">Draft — hidden while you set it up</option>
+                <option value="archived">Archived — retired</option>
+              </select>
+            </div>
+            {isLive && (
+              <div>
+                <label>Preorder campaign</label>
+                <select value={p.campaignId || ''} onChange={(e) => set('campaignId', e.target.value || null)}>
+                  <option value="">Not a preorder — ships from stock</option>
+                  {campaigns.map((c) => <option key={c.id} value={c.id}>{c.name} ({c.status})</option>)}
+                </select>
+                <div className="hint">Campaign dates, access codes and status live under <b>Preorders</b>.</div>
+              </div>
+            )}
+          </div>
+          {isPreorder && (
+            <div className="row three">
+              <div>
+                <label>Max per customer</label>
+                <input type="number" min="1" value={p.perCustomerLimit ?? ''} placeholder="no limit"
+                  onChange={(e) => set('perCustomerLimit', e.target.value === '' ? null : Number(e.target.value))} />
+              </div>
+              <div>
+                <label>Production cap (all sizes)</label>
+                <input type="number" min="1" value={p.maxPreorderUnits ?? ''} placeholder="no cap"
+                  onChange={(e) => set('maxPreorderUnits', e.target.value === '' ? null : Number(e.target.value))} />
+              </div>
+              <div>
+                <label>Deposit per unit ($)</label>
+                <input type="number" min="0" step="0.01" value={p.deposit ?? ''} placeholder="full price today"
+                  onChange={(e) => set('deposit', e.target.value === '' ? null : Number(e.target.value))} />
+                <div className="hint">Blank = customer pays in full. Set = they pay this now, you invoice the rest from Preorders.</div>
+              </div>
+            </div>
+          )}
+        </fieldset>
         <div className="row two">
           <div>
             <label>SEO title</label>

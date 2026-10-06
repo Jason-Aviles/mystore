@@ -25,9 +25,9 @@ export const DEFAULT_HOMEPAGE = {
   dropOutroHrefDrop: '/drop',
   dropOutroButtonShop: 'Shop All',
   dropOutroHrefShop: '/shop',
-  dropOutroLogoPoster: '/media/brand/logo-3d.png',
-  dropOutroLogoModel: '/media/brand/logo.glb',
-  dropOutroLogoAlt: 'Dark Divine serpent crown logo in 3D',
+  dropOutroLogoPoster: '/media/brand/emblem.webp',
+  dropOutroLogoModel: '/media/brand/emblem.glb',
+  dropOutroLogoAlt: 'Dark Divine spiked D emblem in 3D',
   bestIndex: '02',
   bestEyebrow: 'Most Wanted',
   bestTitle: 'Best Sellers',
@@ -109,7 +109,7 @@ export const DEFAULT_HOMEPAGE = {
   signupPhonePlaceholder: 'Phone (optional — SMS drop alerts)',
   signupSmsConsent: 'I agree to receive automated SMS drop alerts from Dark Divine. Msg & data rates may apply. Reply STOP to opt out.',
   signupNote: 'Unsubscribe anytime. We never sell your info.',
-  signupVideo: '/media/brand/logo-3d-web.mp4',
+  signupVideo: '/media/brand/emblem-loop.mp4',
   signupVideoPoster: '',
 };
 

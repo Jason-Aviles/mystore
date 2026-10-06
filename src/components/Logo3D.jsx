@@ -4,9 +4,9 @@ import { useEffect, useRef, useState } from 'react';
    Both model and poster can be replaced through Homepage Content settings. */
 export default function Logo3D({
   className = '',
-  modelSrc = '/media/brand/logo.glb',
-  posterSrc = '/media/brand/logo-3d.png',
-  alt = 'Dark Divine serpent crown logo in 3D',
+  modelSrc = '/media/brand/emblem.glb',
+  posterSrc = '/media/brand/emblem.webp',
+  alt = 'Dark Divine spiked D emblem in 3D',
 }) {
   const [ready, setReady] = useState(false);
   const holder = useRef(null);
@@ -44,10 +44,12 @@ export default function Logo3D({
       disable-zoom
       disable-pan
       interaction-prompt="none"
-      rotation-per-second="24deg"
-      shadow-intensity="0.5"
-      exposure="1"
-      camera-orbit="0deg 82deg 105%"
+      rotation-per-second="38deg"
+      environment-image="neutral"
+      tone-mapping="aces"
+      shadow-intensity="0.6"
+      exposure="1.25"
+      camera-orbit="0deg 86deg 110%"
     />
   );
 }

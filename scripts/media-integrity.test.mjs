@@ -17,6 +17,9 @@ const TEXT_EXTENSIONS = new Set([
 ]);
 const IGNORED_DIRECTORIES = new Set([
   '.git', 'dist', 'node_modules',
+  // gitignored raw source art (full-size logo/campaign originals); the
+  // web-ready copies live in public/media
+  'new logos',
 ]);
 
 function mp4DurationSeconds(buffer) {

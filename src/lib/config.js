@@ -16,6 +16,12 @@ export const DEFAULT_CONFIG = {
   dropMode: true,       // master switch — off hides countdowns, drop links, drop language everywhere
   dropName: 'CITY OF SINS — DROP 002',
   dropDate: '2026-07-24T19:00:00-04:00', // update per drop
+  // "Up next" teaser (homepage + Drop page) — pieces only, no prices/dates
+  nextDropEnabled: true,
+  nextDropName: 'THE EMBLEM — DROP 003',
+  nextDropBlurb: 'The spiked D, worn big. An oversized emblem hoodie and a crop top + capri set with emblem tape down the leg. Made to order in one run — list members get first access to the preorder.',
+  nextDropImage1: '/media/products/emblem-hoodie-back-1.webp',
+  nextDropImage2: '/media/products/emblem-set-front.webp',
   supportEmail: 'contact@darkdivine.store', // the brand's only mailbox
   founderName: '',
   founderRole: '',

@@ -22,6 +22,11 @@ const FIELDS = [
     ['dropDate', 'Drop date & time', 'datetime', 'The countdown target'],
     ['dropImage', 'Drop picture', 'image', 'Shown on the gate, the homepage timer panel, and the Drop page'],
     ['shopCampaignImage', 'Shop campaign picture', 'image', 'The editorial photo tile inside the Shop All grid — swap it each drop. Caption auto-updates from the Drop name'],
+    ['nextDropEnabled', 'Show “Up next” teaser', 'toggle', 'A teaser for the NEXT drop on the homepage and Drop page — pieces + email signup, no prices'],
+    ['nextDropName', 'Next drop name', 'text', 'e.g. THE EMBLEM — DROP 003'],
+    ['nextDropBlurb', 'Next drop description', 'textarea', 'One or two lines about the pieces'],
+    ['nextDropImage1', 'Next drop picture 1', 'image', 'Tall photo, shown large'],
+    ['nextDropImage2', 'Next drop picture 2', 'image', 'Second photo, offset beside the first'],
     ['saleEndsAt', 'Sale ends (optional)', 'datetime', 'Shows a live countdown in the announcement bar. Only set this if the sale really ends then — then end it.'],
   ]],
   ['Access', [

@@ -54,11 +54,13 @@ export async function fetchProducts() {
       supabase.from('product_variants').select('*'),
     ]);
     if (!e1 && !e2 && prods?.length) {
-      return prods.filter((p) => p.status !== 'archived').map((p) => fromDb(p, vars || []));
+      // drafts (e.g. an upcoming preorder still being set up) stay admin-only,
+      // even when the admin is signed in on this browser
+      return prods.filter((p) => (p.status || 'active') === 'active').map((p) => fromDb(p, vars || []));
     }
     // fall through to seed if the tables are empty or unreachable
   }
-  return (localOverlay() ?? seed).map(normalizeProductMedia);
+  return (localOverlay() ?? seed).filter((p) => (p.status || 'active') === 'active').map(normalizeProductMedia);
 }
 
 export function variantQty(p, o1, o2) {

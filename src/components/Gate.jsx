@@ -6,6 +6,7 @@ import { saveEmailSignup, saveSmsSignup, validateAccessCode } from '../lib/marke
 import { submitGate, campaignLive, shipWindowText, productionStartText, closesText, opensText } from '../lib/preorder';
 import { wiggle, scramble, reducedMotion } from '../lib/motion';
 import Countdown from './Countdown';
+import EmblemFX from './EmblemFX';
 
 /* Private preorder gate — two modes, both driven by REAL campaign rows:
      coming_soon → email collection only (no code field, gate stays locked)
@@ -171,8 +172,8 @@ export default function Gate({ onDone, onUtilityNavigate }) {
       <div className="gate-shutter top" aria-hidden="true" />
       <div className="gate-shutter bottom" aria-hidden="true" />
       <div className="inner">
-        <span className="logo-mark lg" aria-hidden="true" style={{ marginBottom: 18 }} />
-        <div className="logo-big" id="gate-title">Dark Divine</div>
+        <EmblemFX size={120} entrance="now" className="gate-emblem" />
+        <h2 className="logo-big" id="gate-title"><span className="logo-word" role="img" aria-label="Dark Divine" /></h2>
         <div className="script-line">Illuminate the darkness within</div>
         <div className="gate-tease" aria-hidden="true">
           <span className="gt-tape">{campaign ? 'PRIVATE PREORDER' : (CONFIG.dropMode !== false ? CONFIG.dropName : 'DARK DIVINE')}</span>

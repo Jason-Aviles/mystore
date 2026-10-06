@@ -1011,5 +1011,150 @@
     "stripeLink": "",
     "seoTitle": "Dark Divine T-Shirt — Serpent Graphic | Dark Divine",
     "seoDescription": "60/40 premium cotton blend tee with bold serpent graphic. Limited run."
+  },
+  {
+    "handle": "emblem-hoodie",
+    "title": "Emblem Hoodie",
+    "sub": "Oversized — spiked D back, spike sleeve, hood print",
+    "price": 79.99,
+    "compare": null,
+    "category": "essentials",
+    "collection": "The Emblem",
+    "tag": "PREORDER",
+    "featured": false,
+    "bestseller": false,
+    "newArrival": true,
+    "status": "draft",
+    "short": "Oversized black hoodie. The spiked D across the back, a tribal spike down the sleeve and over the hood.",
+    "desc": [
+      "Oversized black hoodie carrying the new Dark Divine emblem: the spiked D across the full back, a tribal spike running down the sleeve and up over the hood.",
+      "Made to order in one run after the preorder closes. Photos are pre-production renders — the final piece may differ slightly."
+    ],
+    "includes": null,
+    "materials": "",
+    "care": "",
+    "fit": "Oversized.",
+    "model": "",
+    "optionNames": [
+      "Size",
+      null
+    ],
+    "options1": [
+      "S",
+      "M",
+      "L",
+      "XL",
+      "2XL"
+    ],
+    "options2": null,
+    "images": [
+      "/media/products/emblem-hoodie-back-1.webp",
+      "/media/products/emblem-hoodie-back-2.webp"
+    ],
+    "colorImages": null,
+    "variants": [
+      [
+        "S",
+        "",
+        0
+      ],
+      [
+        "M",
+        "",
+        0
+      ],
+      [
+        "L",
+        "",
+        0
+      ],
+      [
+        "XL",
+        "",
+        0
+      ],
+      [
+        "2XL",
+        "",
+        0
+      ]
+    ],
+    "stripeLink": "",
+    "seoTitle": "Emblem Hoodie — Dark Divine",
+    "seoDescription": "Oversized black hoodie with the spiked D emblem across the back. Limited preorder."
+  },
+  {
+    "handle": "emblem-crop-capri-set",
+    "title": "Emblem Crop Top + Capri Set",
+    "sub": "Square-neck long-sleeve crop + high-waist capri",
+    "price": 89.99,
+    "compare": null,
+    "category": "essentials",
+    "collection": "The Emblem",
+    "tag": "PREORDER",
+    "featured": false,
+    "bestseller": false,
+    "newArrival": true,
+    "status": "draft",
+    "short": "Long-sleeve square-neck crop top and high-waist capri leggings. Spiked D on the chest, back and waistband; emblem-chain tape down both legs.",
+    "desc": [
+      "A matched two-piece: square-neck long-sleeve crop top and high-waist capri leggings. The spiked D sits on the chest, the back and the waistband, with emblem-chain tape running down both legs.",
+      "Made to order in one run after the preorder closes. Photos are pre-production renders — the final piece may differ slightly."
+    ],
+    "includes": [
+      "Crop top",
+      "Capri leggings"
+    ],
+    "materials": "",
+    "care": "",
+    "fit": "Fitted, high waist.",
+    "model": "",
+    "optionNames": [
+      "Size",
+      null
+    ],
+    "options1": [
+      "XS",
+      "S",
+      "M",
+      "L",
+      "XL"
+    ],
+    "options2": null,
+    "images": [
+      "/media/products/emblem-set-front.webp",
+      "/media/products/emblem-set-back.webp"
+    ],
+    "colorImages": null,
+    "variants": [
+      [
+        "XS",
+        "",
+        0
+      ],
+      [
+        "S",
+        "",
+        0
+      ],
+      [
+        "M",
+        "",
+        0
+      ],
+      [
+        "L",
+        "",
+        0
+      ],
+      [
+        "XL",
+        "",
+        0
+      ]
+    ],
+    "stripeLink": "",
+    "seoTitle": "Emblem Crop Top + Capri Set — Dark Divine",
+    "seoDescription": "Square-neck crop top and capri leggings with the spiked D emblem. Limited preorder."
   }
 ]

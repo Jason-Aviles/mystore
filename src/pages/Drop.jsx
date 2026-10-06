@@ -3,6 +3,7 @@ import { useStore } from '../context/StoreContext';
 import ProductCard from '../components/ProductCard';
 import Countdown from '../components/Countdown';
 import Reveal from '../components/Reveal';
+import NextDrop from '../components/NextDrop';
 
 export default function Drop() {
   const { products, CONFIG } = useStore();
@@ -16,7 +17,7 @@ export default function Drop() {
       <div className="drop-video">
         {CONFIG.dropImage
           ? <img src={CONFIG.dropImage} alt={CONFIG.dropName} style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover' }} />
-          : <video src="/media/brand/logo-3d-web.mp4" poster="/media/brand/logo-3d.png"
+          : <video src="/media/brand/emblem-loop.mp4" poster="/media/brand/emblem-loop-poster.jpg"
               autoPlay muted loop playsInline preload="metadata" />}
         <div className="dv-copy wrap">
           <span className="eyebrow">Private Release</span>
@@ -52,6 +53,7 @@ export default function Drop() {
           )}
         </div>
       </section>
+      <NextDrop />
     </>
   );
 }

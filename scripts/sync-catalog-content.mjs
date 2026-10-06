@@ -66,7 +66,9 @@ for (const p of seed) {
     featured: !!p.featured,
     bestseller: !!p.bestseller,
     new_arrival: !!p.newArrival,
-    status: 'active',
+    // a seed draft (unreleased preorder piece) never gets published by a
+    // sync — once it exists, its visibility belongs to the admin panel
+    ...(p.status === 'draft' ? {} : { status: 'active' }),
     images: p.images || [],
     data,
     updated_at: new Date().toISOString(),

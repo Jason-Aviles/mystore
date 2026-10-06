@@ -27,7 +27,7 @@ export default function Footer() {
       <div className="wrap">
         <div className="foot-grid">
           <div className="foot-brand">
-            <span className="logo">Dark <em>Divine</em></span>
+            <span className="logo"><span className="logo-mark" aria-hidden="true" /><span className="logo-word" role="img" aria-label="Dark Divine" /></span>
             <p>Limited-run streetwear. Cut in small numbers, released in drops, never restocked.</p>
             {done ? (
               <p style={{ color: 'var(--bone)' }}>You're in. Code <b>{CONFIG.welcomeCode}</b> = 10% off.</p>

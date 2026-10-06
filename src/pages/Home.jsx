@@ -5,6 +5,7 @@ import ProductCard from '../components/ProductCard';
 import Countdown from '../components/Countdown';
 import Reveal from '../components/Reveal';
 import Logo3D from '../components/Logo3D';
+import NextDrop from '../components/NextDrop';
 import FilmStrip from '../components/FilmStrip';
 import ScrollSerpent from '../components/ScrollSerpent';
 import { ReviewCard } from '../components/Reviews';
@@ -204,6 +205,8 @@ export default function Home() {
           </div>
         </div>
       </section>
+
+      <NextDrop />
 
       {/* BEST SELLERS */}
       <section className="section">

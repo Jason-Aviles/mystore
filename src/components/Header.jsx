@@ -80,7 +80,7 @@ export default function Header() {
         <div className="wrap bar">
           <button className="icon-btn nav-toggle" aria-label="Open menu" aria-expanded={menuOpen}
             data-cursor="open" onClick={() => setMenuOpen(true)}><Menu /></button>
-          <Link className="logo" to="/"><span className="logo-mark" aria-hidden="true" />Dark <em>Divine</em></Link>
+          <Link className="logo" to="/"><span className="logo-mark" aria-hidden="true" /><span className="logo-word" role="img" aria-label="Dark Divine" /></Link>
           <nav className="main-nav" aria-label="Main">
             {LINKS.filter(([to]) => to !== '/drop' || CONFIG.dropMode !== false).map(([to, label]) => (
               <NavLink key={to} to={to} end={to === '/'} className={({ isActive }) => (isActive ? 'active' : '')}>

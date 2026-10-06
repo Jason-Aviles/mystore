@@ -1,6 +1,17 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
+import { Link } from 'react-router-dom';
 import { supabase, hasSupabase } from '../lib/supabase';
-import { isLive } from './adminData';
+import { isLive, uploadProductImage } from './adminData';
+
+/* "Black, Bone · S–XL" — what a product actually offers, at a glance */
+function optionSummary(p) {
+  const d = p.data || {};
+  const names = d.optionNames || [];
+  const o1 = d.options1 || [];
+  const o2 = d.options2 || [];
+  if (names[0] === 'Color') return `${o1.join(', ')}${o2.length ? ` · ${o2.join(', ')}` : ''}`;
+  return [o1.join(', '), o2.join(', ')].filter(Boolean).join(' / ') || '—';
+}
 
 /* Private preorder mission control.
    Campaigns → products → codes → orders → updates, all against the live
@@ -62,7 +73,12 @@ function csv(name, head, rows) {
 
 export default function Preorders() {
   const [campaigns, setCampaigns] = useState([]);
-  const [selId, setSelId] = useState(null);
+  // remembered so "Edit product" → back lands on the same campaign
+  const [selId, setSelIdRaw] = useState(() => { try { return sessionStorage.getItem('dd_preorder_sel'); } catch { return null; } });
+  const setSelId = (id) => {
+    setSelIdRaw(id);
+    try { if (id) sessionStorage.setItem('dd_preorder_sel', id); else sessionStorage.removeItem('dd_preorder_sel'); } catch { /* private mode */ }
+  };
   const [form, setForm] = useState(null);   // editing form (null = list view)
   const [products, setProducts] = useState([]);
   const [codes, setCodes] = useState([]);
@@ -73,6 +89,17 @@ export default function Preorders() {
   const [busy, setBusy] = useState(false);
   const [newCode, setNewCode] = useState({ code: '', label: '', max_uses: '' });
   const [newUpdate, setNewUpdate] = useState({ title: '', body: '', stage: '' });
+  const heroFile = useRef(null);
+  const [heroBusy, setHeroBusy] = useState(false);
+
+  async function uploadHero(file) {
+    setHeroBusy(true);
+    try {
+      const url = await uploadProductImage(file);
+      setForm((f) => ({ ...f, hero_image_url: url }));
+    } catch (e) { flash(`Upload failed: ${e.message || e}`); }
+    setHeroBusy(false);
+  }
 
   const sel = campaigns.find((c) => c.id === selId) || null;
 
@@ -86,7 +113,7 @@ export default function Preorders() {
     if (!hasSupabase || !selId) return;
     (async () => {
       const [p, c, o, u] = await Promise.all([
-        supabase.from('products').select('handle, title, price, campaign_id, per_customer_limit, max_preorder_units, deposit').order('title'),
+        supabase.from('products').select('handle, title, price, status, data, campaign_id, per_customer_limit, max_preorder_units, deposit').neq('status', 'archived').order('title'),
         supabase.from('preorder_access_codes').select('*').eq('campaign_id', selId).order('created_at'),
         supabase.from('orders').select('id, customer_email, status, production_status, total, tracking, created_at, access_token, balance_due, balance_status, shipping').eq('campaign_id', selId).order('created_at', { ascending: false }),
         supabase.from('preorder_campaign_updates').select('*').eq('campaign_id', selId).order('created_at', { ascending: false }),
@@ -268,7 +295,12 @@ export default function Preorders() {
             <label>Name<input required value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} placeholder="CITY OF SINS — PRIVATE PREORDER" /></label>
             <label>Slug<input value={form.slug} onChange={(e) => setForm({ ...form, slug: e.target.value })} placeholder="auto from name" /></label>
             <label>Description (shown on the gate)<textarea rows={3} value={form.description} onChange={(e) => setForm({ ...form, description: e.target.value })} /></label>
-            <label>Hero image URL<input value={form.hero_image_url} onChange={(e) => setForm({ ...form, hero_image_url: e.target.value })} placeholder="/media/editorial/..." /></label>
+            <label>Hero image (shown on the gate)<input value={form.hero_image_url} onChange={(e) => setForm({ ...form, hero_image_url: e.target.value })} placeholder="/media/editorial/... or upload" /></label>
+            <div style={{ display: 'flex', gap: 10, alignItems: 'center', margin: '-4px 0 8px' }}>
+              <button type="button" className="btn btn-ghost btn-sm" disabled={heroBusy} onClick={() => heroFile.current?.click()}>{heroBusy ? 'Uploading…' : 'Upload image'}</button>
+              {form.hero_image_url && <img src={form.hero_image_url} alt="" style={{ width: 54, height: 68, objectFit: 'cover', border: '1px solid var(--line)' }} />}
+              <input ref={heroFile} type="file" accept="image/*" hidden onChange={(e) => e.target.files?.[0] && uploadHero(e.target.files[0])} />
+            </div>
             <label>Status
               <select value={form.status} onChange={(e) => setForm({ ...form, status: e.target.value })}>
                 {STATUSES.map((s) => <option key={s} value={s}>{s}</option>)}
@@ -336,17 +368,25 @@ export default function Preorders() {
           ))}
         </div>
 
-        <div className="admin-head" style={{ marginTop: 8 }}><h2 style={{ fontSize: 18 }}>Products in this campaign</h2></div>
+        <div className="admin-head" style={{ marginTop: 8 }}>
+          <h2 style={{ fontSize: 18 }}>Products in this campaign</h2>
+          <Link className="btn btn-sm" to={`/admin/products/new?campaign=${selId}`}>+ New product for this preorder</Link>
+        </div>
+        <p style={{ fontSize: 12, color: 'var(--silver)', margin: '0 0 10px' }}>
+          Colors, sizes, photos and how many of each you will make are set on the product — hit <b>Edit</b>. Draft products stay hidden from the store until you switch them to Live.
+        </p>
         <div className="table-scroll">
           <table className="admin-table">
-            <thead><tr><th>In</th><th>Product</th><th>Price</th><th>Per-customer limit</th><th>Production cap</th><th>Deposit $</th></tr></thead>
+            <thead><tr><th>In</th><th>Product</th><th>Colors · sizes</th><th>Price</th><th>Per-customer limit</th><th>Production cap</th><th>Deposit $</th><th /></tr></thead>
             <tbody>
               {products.map((p) => (
                 <tr key={p.handle} style={{ opacity: p.campaign_id && p.campaign_id !== selId ? 0.45 : 1 }}>
                   <td><input type="checkbox" checked={p.campaign_id === selId}
                     disabled={Boolean(p.campaign_id) && p.campaign_id !== selId}
                     onChange={() => toggleProduct(p)} aria-label={`Assign ${p.title}`} /></td>
-                  <td>{p.title}{p.campaign_id && p.campaign_id !== selId ? ' (in another campaign)' : ''}</td>
+                  <td>{p.title}{p.campaign_id && p.campaign_id !== selId ? ' (in another campaign)' : ''}
+                    {p.status === 'draft' && <> <span className="pill">draft</span></>}</td>
+                  <td style={{ fontSize: 12, maxWidth: 220 }}>{optionSummary(p)}</td>
                   <td>${Number(p.price).toFixed(2)}</td>
                   {['per_customer_limit', 'max_preorder_units', 'deposit'].map((f) => (
                     <td key={f}>
@@ -357,6 +397,7 @@ export default function Preorders() {
                       ) : '—'}
                     </td>
                   ))}
+                  <td><Link className="btn btn-ghost btn-sm" to={`/admin/products/${p.handle}`}>Edit</Link></td>
                 </tr>
               ))}
             </tbody>
