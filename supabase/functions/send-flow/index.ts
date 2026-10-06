@@ -26,7 +26,7 @@ function shell(inner: string, opts: { script?: boolean; transactional?: boolean 
   <tr><td align="center">
     <table role="presentation" width="560" cellpadding="0" cellspacing="0" style="max-width:560px;width:100%;background:#141416;border:1px solid #2a2a2e;">
       <tr><td style="padding:36px 32px 8px;text-align:center;">
-        <div style="font-family:Georgia,serif;font-size:26px;letter-spacing:4px;color:#f2f1ee;font-weight:bold;">DARK DIVINE</div>
+        <img src="https://darkdivine.store/media/brand/email-logo.png" width="260" height="156" alt="DARK DIVINE" style="display:block;margin:0 auto;border:0;width:260px;max-width:100%;height:auto;font-family:Georgia,serif;font-size:26px;letter-spacing:4px;color:#f2f1ee;font-weight:bold;" />
         ${opts.script ? '<div style="font-family:Georgia,serif;font-style:italic;font-size:15px;color:#8e939c;margin-top:6px;">Illuminate the darkness within</div>' : ''}
       </td></tr>
       ${inner}

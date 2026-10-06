@@ -58,6 +58,9 @@ async function localMediaReferences() {
   const files = [
     ...await walk(path.join(ROOT, 'src')),
     ...await walk(PUBLIC),
+    // emails embed site media by absolute URL (https://darkdivine.store/media/…)
+    ...await walk(path.join(ROOT, 'supabase', 'functions')),
+    ...await walk(path.join(ROOT, 'emails')),
     path.join(ROOT, 'index.html'),
   ];
   const references = new Set();

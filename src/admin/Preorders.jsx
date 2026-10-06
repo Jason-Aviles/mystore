@@ -372,6 +372,11 @@ export default function Preorders() {
           <h2 style={{ fontSize: 18 }}>Products in this campaign</h2>
           <Link className="btn btn-sm" to={`/admin/products/new?campaign=${selId}`}>+ New product for this preorder</Link>
         </div>
+        {['live', 'coming_soon'].includes(sel.status) && products.some((p) => p.campaign_id === selId && p.status === 'draft') && (
+          <div className="note-banner" style={{ marginBottom: 10 }}>
+            This campaign is <b>{sel.status}</b> but {products.filter((p) => p.campaign_id === selId && p.status === 'draft').map((p) => p.title).join(', ')} {products.filter((p) => p.campaign_id === selId && p.status === 'draft').length === 1 ? 'is' : 'are'} still <b>Draft</b> — customers can't see or buy {products.filter((p) => p.campaign_id === selId && p.status === 'draft').length === 1 ? 'it' : 'them'}. Open Edit and set Visibility to Live.
+          </div>
+        )}
         <p style={{ fontSize: 12, color: 'var(--silver)', margin: '0 0 10px' }}>
           Colors, sizes, photos and how many of each you will make are set on the product — hit <b>Edit</b>. Draft products stay hidden from the store until you switch them to Live.
         </p>

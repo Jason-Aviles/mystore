@@ -415,6 +415,11 @@ export default function ProductEdit() {
             ))}
           </div>
           {p.variants.length === 0 && <div className="hint">Set option values above — variant cells appear here.</div>}
+          {(p.status || 'active') === 'active' && p.variants.length > 0 && p.variants.every((v) => !v[2]) && (
+            <div className="note-banner" style={{ marginTop: 10 }}>
+              Every size is at 0 — this product will show as <b>sold out</b> on the store. {isPreorder ? 'Enter how many of each you will make.' : 'Add stock, or switch Visibility to Draft.'}
+            </div>
+          )}
         </div>
         <fieldset className="opt-builder">
           <legend>Visibility &amp; preorder</legend>
