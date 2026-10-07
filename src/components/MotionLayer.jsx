@@ -94,6 +94,13 @@ export function Preloader({ paused = false }) {
       .call(handoff, [], 2.62)
       .to(slats, { yPercent: -103, duration: 0.6, stagger: 0.055, ease: 'power4.inOut' }, 2.72)
       .set(root.current, { backgroundColor: 'transparent' }, 2.72);
+
+    /* wall-clock safety net: on a struggling device (low-power mode, old
+       phone) frames get slow and GSAP's lag smoothing stretches this ~3.4s
+       intro far longer. Never hold a shopper behind it past ~5s — jump to
+       the end (events fire, so the mark handoff + onComplete still run). */
+    const bail = setTimeout(() => { if (tl.progress() < 1) tl.progress(1, false); }, 5200);
+    return () => clearTimeout(bail);
   }, { scope: root, dependencies: [show, paused] });
 
   if (!show) return null;
