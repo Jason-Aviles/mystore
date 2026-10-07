@@ -47,7 +47,12 @@ export default function PayPalButtons({ getPayload, onCreated, onCheckoutError, 
     supabase.functions.invoke('paypal-create-order', { body: { probe: true } })
       // same app on both sides, or no button: a browser on one PayPal app and
       // a server on another (e.g. sandbox vs live) can never complete a payment
-      .then(({ data }) => { if (alive && data?.configured && data.client_id === CLIENT_ID) setHidden(false); })
+      // and never a SANDBOX (test-money) PayPal on the real store — test mode
+      // only renders in local dev builds
+      .then(({ data }) => {
+        if (alive && data?.configured && data.client_id === CLIENT_ID
+          && (data.env === 'live' || import.meta.env.DEV)) setHidden(false);
+      })
       .catch(() => {});
     return () => { alive = false; };
   }, []);
