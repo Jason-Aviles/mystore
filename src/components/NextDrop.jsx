@@ -12,7 +12,9 @@ export default function NextDrop() {
   const { CONFIG } = useStore();
   const [email, setEmail] = useState('');
   const [state, setState] = useState('idle');
-  if (!CONFIG.nextDropEnabled) return null;
+  // once a drop is FEATURED it is the current drop — an "up next" teaser for
+  // the same pieces would just repeat the page
+  if (!CONFIG.nextDropEnabled || CONFIG.featuredDropId) return null;
   const pics = [CONFIG.nextDropImage1, CONFIG.nextDropImage2].filter(Boolean);
 
   async function join(e) {

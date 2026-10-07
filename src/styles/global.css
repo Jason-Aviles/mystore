@@ -2572,3 +2572,8 @@ input, textarea { caret-color: var(--red); }
 .lockdown-card .lockdown-msg { grid-column: 1 / -1; color: var(--green); }
 @media (max-width: 640px) { .lockdown-card { grid-template-columns: 1fr; } }
 .nd-count { margin: 14px 0 4px; }
+@media (max-width: 640px) {
+  .preview-bar { flex-wrap: nowrap; gap: 8px; padding: 7px 10px; font-size: 11px; bottom: calc(8px + env(safe-area-inset-bottom, 0px)); }
+  .preview-bar span { display: none; }
+  .preview-bar .pb-btn { padding: 5px 8px; font-size: 10px; }
+}
