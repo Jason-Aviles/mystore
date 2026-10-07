@@ -111,8 +111,16 @@ export async function prepareOrder(opts: {
   const settings = settingsRow?.data || {};
   const freeShipThreshold = Number(settings.freeShipThreshold ?? 100);
 
-  // LOCKDOWN (admin: preorder-only mode): only the drop's preorder pieces sell
-  if (settings.preorderOnlyLock === true) {
+  // LOCKDOWN (admin: preorder-only mode): only the drop's preorder pieces sell —
+  // unless the featured drop's countdown has ended with "unlock the store"
+  // on, exactly like the storefront (so the two can never disagree)
+  let lockExpired = false;
+  if (settings.preorderOnlyLock === true && settings.featuredDropId) {
+    const { data: fd } = await supabase.from('preorder_campaigns').select('content').eq('id', settings.featuredDropId).maybeSingle();
+    const cd = fd?.content?.countdown;
+    lockExpired = Boolean(cd?.enabled && cd?.unlockOnExpiry && cd?.at && Date.now() >= Date.parse(cd.at));
+  }
+  if (settings.preorderOnlyLock === true && !lockExpired) {
     const regular = (prods || []).filter((p: any) => !campaignOf(p));
     if (regular.length) return fail(409, { error: 'store_locked', titles: regular.map((p: any) => p.title) });
   }
