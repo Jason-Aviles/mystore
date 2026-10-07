@@ -29,7 +29,10 @@ export default function Layout() {
   const gateSuppressedForUtility = gateUtilityPaths.includes(pathname);
   const preorderUtilityPaths = ['/drop', '/cart', '/thanks', '/order-status', ...gateUtilityPaths, '/size-guide', '/unsubscribe'];
   const productHandle = pathname.startsWith('/product/') ? decodeURIComponent(pathname.slice('/product/'.length)) : '';
-  const productAllowed = productHandle && products.some((product) => product.handle === productHandle && isPreorder(product));
+  // the featured drop's pieces are allowed straight from settings — waiting
+  // for the campaign request let a direct link bounce to /drop on desktop
+  const productAllowed = productHandle && products.some((product) => product.handle === productHandle
+    && (isPreorder(product) || (product.campaignId && product.campaignId === CONFIG.featuredDropId)));
   const preorderPathAllowed = preorderUtilityPaths.includes(pathname) || productAllowed;
   const preorderRouteBlocked = CONFIG.preorderOnlyLock === true
     && !preorderPathAllowed
