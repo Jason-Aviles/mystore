@@ -36,6 +36,7 @@ export function StoreProvider({ children }) {
   const [settings, setSettings] = useState({});
   // preview: 'off' | 'draft' (signed-in admin sees the unpublished draft) | 'signin' (asked, not signed in)
   const [preview, setPreview] = useState('off');
+  const [settingsReady, setSettingsReady] = useState(false); // real admin settings applied
   const [featuredDrop, setFeaturedDrop] = useState(null);
   const [clock, setClock] = useState(() => Date.now()); // bumped when a countdown expires
   const [userMotionPaused, setUserMotionPaused] = useState(readSavedMotionPause);
@@ -100,6 +101,7 @@ export function StoreProvider({ children }) {
       const s = await fetchSiteSettings({ draft: wantPreview && isAdmin }).catch(() => null);
       if (!alive) return;
       if (s) setSettings(s);
+      setSettingsReady(true);
       if (s?.featuredDropId) {
         const d = await fetchFeaturedDrop(s.featuredDropId, { draft: wantPreview && isAdmin }).catch(() => null);
         if (alive) setFeaturedDrop(d);
@@ -233,8 +235,8 @@ export function StoreProvider({ children }) {
     unlocked, unlock, subscribed, markSubscribed,
     campaign, isPreorder,
     cartOpen, setCartOpen, quickView, setQuickView, toast, showToast,
-    motionPaused, systemReducedMotion, toggleMotion, preview, featuredDrop,
-  }), [preview, featuredDrop, products, loading, CONFIG, cart, wishlist, recent, unlocked, subscribed, cartOpen, quickView, toast, motionPaused, systemReducedMotion,
+    motionPaused, systemReducedMotion, toggleMotion, preview, featuredDrop, settingsReady,
+  }), [preview, featuredDrop, settingsReady, products, loading, CONFIG, cart, wishlist, recent, unlocked, subscribed, cartOpen, quickView, toast, motionPaused, systemReducedMotion,
        byHandle, addToCart, setQty, removeLine, cartCount, cartTotal, toggleWish, markViewed,
        unlock, markSubscribed, showToast, reloadProducts, campaign, isPreorder, toggleMotion]);
 

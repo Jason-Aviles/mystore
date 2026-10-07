@@ -24,7 +24,10 @@ const UTILITY_LINKS = [
 ];
 
 export default function Gate({ onDone, onUtilityNavigate }) {
-  const { CONFIG, campaign, unlock, markSubscribed, showToast } = useStore();
+  const { CONFIG, campaign, unlock, markSubscribed, showToast, settingsReady } = useStore();
+  // never offer a way around the gate until the REAL settings are known —
+  // the shipped default allows guests, a lockdown doesn't
+  const guestAllowed = settingsReady && CONFIG.gateGuestBypass !== false;
   const navigate = useNavigate();
   const [email, setEmail] = useState('');
   const [phone, setPhone] = useState('');
@@ -149,7 +152,7 @@ export default function Gate({ onDone, onUtilityNavigate }) {
     setBusy(false);
     // LOCKDOWN (guest bypass off): joining the list is NOT a key — only a
     // valid code opens the store. Otherwise the list doubles as a soft entry.
-    if (CONFIG.gateGuestBypass === false) { setJoined(true); return; }
+    if (!guestAllowed) { setJoined(true); return; }
     open(() => { unlock(); onDone?.(); showToast('You’re on the list — next code hits your inbox'); });
   }
 
@@ -171,7 +174,7 @@ export default function Gate({ onDone, onUtilityNavigate }) {
 
   return (
     <div className="gate" role="dialog" aria-modal="true" aria-labelledby="gate-title" ref={root}>
-      {CONFIG.gateGuestBypass !== false && (
+      {guestAllowed && (
         <button type="button" className="gate-mobile-exit" onClick={browseAsGuest} aria-label="Browse site">
           Browse site <span aria-hidden="true">&times;</span>
         </button>
@@ -244,7 +247,7 @@ export default function Gate({ onDone, onUtilityNavigate }) {
         {entryEnabled && (live || !campaign) && !joined && (
           <div className="alt">No code? <button type="button" onClick={joinList} disabled={busy}>Join the list</button> — codes go out before every {campaign ? 'preorder' : 'drop'}.</div>
         )}
-        {CONFIG.gateGuestBypass !== false && (
+        {guestAllowed && (
           <div className="guest"><button type="button" className="btn btn-ghost btn-sm" onClick={browseAsGuest}>Browse as guest</button></div>
         )}
         <nav className="gate-utility" aria-label="Policies and support">
