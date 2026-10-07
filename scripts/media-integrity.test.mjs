@@ -16,7 +16,7 @@ const TEXT_EXTENSIONS = new Set([
   '.webmanifest', '.xml',
 ]);
 const IGNORED_DIRECTORIES = new Set([
-  '.git', 'dist', 'node_modules',
+  '.git', 'dist', 'node_modules', '.worktrees',
   // gitignored raw source art (full-size logo/campaign originals); the
   // web-ready copies live in public/media
   'new logos',

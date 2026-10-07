@@ -1,4 +1,4 @@
-import { useEffect, useId, useRef } from 'react';
+import { useEffect, useId, useRef, useState } from 'react';
 import gsap from 'gsap';
 import { ScrollTrigger } from 'gsap/ScrollTrigger';
 import { DrawSVGPlugin } from 'gsap/DrawSVGPlugin';
@@ -63,80 +63,79 @@ const SCRIBBLE = 'M-60 38 C 180 12, 520 58, 960 22 M960 22 C 640 92, 260 70, -60
 
 /** The gothic metal wordmark, drawn by hand.
     half: 'left' | 'right' shows only DARK / DIVINE (the hero splits it)
-    reveal: 'now' | 'scroll' | 'none'  ·  delay in seconds (for 'now') */
+    reveal: 'now' | 'scroll' | 'none'  ·  delay in seconds (for 'now')
+
+    PERFORMANCE (Oct 2026 fix): SVG masks inside the pinned, 3D-tilting hero
+    were re-cut on every scroll frame and halved the frame rate. Now the
+    colours are pre-tinted images (no glyph masks), the marker-scribble
+    mask exists ONLY while it is drawing, and the boil filter runs only
+    while drawing or hovered. At rest it is three plain images. */
+const WM = { bone: '/media/brand/wordmark-bone.webp', pink: '/media/brand/wordmark-pink.webp', mint: '/media/brand/wordmark-mint.webp' };
+
 export function HandWordmark({ className = '', label = 'Dark Divine', reveal = 'scroll', delay = 0, half = null, decorative = false }) {
   const { motionPaused } = useStore();
   const uid = useId().replace(/:/g, '');
   const root = useRef(null);
   const vb = half === 'left' ? '0 0 450 300' : half === 'right' ? '450 0 450 300' : '0 0 900 300';
+  const still = motionPaused || reducedMotion() || reveal === 'none';
+  const [drawing, setDrawing] = useState(!still);
 
   useEffect(() => {
     const svg = root.current;
     if (!svg) return undefined;
-    const scribble = svg.querySelector('.hw-scribble');
     const prints = svg.querySelectorAll('.hw-print');
-    if (motionPaused || reducedMotion() || reveal === 'none') {
-      gsap.set(scribble, { drawSVG: '100%' });
-      return undefined;
-    }
+    const art = svg.querySelector('.hw-art');
+    if (still) { setDrawing(false); gsap.set(prints, { opacity: 0.7, x: (i) => (i ? -3 : 3.5), y: (i) => (i ? 1.5 : -1.5) }); return undefined; }
+    const scribble = svg.querySelector('.hw-scribble');
     const ctx = gsap.context(() => {
       gsap.set(scribble, { drawSVG: '0%' });
       gsap.set(prints, { opacity: 0 });
-      const tl = gsap.timeline({ paused: true, delay })
+      const tl = gsap.timeline({ paused: true, delay, onComplete: () => setDrawing(false) })
         .to(scribble, { drawSVG: '100%', duration: 1.15, ease: TWOS(14) })
         .to(prints, { opacity: 0.7, duration: 0.01 }, 0.5)
         .fromTo(prints, { x: (i) => (i ? -14 : 14), y: (i) => (i ? 6 : -6) },
           { x: (i) => (i ? -3 : 3.5), y: (i) => (i ? 1.5 : -1.5), duration: 0.6, ease: TWOS(6) }, 0.5);
       if (reveal === 'now') tl.play();
-      else {
-        ScrollTrigger.create({ trigger: svg, start: 'top 88%', once: true, onEnter: () => tl.play() });
-      }
-
-      // hover: the print shudders out of register, the boil gets violent
-      const art = svg.querySelector('.hw-art');
-      const onEnter = () => {
-        art.setAttribute('filter', 'url(#dd-boil-hard)');
-        gsap.to(prints, { x: (i) => (i ? -9 : 10), y: (i) => (i ? 4 : -3), duration: 0.25, ease: TWOS(3), overwrite: true });
-      };
-      const onLeave = () => {
-        art.setAttribute('filter', 'url(#dd-boil)');
-        gsap.to(prints, { x: (i) => (i ? -3 : 3.5), y: (i) => (i ? 1.5 : -1.5), duration: 0.4, ease: TWOS(4), overwrite: true });
-      };
-      // click: wipe it and scribble it back in
-      const onClick = () => gsap.timeline()
-        .to(scribble, { drawSVG: '100% 100%', duration: 0.35, ease: TWOS(5) })
-        .set(scribble, { drawSVG: '0%' })
-        .to(scribble, { drawSVG: '100%', duration: 0.7, ease: TWOS(9) });
-      svg.addEventListener('mouseenter', onEnter);
-      svg.addEventListener('mouseleave', onLeave);
-      svg.addEventListener('click', onClick);
-      return () => {
-        svg.removeEventListener('mouseenter', onEnter);
-        svg.removeEventListener('mouseleave', onLeave);
-        svg.removeEventListener('click', onClick);
-      };
+      else ScrollTrigger.create({ trigger: svg, start: 'top 88%', once: true, onEnter: () => tl.play() });
     }, svg);
     return () => ctx.revert();
-  }, [motionPaused, reveal, delay]);
+  }, [still, reveal, delay]);
 
-  const img = '/media/brand/wordmark-mask.png';
+  // hover (fine pointers): the print shudders out of register and the ink boils
+  useEffect(() => {
+    const svg = root.current;
+    if (!svg || still) return undefined;
+    const prints = svg.querySelectorAll('.hw-print');
+    const art = svg.querySelector('.hw-art');
+    const onEnter = () => {
+      art.setAttribute('filter', 'url(#dd-boil-hard)');
+      gsap.to(prints, { x: (i) => (i ? -9 : 10), y: (i) => (i ? 4 : -3), duration: 0.25, ease: TWOS(3), overwrite: true });
+    };
+    const onLeave = () => {
+      art.removeAttribute('filter');
+      gsap.to(prints, { x: (i) => (i ? -3 : 3.5), y: (i) => (i ? 1.5 : -1.5), duration: 0.4, ease: TWOS(4), overwrite: true });
+    };
+    svg.addEventListener('mouseenter', onEnter);
+    svg.addEventListener('mouseleave', onLeave);
+    return () => { svg.removeEventListener('mouseenter', onEnter); svg.removeEventListener('mouseleave', onLeave); };
+  }, [still]);
+
   return (
     <svg ref={root} className={`hand-wm ${className}`} viewBox={vb} preserveAspectRatio="xMidYMid meet"
       role={decorative ? undefined : 'img'} aria-label={decorative ? undefined : label} aria-hidden={decorative || undefined}>
-      <defs>
-        <mask id={`g${uid}`} maskUnits="userSpaceOnUse" x="0" y="0" width="900" height="300">
-          <image href={img} x="0" y="0" width="900" height="300" />
-        </mask>
-        <mask id={`s${uid}`} maskUnits="userSpaceOnUse" x="-80" y="-40" width="1060" height="400">
-          <path className="hw-scribble" d={SCRIBBLE} fill="none" stroke="#fff" strokeWidth="128" strokeLinecap="round" strokeLinejoin="round" />
-        </mask>
-      </defs>
-      <g mask={`url(#s${uid})`}>
-        <g className="hw-art" filter="url(#dd-boil)">
-          {/* off-register print layers */}
-          <rect className="hw-print" x="0" y="0" width="900" height="300" style={{ fill: 'var(--red)' }} mask={`url(#g${uid})`} />
-          <rect className="hw-print" x="0" y="0" width="900" height="300" style={{ fill: 'var(--green)' }} mask={`url(#g${uid})`} />
-          <rect x="0" y="0" width="900" height="300" style={{ fill: 'var(--bone)' }} mask={`url(#g${uid})`} />
+      {drawing && (
+        <defs>
+          <mask id={`s${uid}`} maskUnits="userSpaceOnUse" x="-80" y="-40" width="1060" height="400">
+            <path className="hw-scribble" d={SCRIBBLE} fill="none" stroke="#fff" strokeWidth="128" strokeLinecap="round" strokeLinejoin="round" />
+          </mask>
+        </defs>
+      )}
+      <g mask={drawing ? `url(#s${uid})` : undefined}>
+        <g className="hw-art" filter={drawing ? 'url(#dd-boil)' : undefined}>
+          {/* off-register print layers (pre-tinted — no runtime masks) */}
+          <image className="hw-print" href={WM.pink} x="0" y="0" width="900" height="300" />
+          <image className="hw-print" href={WM.mint} x="0" y="0" width="900" height="300" />
+          <image href={WM.bone} x="0" y="0" width="900" height="300" />
         </g>
       </g>
     </svg>

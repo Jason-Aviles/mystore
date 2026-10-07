@@ -2490,7 +2490,9 @@ input, textarea { caret-color: var(--red); }
 .hs-title.hand .w {
   display: block; font-size: inherit; -webkit-text-stroke: 0; text-shadow: none;
   background: none !important; animation: none !important; color: inherit;
-  filter: drop-shadow(0 6px 30px rgba(0,0,0,.55));
+  /* NO filter here: a blurred drop-shadow on this pinned, 3D-tilting element
+     re-rasterised every scroll frame and cost ~30% of the frame rate.
+     The hero's own dark grade already gives the mark its contrast. */
 }
 
 /* preloader + gate + footer wordmarks */
