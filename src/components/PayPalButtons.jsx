@@ -8,9 +8,12 @@ import { supabase, hasSupabase } from '../lib/supabase';
    then marks the order paid: address, email, owner alert, inventory).
    The browser never decides the amount and never records the sale.
 
-   Needs VITE_PAYPAL_CLIENT_ID (public) here, and PAYPAL_CLIENT_ID +
+   Needs VITE_PAYPAL_ID (public) here, and PAYPAL_CLIENT_ID +
    PAYPAL_CLIENT_SECRET + PAYPAL_ENV in Supabase Edge Function secrets. */
-const CLIENT_ID = import.meta.env.VITE_PAYPAL_CLIENT_ID;
+// VITE_PAYPAL_ID (written by `npm run secrets:paypal` into .env.production)
+// wins over the older VITE_PAYPAL_CLIENT_ID, which a host like Netlify may
+// still hold with a stale value and would otherwise override the file.
+const CLIENT_ID = import.meta.env.VITE_PAYPAL_ID || import.meta.env.VITE_PAYPAL_CLIENT_ID;
 
 let sdkPromise = null;
 function loadSdk() {

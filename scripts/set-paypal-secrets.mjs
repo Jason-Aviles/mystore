@@ -76,7 +76,7 @@ ${line}
 `;
   writeFileSync(url, text);
 };
-for (const file of ['.env', '.env.production', 'netlify.env']) setVar(file, 'VITE_PAYPAL_CLIENT_ID', env.PAYPAL_CLIENT_ID);
-console.log('✓ VITE_PAYPAL_CLIENT_ID written to .env, .env.production and netlify.env');
-console.log('Next: commit + push (Netlify rebuilds), and in Netlify set VITE_PAYPAL_CLIENT_ID to the same value or delete it there.');
+for (const file of ['.env', '.env.production', 'netlify.env']) setVar(file, 'VITE_PAYPAL_ID', env.PAYPAL_CLIENT_ID);
+console.log('✓ VITE_PAYPAL_ID written to .env, .env.production and netlify.env');
+console.log('Next: commit + push — Netlify rebuilds with it. (An old VITE_PAYPAL_CLIENT_ID in Netlify no longer matters.)');
 console.log('Then add "PayPal" to Admin → Site Settings → Accepted payment methods.');

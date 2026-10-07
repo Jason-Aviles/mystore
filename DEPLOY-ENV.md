@@ -139,7 +139,7 @@ The button stays hidden until Supabase has these Edge Function secrets:
 
 | Secret | Value |
 | --- | --- |
-| `PAYPAL_CLIENT_ID` | same as `VITE_PAYPAL_CLIENT_ID` (same PayPal app) |
+| `PAYPAL_CLIENT_ID` | same as `VITE_PAYPAL_ID` in `.env.production` (same PayPal app) |
 | `PAYPAL_CLIENT_SECRET` | developer.paypal.com → Apps & Credentials → your app |
 | `PAYPAL_ENV` | `live` for real money, `sandbox` for test accounts |
 
@@ -161,3 +161,9 @@ to Admin → Site Settings → Accepted payment methods so the logo shows.
 Limits: PayPal charges the US Standard (free over the threshold) or Canada
 Tracked rate — Priority shipping and Stripe promo codes are card-checkout
 only.
+
+**Status (Oct 6 2026): PayPal is LIVE.** Live app credentials verified with
+PayPal and stored in Supabase (`PAYPAL_ENV=live`); the storefront reads the
+public client ID from `VITE_PAYPAL_ID` in `.env.production`. (Note: this
+live client ID also starts with `BAA…` — the prefix alone doesn't tell
+sandbox from live; only PayPal's API does, which the setup script checks.)

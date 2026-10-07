@@ -53,7 +53,7 @@ export const DEFAULT_CONFIG = {
   // Payment methods VERIFIED against this Stripe account's dashboard config
   // (card brands, Apple Pay, Link, Cash App, Klarna, Amazon Pay on; Google Pay
   // and Afterpay OFF). Edit in admin if you toggle methods in Stripe.
-  payMethods: 'Visa, Mastercard, Amex, Discover, Apple Pay, Link, Cash App, Klarna, Amazon Pay',
+  payMethods: 'Visa, Mastercard, Amex, Discover, Apple Pay, PayPal, Link, Cash App, Klarna, Amazon Pay',
   payLaterNote: true,     // Klarna pay-in-4 note on product/cart — Klarna is ON in Stripe; turn off if you disable it there
 
   anncText: '', // empty = auto "Free US shipping over $X · {dropName} loading"
