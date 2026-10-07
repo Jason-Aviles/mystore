@@ -3,6 +3,7 @@ import { useStore } from '../context/StoreContext';
 import { saveEmailSignup } from '../lib/marketing';
 import EmblemFX from './EmblemFX';
 import Reveal from './Reveal';
+import Countdown from './Countdown';
 
 /* "Up next" teaser for the drop after the current one. No prices or dates
    until the owner sets them — just the pieces and a way onto the list.
@@ -32,6 +33,7 @@ export default function NextDrop() {
           <span className="eyebrow">Up Next</span>
           <h2 id="next-drop-title">{CONFIG.nextDropName}</h2>
           {CONFIG.nextDropBlurb && <p>{CONFIG.nextDropBlurb}</p>}
+          {CONFIG.dropDate && <div className="nd-count"><Countdown target={CONFIG.dropDate} /></div>}
           {state === 'done' ? (
             <p className="nd-done" role="status">You're on the list — you'll hear first when it opens.</p>
           ) : (

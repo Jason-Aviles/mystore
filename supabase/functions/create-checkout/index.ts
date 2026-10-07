@@ -32,7 +32,7 @@ Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') return new Response('ok', { headers: corsHeaders });
 
   try {
-    const { order_id, email, items, origin, country } = await req.json();
+    const { order_id, email, items, origin, country, access_code } = await req.json();
     if (!items?.length) return json({ error: 'empty cart' }, 400);
 
     const stripeKey = Deno.env.get('STRIPE_SECRET_KEY');
@@ -46,7 +46,7 @@ Deno.serve(async (req) => {
 
     const site = origin || 'https://darkdivine.store';
     const prepared = await prepareOrder({
-      supabase, order_id, email, items, country, site,
+      supabase, order_id, email, items, country, site, accessCode: access_code,
       createStripeCustomer: async (e) => (await stripe.customers.create({ email: e })).id,
     });
     if (!prepared.ok) return json(prepared.body, prepared.status);

@@ -10,13 +10,13 @@ import ScrollSerpent from '../components/ScrollSerpent';
 
 const FILTERS = [
   ['all', 'All'],
-  ['bundle', 'The Drop'],
+  ['bundle', 'Bundles'],
   ['jersey', 'Jerseys'],
   ['pants', 'Pants'],
   ['essentials', 'Essentials'],
   ['saved', 'Saved ♥'],
 ];
-const TITLES = { all: 'Shop All', bundle: 'The Drop', jersey: 'Jerseys', pants: 'Pants', essentials: 'Essentials', saved: 'Saved Pieces' };
+const TITLES = { all: 'Shop All', bundle: 'Bundles', jersey: 'Jerseys', pants: 'Pants', essentials: 'Essentials', saved: 'Saved Pieces' };
 
 /* survives the route change between chip click and re-render */
 const flipState = { current: null };

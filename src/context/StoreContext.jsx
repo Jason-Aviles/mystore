@@ -199,11 +199,12 @@ export function StoreProvider({ children }) {
     setRecent((r) => [handle, ...r.filter((h) => h !== handle)].slice(0, 8));
   }, []);
 
-  const unlock = useCallback((viaCampaign = null) => {
+  const unlock = useCallback((viaCampaign = null, accessCode = '') => {
     if (viaCampaign) {
       // campaign unlock: persists exactly until the preorder closes, then
-      // the gate greets this browser again — access is never open-ended
-      saveUnlock(viaCampaign);
+      // the gate greets this browser again — access is never open-ended.
+      // The code rides along so checkout can re-verify it on the server.
+      saveUnlock(viaCampaign, accessCode);
       try { sessionStorage.setItem('dd_access', '1'); } catch { /* private mode */ }
     } else if (CONFIG.gateRemember === true) ls.set('dd_access', 1);
     else { try { sessionStorage.setItem('dd_access', '1'); } catch { /* private mode */ } }

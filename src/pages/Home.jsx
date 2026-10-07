@@ -189,7 +189,6 @@ export default function Home() {
                 comparePrice: money(featured[0].compare), price: money(featured[0].price),
               })}</p>
             )}
-            {CONFIG.dropMode !== false && <Countdown target={CONFIG.dropDate} />}
           </div>
           {featured.map((p, i) => (
             <div className="hpanel hp-product" key={p.handle}>

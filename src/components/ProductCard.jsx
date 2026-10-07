@@ -29,9 +29,7 @@ export default function ProductCard({ p }) {
             ? <span className="badge">Sold out</span>
             : pre
               ? <span className="badge red">Preorder</span>
-              : p.tag === 'DROP 002'
-                ? <span className="badge red">Drop 002</span>
-                : off > 0 && <span className="badge">Sale −{off}%</span>}
+              : off > 0 && <span className="badge">Sale −{off}%</span>}
         </div>
         <button
           className={`wish ${wished ? 'on' : ''}`}

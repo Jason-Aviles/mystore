@@ -17,7 +17,7 @@ import { SHOPIFY_RATING_COUNTS, productAvg, REVIEW_PROVENANCE } from '../lib/rev
 import { saveEmailSignup } from '../lib/marketing';
 import { metaTrack } from '../lib/meta';
 import { fetchDemand, MIN_SHOW } from '../lib/demand';
-import { shipWindowText, productionStartText, closesText, opensText, campaignLive, depositTerms, saveOrderRef } from '../lib/preorder';
+import { shipWindowText, productionStartText, closesText, opensText, campaignLive, depositTerms, saveOrderRef, unlockCode } from '../lib/preorder';
 import { supabase, hasSupabase } from '../lib/supabase';
 
 export default function Product() {
@@ -271,7 +271,7 @@ export default function Product() {
     try {
       const { data, error } = await supabase.functions.invoke('create-checkout', {
         body: {
-          email: '', origin: window.location.origin, country: 'US',
+          email: '', origin: window.location.origin, country: 'US', access_code: unlockCode(),
           items: [{ handle: p.handle, option1: selection[0], option2: selection[1] || null, qty: 1 }],
         },
       });

@@ -15,6 +15,7 @@ import ReviewsAdmin from './ReviewsAdmin';
 import Settings from './Settings';
 import Flows from './Flows';
 import Preorders from './Preorders';
+import Account from './Account';
 import '../styles/global.css';
 
 /* Admin auth:
@@ -111,6 +112,7 @@ const NAV = [
   ['/admin/campaigns', 'Campaigns', false],
   ['/admin/flows', 'Flows', false],
   ['/admin/settings', 'Site Settings', false],
+  ['/admin/account', 'Account', false],
 ];
 
 export default function AdminRoutes() {
@@ -185,6 +187,7 @@ export default function AdminRoutes() {
           <Route path="orders" element={<Orders />} />
           <Route path="support" element={<Support />} />
           <Route path="preorders" element={<Preorders />} />
+          <Route path="account" element={<Account />} />
           <Route path="customers" element={<Customers />} />
           <Route path="reviews" element={<ReviewsAdmin />} />
           <Route path="signups" element={<Signups />} />

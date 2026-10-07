@@ -16,11 +16,9 @@ export default function Drop() {
   if (CONFIG.dropMode === false) return <Navigate to="/shop" replace />;
 
   const dropPieces = featuredDrop ? products.filter((p) => p.campaignId === featuredDrop.id) : [];
-  const bundles = products.filter((p) => p.category === 'bundle');
-  const rest = products.filter((p) => p.collection === 'City of Sins' && p.category !== 'bundle');
   const eyebrow = featuredDrop
     ? ({ coming_soon: 'Coming Soon', live: 'Private Preorder', released: 'Out Now', closed: 'Preorder Closed' }[featuredDrop.status] || DROP_STATUS_LABEL[featuredDrop.status] || 'The Drop')
-    : 'Private Release';
+    : 'Coming Soon';
   const href = CONFIG.dropButtonHref || (dropPieces[0] ? `/product/${dropPieces[0].handle}` : '');
   const cta = CONFIG.dropButtonText && href
     ? (/^https?:/.test(href)
@@ -43,21 +41,15 @@ export default function Drop() {
         </div>
       </div>
       <section className="section" style={{ paddingTop: 34 }}>
-        <div className="ghost-00" data-speed="0.85">{featuredDrop ? '00' : '002'}</div>
+        <div className="ghost-00" data-speed="0.85">00</div>
         <div className="wrap" style={{ position: 'relative', zIndex: 1 }}>
           <Reveal className="drop-panel" style={{ marginBottom: 48 }}>
             <div>
               <span className="eyebrow">{CONFIG.storeUnlockedByCountdown ? 'Open Now' : 'Goes Live'}</span>
               <h2 data-fx="serpentPupil">One Run. No Restock.</h2>
-              {featuredDrop ? (
-                CONFIG.dropDescription && <p>{CONFIG.dropDescription}</p>
-              ) : (
-                /* unit claim verified against live inventory before it renders */
-                <p>Three matched bundle colorways plus standalone jerseys and pants.{(() => {
-                  const maxCombo = Math.max(0, ...bundles.flatMap((p) => p.variants.map((v) => v[2] || 0)));
-                  return maxCombo > 0 && maxCombo <= 3 ? ' No size combo has more than three units.' : '';
-                })()} When the counter hits zero, the door opens for everyone — list members are already inside.</p>
-              )}
+              {featuredDrop
+                ? (CONFIG.dropDescription && <p>{CONFIG.dropDescription}</p>)
+                : (CONFIG.nextDropBlurb && <p>{CONFIG.nextDropBlurb}</p>)}
             </div>
             <Countdown target={CONFIG.dropDate} />
           </Reveal>
@@ -72,18 +64,7 @@ export default function Drop() {
               <p className="empty-note">The pieces are revealed soon — join the list to see them first.</p>
             )
           ) : (
-            <>
-              <div className="section-head"><span className="eyebrow">The Bundles</span><h2>Matched Sets</h2></div>
-              <div className="grid">{bundles.map((p) => <ProductCard key={p.handle} p={p} />)}</div>
-              {rest.length > 0 && (
-                <>
-                  <div className="section-head" style={{ marginTop: 64 }}>
-                    <span className="eyebrow">Break the Set</span><h2>Singles</h2>
-                  </div>
-                  <div className="grid g4">{rest.map((p) => <ProductCard key={p.handle} p={p} />)}</div>
-                </>
-              )}
-            </>
+            <p className="empty-note">The pieces are revealed soon — join the list below to see them first. Looking for City of Sins? <Link to="/shop">Shop the collection</Link>.</p>
           )}
         </div>
       </section>

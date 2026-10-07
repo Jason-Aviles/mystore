@@ -15,8 +15,8 @@ export const DEFAULT_CONFIG = {
   lowStockThreshold: 12, // "Only X left" appears at or below this many total units
   freeShipThreshold: 100,
   dropMode: true,       // master switch — off hides countdowns, drop links, drop language everywhere
-  dropName: 'CITY OF SINS — DROP 002',
-  dropDate: '2026-07-24T19:00:00-04:00', // update per drop
+  dropName: 'THE EMBLEM — DROP 003',
+  dropDate: '', // set per drop (Drops → countdown); blank = no timer
   // "Up next" teaser (homepage + Drop page) — pieces only, no prices/dates
   nextDropEnabled: true,
   nextDropName: 'THE EMBLEM — DROP 003',

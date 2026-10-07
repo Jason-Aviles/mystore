@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom';
 import { supabase, hasSupabase } from '../lib/supabase';
 import { isLive, uploadProductImage, adminGetSettings, adminReplaceSettings } from './adminData';
 import PublishBar from './PublishBar';
+import LockdownCard from './LockdownCard';
 import { COMMON_ZONES, zonedToUtcIso, utcToZonedLocal, formatInZone } from '../lib/tz';
 import { DROP_STATUS_LABEL } from '../lib/preorder';
 
@@ -672,6 +673,7 @@ export default function Preorders() {
         <button className="btn btn-sm" onClick={() => setForm({ ...EMPTY })}>New Drop</button>
       </div>
       {msg && <div className="note-banner">{msg}</div>}
+      <LockdownCard onSaved={() => setPubKey((k) => k + 1)} />
       <PublishBar refreshKey={pubKey} previewPath="/drop" />
       {campaigns.length === 0 ? (
         <p className="empty-note">

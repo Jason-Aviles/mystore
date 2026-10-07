@@ -41,6 +41,8 @@ export async function prepareOrder(opts: {
   site: string;
   /** creates a Stripe customer for deposit orders (balance is invoiced later) */
   createStripeCustomer?: (email: string) => Promise<string | null>;
+  /** code the shopper unlocked the private preorder with (gate) */
+  accessCode?: string | null;
 }): Promise<Fail | Prepared> {
   const { supabase, order_id, items, site } = opts;
   const email = String(opts.email || '').toLowerCase();
@@ -74,6 +76,25 @@ export async function prepareOrder(opts: {
     if (c && !campaignLive(c)) return fail(409, { error: 'preorder_closed', campaign: c.name, closes_at: c.closes_at });
   }
 
+  // PRIVATE PREORDER: the gate is only a screen — the code is enforced HERE.
+  // A code-only campaign needs a currently active code for that campaign
+  // (or a legacy drop code), whatever the browser did to skip the gate.
+  const codeCampaigns = (campaigns || []).filter((c: any) => c.status === 'live' && c.access_required !== false);
+  if (codeCampaigns.length && (prods || []).some((p: any) => codeCampaigns.some((c: any) => c.id === p.campaign_id))) {
+    const clean = String(opts.accessCode || '').trim().toUpperCase();
+    let ok = false;
+    if (clean) {
+      const { data: pc } = await supabase.from('preorder_access_codes').select('campaign_id')
+        .eq('code', clean).eq('active', true).in('campaign_id', codeCampaigns.map((c: any) => c.id));
+      ok = Boolean(pc?.length);
+      if (!ok) {
+        const { data: legacy } = await supabase.from('access_codes').select('code').eq('code', clean).eq('active', true).maybeSingle();
+        ok = Boolean(legacy);
+      }
+    }
+    if (!ok) return fail(403, { error: 'code_required' });
+  }
+
   // prior PAID units per handle (for per-customer + production-cap checks)
   const { data: priorItems } = campaignIds.length
     ? await supabase.from('order_items')
@@ -89,6 +110,12 @@ export async function prepareOrder(opts: {
     .reduce((s: number, x: any) => s + x.qty, 0);
   const settings = settingsRow?.data || {};
   const freeShipThreshold = Number(settings.freeShipThreshold ?? 100);
+
+  // LOCKDOWN (admin: preorder-only mode): only the drop's preorder pieces sell
+  if (settings.preorderOnlyLock === true) {
+    const regular = (prods || []).filter((p: any) => !campaignOf(p));
+    if (regular.length) return fail(409, { error: 'store_locked', titles: regular.map((p: any) => p.title) });
+  }
 
   const short: any[] = [];
   const lines: Line[] = [];

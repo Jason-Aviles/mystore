@@ -9,7 +9,7 @@ import { hasSupabase, supabase } from '../lib/supabase';
 import { Flip, rollNumber, reducedMotion } from '../lib/motion';
 import { variantQty } from '../lib/catalog';
 import { payMethodList, returnsClaim, shipsClaim, freeShipActive, guaranteePoints, chargeReassurance } from '../lib/trust';
-import { saveOrderRef, shipWindowText, depositTerms, lineDueNow, lineBalanceLater } from '../lib/preorder';
+import { saveOrderRef, shipWindowText, depositTerms, lineDueNow, lineBalanceLater, unlockCode } from '../lib/preorder';
 import PayPalButtons from '../components/PayPalButtons';
 import { metaTrack } from '../lib/meta';
 import reviewSeed from '../data/imported-reviews.json';
@@ -117,6 +117,7 @@ export default function CartPage() {
     email: email.toLowerCase(),
     origin: window.location.origin,
     country,
+    access_code: unlockCode(), // checkout re-verifies it for code-only preorders
     items: lines.map((l) => ({ handle: l.handle, option1: l.o1, option2: l.o2 || null, qty: l.qty })),
   });
 
@@ -132,6 +133,10 @@ export default function CartPage() {
     } else if (body?.error === 'limit') {
       setPayErr(`${body.title} is limited to ${body.limit} per customer${body.already ? ` and this email has already ordered ${body.already}` : ''}. Lower the quantity and try again — nothing was charged.`);
       if (window.fbq) window.fbq('trackCustom', 'CheckoutError', { kind: 'limit' });
+    } else if (body?.error === 'code_required') {
+      setPayErr('This preorder is private — enter your access code at the gate first. Nothing was charged.');
+    } else if (body?.error === 'store_locked') {
+      setPayErr('The store is in private preorder mode — only the preorder pieces can be bought right now. Remove the other items to continue. Nothing was charged.');
     } else if (body?.error === 'preorder_full') {
       setPayErr(`The ${body.campaign || 'preorder'} has reached its production cap${body.available ? ` — only ${body.available} unit(s) remain` : ''}. Nothing was charged and your cart is saved.`);
       if (window.fbq) window.fbq('trackCustom', 'CheckoutError', { kind: 'preorder_full' });

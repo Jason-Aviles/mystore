@@ -89,15 +89,21 @@ export function lineBalanceLater(p, qty, campaign) {
    unlocks are ignored, so access ends when the preorder does. */
 const UNLOCK_KEY = 'dd_preorder_unlock';
 
-export function saveUnlock(campaign) {
+export function saveUnlock(campaign, code = '') {
   try {
     localStorage.setItem(UNLOCK_KEY, JSON.stringify({
+      code: code || null, // re-checked by create-checkout / paypal-create-order
       campaignId: campaign?.id ?? null,
       slug: campaign?.slug ?? null,
       expiresAt: campaign?.closes_at ?? null,
       at: Date.now(),
     }));
   } catch { /* private mode */ }
+}
+
+/** The access code this browser unlocked the current preorder with. */
+export function unlockCode() {
+  return readUnlock()?.code || '';
 }
 
 export function readUnlock() {

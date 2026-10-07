@@ -2565,3 +2565,10 @@ input, textarea { caret-color: var(--red); }
   .section-head h2:hover, .page-head h1:hover { filter: url(#dd-boil); }
 }
 .motion-paused .section-head h2:hover, .motion-paused .page-head h1:hover { filter: none; }
+/* admin: store lockdown switch */
+.lockdown-card { display: grid; grid-template-columns: 1fr auto; gap: 8px 16px; align-items: center; padding: 14px 16px; margin: 0 0 14px; border: 1px solid var(--line); background: rgba(20, 20, 24, .7); }
+.lockdown-card.on { border-color: var(--red); background: #1a0f13; }
+.lockdown-card p { margin: 4px 0 0; font-size: 12px; color: var(--silver); max-width: 70ch; }
+.lockdown-card .lockdown-msg { grid-column: 1 / -1; color: var(--green); }
+@media (max-width: 640px) { .lockdown-card { grid-template-columns: 1fr; } }
+.nd-count { margin: 14px 0 4px; }

@@ -106,7 +106,7 @@ export default function Gate({ onDone, onUtilityNavigate }) {
       markSubscribed();
       if (res.unlocked) {
         open(() => {
-          unlock(campaign);
+          unlock(campaign, code.trim().toUpperCase());
           onDone?.();
           showToast('Access granted — welcome to the preorder');
           navigate('/drop');
@@ -147,6 +147,9 @@ export default function Gate({ onDone, onUtilityNavigate }) {
     if (phone.trim() && smsConsent) await saveSmsSignup({ phone, consent: true });
     markSubscribed();
     setBusy(false);
+    // LOCKDOWN (guest bypass off): joining the list is NOT a key — only a
+    // valid code opens the store. Otherwise the list doubles as a soft entry.
+    if (CONFIG.gateGuestBypass === false) { setJoined(true); return; }
     open(() => { unlock(); onDone?.(); showToast('You’re on the list — next code hits your inbox'); });
   }
 
@@ -208,7 +211,9 @@ export default function Gate({ onDone, onUtilityNavigate }) {
 
         {joined ? (
           <div className="gate-joined">
-            <p><b>You’re on the list.</b> We’ll email you when the preorder opens{campaign?.opens_at ? ` (${opensText(campaign)})` : ''}.</p>
+            <p><b>You’re on the list.</b> {campaign
+              ? <>We’ll email you when the preorder opens{campaign?.opens_at ? ` (${opensText(campaign)})` : ''}.</>
+              : <>Your access code arrives by email before the drop opens.</>}</p>
           </div>
         ) : (
           <form onSubmit={submitVisibleForm}>

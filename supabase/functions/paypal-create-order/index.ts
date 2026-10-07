@@ -18,7 +18,7 @@ import { paypal, paypalConfigured, money } from '../_shared/paypal.ts';
 Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') return new Response('ok', { headers: corsHeaders });
   try {
-    const { order_id, email, items, origin, country, probe } = await req.json();
+    const { order_id, email, items, origin, country, probe, access_code } = await req.json();
     // the storefront asks first, so the button never shows before the
     // server-side secrets exist (no half-working PayPal window)
     if (probe) {
@@ -36,7 +36,7 @@ Deno.serve(async (req) => {
     const site = origin || 'https://darkdivine.store';
 
     const prepared = await prepareOrder({
-      supabase, order_id, email, items, country, site,
+      supabase, order_id, email, items, country, site, accessCode: access_code,
       // deposit balances are invoiced through Stripe, whatever paid the deposit
       createStripeCustomer: stripeKey
         ? async (e) => (await new Stripe(stripeKey).customers.create({ email: e })).id
