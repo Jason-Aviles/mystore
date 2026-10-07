@@ -59,6 +59,7 @@ export function StoreProvider({ children }) {
       dropName: L.heading || d.name || base.dropName,
       dropDescription: L.description || '',
       dropImage: L.heroImage || d.hero_image_url || base.dropImage,
+      dropImage2: L.heroImage2 || '',
       dropButtonText: L.buttonText || '',
       dropButtonHref: L.buttonHref || '',
       dropDate: countdownAt,

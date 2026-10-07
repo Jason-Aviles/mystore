@@ -2577,3 +2577,12 @@ input, textarea { caret-color: var(--red); }
   .preview-bar span { display: none; }
   .preview-bar .pb-btn { padding: 5px 8px; font-size: 10px; }
 }
+
+/* gate: one or two polaroids (featured drop's pieces) */
+.gate-teases { display: flex; justify-content: center; align-items: flex-start; }
+.gate-teases.pair .gate-tease { width: min(190px, 40vw); margin: 4px -10px 24px; }
+.gate-teases.pair .gate-tease.second { transform: rotate(3.2deg) translateY(14px); z-index: 0; }
+.gate-teases.pair .gate-tease:first-child { z-index: 1; }
+.gate-teases.pair .gate-tease.second:hover { transform: rotate(0.6deg) translateY(10px) scale(1.03); }
+@media (max-width: 640px) { .gate-teases.pair .gate-tease { width: clamp(118px, 36vw, 160px); margin-bottom: 26px; } }
+@media (max-width: 640px) and (max-height: 620px) { .gate-teases { display: none; } }

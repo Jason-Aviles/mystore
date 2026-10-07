@@ -43,6 +43,8 @@ export default function Gate({ onDone, onUtilityNavigate }) {
 
   const live = campaignLive(campaign);
   const soon = Boolean(campaign) && !live; // coming_soon, or live-but-not-yet-open
+  // a drop can be public (no code): the email is the way in, no code box
+  const codeNeeded = campaign ? live && campaign.access_required !== false : true;
   const shipWin = shipWindowText(campaign);
   const browseAsGuest = () => { unlock(); onDone?.(); };
 
@@ -184,12 +186,19 @@ export default function Gate({ onDone, onUtilityNavigate }) {
       <div className="inner">
         <h2 className="logo-big" id="gate-title" aria-label="Dark Divine"><BrandMark placement="gate" className="gate-wm" reveal="now" delay={0.35} animated /></h2>
         <div className="script-line">Illuminate the darkness within</div>
-        <div className="gate-tease" aria-hidden="true">
-          <span className="gt-tape">{campaign ? 'PRIVATE PREORDER' : (CONFIG.dropMode !== false ? CONFIG.dropName : 'DARK DIVINE')}</span>
-          <img src={(featured && CONFIG.dropImage) || campaign?.hero_image_url || CONFIG.dropImage || '/media/editorial/cafe-fit.webp'} alt="" fetchPriority="high" />
+        <div className={`gate-teases ${featured && CONFIG.dropImage2 ? 'pair' : ''}`} aria-hidden="true">
+          <div className="gate-tease">
+            <span className="gt-tape">{campaign ? (codeNeeded || !live ? 'PRIVATE PREORDER' : 'PREORDER OPEN') : (CONFIG.dropMode !== false ? CONFIG.dropName : 'DARK DIVINE')}</span>
+            <img src={(featured && CONFIG.dropImage) || campaign?.hero_image_url || CONFIG.dropImage || '/media/editorial/cafe-fit.webp'} alt="" fetchPriority="high" />
+          </div>
+          {featured && CONFIG.dropImage2 && (
+            <div className="gate-tease second">
+              <img src={CONFIG.dropImage2} alt="" fetchPriority="high" />
+            </div>
+          )}
         </div>
         <div className="lbl" ref={lblRef}>
-          {campaign ? `Private Preorder — ${heading}` : `Private Access — ${heading}`}
+          {campaign ? `${codeNeeded || !live ? 'Private Preorder' : 'Preorder Open'} — ${heading}` : `Private Access — ${heading}`}
         </div>
 
         {campaign && (
@@ -234,17 +243,17 @@ export default function Gate({ onDone, onUtilityNavigate }) {
                 <span>I agree to receive automated SMS alerts from Dark Divine. Msg &amp; data rates may apply. Reply STOP to opt out.</span>
               </label>
             )}
-            {entryEnabled && (live || !campaign) && (
+            {entryEnabled && codeNeeded && (live || !campaign) && (
               <input className="code" type="text" name="access-code" required placeholder="ACCESS CODE" aria-label="Access code"
                 value={code} onChange={(e) => setCode(e.target.value)} autoComplete="off" autoCapitalize="characters" spellCheck="false" ref={codeRef} />
             )}
             <button className="btn" type="submit" disabled={busy}>
-              {busy ? (entryEnabled ? 'Checking…' : 'Joining…') : (!entryEnabled && !soon ? 'Join the list' : (campaign ? (live ? 'Enter Private Preorder' : 'Notify Me When It Opens') : 'Enter'))}
+              {busy ? (entryEnabled ? 'Checking…' : 'Joining…') : (!entryEnabled && !soon ? 'Join the list' : (campaign ? (live ? (codeNeeded ? 'Enter Private Preorder' : 'Enter the Preorder') : 'Notify Me When It Opens') : 'Enter'))}
             </button>
           </form>
         )}
         <div className="err" role="status" aria-live="polite">{err}</div>
-        {entryEnabled && (live || !campaign) && !joined && (
+        {entryEnabled && codeNeeded && (live || !campaign) && !joined && (
           <div className="alt">No code? <button type="button" onClick={joinList} disabled={busy}>Join the list</button> — codes go out before every {campaign ? 'preorder' : 'drop'}.</div>
         )}
         {guestAllowed && (

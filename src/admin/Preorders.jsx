@@ -61,7 +61,7 @@ const EMPTY = {
   estimated_production_start: '', estimated_shipping_start: '', estimated_shipping_end: '',
   access_required: true, max_orders: '', max_units: '', hero_image_url: '', terms: '',
   // landing page + countdown — saved to draft_content, live after Publish
-  l_heading: '', l_description: '', l_heroImage: '', l_buttonText: '', l_buttonHref: '', l_announcement: '',
+  l_heading: '', l_description: '', l_heroImage: '', l_heroImage2: '', l_buttonText: '', l_buttonHref: '', l_announcement: '',
   cd_enabled: false, cd_local: '', cd_tz: 'America/New_York', cd_label: '', cd_expired: '', cd_unlock: false,
 };
 
@@ -70,6 +70,7 @@ function landingFrom(form) {
     heading: form.l_heading.trim(),
     description: form.l_description.trim(),
     heroImage: form.l_heroImage.trim(),
+    heroImage2: form.l_heroImage2.trim(),
     buttonText: form.l_buttonText.trim(),
     buttonHref: form.l_buttonHref.trim(),
     announcement: form.l_announcement.trim(),
@@ -106,7 +107,7 @@ const toForm = (c) => ({
     const L = c.draft_content || {};
     const cd = L.countdown || {};
     return {
-      l_heading: L.heading || '', l_description: L.description || '', l_heroImage: L.heroImage || '',
+      l_heading: L.heading || '', l_description: L.description || '', l_heroImage: L.heroImage || '', l_heroImage2: L.heroImage2 || '',
       l_buttonText: L.buttonText || '', l_buttonHref: L.buttonHref || '', l_announcement: L.announcement || '',
       cd_enabled: Boolean(cd.enabled), cd_tz: cd.tz || 'America/New_York',
       cd_local: cd.local || (cd.at ? utcToZonedLocal(cd.at, cd.tz || 'America/New_York') : ''),
@@ -391,7 +392,7 @@ export default function Preorders() {
             </label>
             <label className="consent-row" style={{ margin: '4px 0' }}>
               <input type="checkbox" checked={form.access_required !== false} onChange={(e) => setForm({ ...form, access_required: e.target.checked })} />
-              <span>Access code required to enter (private preorder)</span>
+              <span>Access code required (private preorder). Off = anyone who enters their email gets in.</span>
             </label>
           </fieldset>
           <fieldset>
@@ -399,6 +400,7 @@ export default function Preorders() {
             <label>Heading<input value={form.l_heading} maxLength={80} onChange={(e) => setForm({ ...form, l_heading: e.target.value })} placeholder={form.name || 'THE EMBLEM — DROP 003'} /><small>Shown on the gate, homepage timer, Drop page and announcement bar. Blank = the drop name.</small></label>
             <label>Description<textarea rows={3} maxLength={600} value={form.l_description} onChange={(e) => setForm({ ...form, l_description: e.target.value })} /></label>
             <label>Hero image<input value={form.l_heroImage} onChange={(e) => setForm({ ...form, l_heroImage: e.target.value })} placeholder="Blank = the hero image above" /></label>
+            <label>Second picture (the gate shows both side by side)<input value={form.l_heroImage2} onChange={(e) => setForm({ ...form, l_heroImage2: e.target.value })} placeholder="/media/products/… — blank = one picture" /></label>
             <div className="row two">
               <label>Button text<input value={form.l_buttonText} maxLength={40} onChange={(e) => setForm({ ...form, l_buttonText: e.target.value })} placeholder="Shop the drop" /></label>
               <label>Button link<input value={form.l_buttonHref} onChange={(e) => setForm({ ...form, l_buttonHref: e.target.value })} placeholder="Blank = first piece in the drop" /></label>
