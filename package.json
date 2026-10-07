@@ -12,7 +12,8 @@
     "test:homepage": "node --test scripts/homepage-content.test.mjs",
     "test:responsive": "node --test scripts/responsive-accessibility.test.mjs",
     "import:shopify": "node scripts/import-shopify.mjs",
-    "import:reviews": "node scripts/import-reviews.mjs"
+    "import:reviews": "node scripts/import-reviews.mjs",
+    "secrets:paypal": "node scripts/set-paypal-secrets.mjs"
   },
   "dependencies": {
     "@google/model-viewer": "^4.3.1",

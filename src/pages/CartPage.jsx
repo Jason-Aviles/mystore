@@ -112,6 +112,35 @@ export default function CartPage() {
 
   /* Step 2a — Stripe Checkout: the Edge Function verifies stock + prices,
      records the pending order, and returns one session for the whole cart. */
+  const checkoutPayload = () => ({
+    order_id: orderId,
+    email: email.toLowerCase(),
+    origin: window.location.origin,
+    country,
+    items: lines.map((l) => ({ handle: l.handle, option1: l.o1, option2: l.o2 || null, qty: l.qty })),
+  });
+
+  /* one honest answer per server refusal — shared by card + PayPal */
+  async function handleCheckoutError(body) {
+    if (body?.error === 'stock' && Array.isArray(body.lines)) {
+      await reloadProducts(); // pull fresh inventory so the page tells the same story
+      setShortLines(body.lines);
+      if (window.fbq) window.fbq('trackCustom', 'CheckoutError', { kind: 'stock' });
+    } else if (body?.error === 'preorder_closed') {
+      setPayErr(`The ${body.campaign || 'preorder'} window has closed — preorder items can no longer be purchased. Nothing was charged and your cart is saved; remove the preorder items to check out the rest.`);
+      if (window.fbq) window.fbq('trackCustom', 'CheckoutError', { kind: 'preorder_closed' });
+    } else if (body?.error === 'limit') {
+      setPayErr(`${body.title} is limited to ${body.limit} per customer${body.already ? ` and this email has already ordered ${body.already}` : ''}. Lower the quantity and try again — nothing was charged.`);
+      if (window.fbq) window.fbq('trackCustom', 'CheckoutError', { kind: 'limit' });
+    } else if (body?.error === 'preorder_full') {
+      setPayErr(`The ${body.campaign || 'preorder'} has reached its production cap${body.available ? ` — only ${body.available} unit(s) remain` : ''}. Nothing was charged and your cart is saved.`);
+      if (window.fbq) window.fbq('trackCustom', 'CheckoutError', { kind: 'preorder_full' });
+    } else {
+      return false;
+    }
+    return true;
+  }
+
   async function payWithStripe() {
     setBusy(true);
     setPayErr('');
@@ -122,15 +151,7 @@ export default function CartPage() {
       return;
     }
     try {
-      const { data, error } = await supabase.functions.invoke('create-checkout', {
-        body: {
-          order_id: orderId,
-          email: email.toLowerCase(),
-          origin: window.location.origin,
-          country,
-          items: lines.map((l) => ({ handle: l.handle, option1: l.o1, option2: l.o2 || null, qty: l.qty })),
-        },
-      });
+      const { data, error } = await supabase.functions.invoke('create-checkout', { body: checkoutPayload() });
       if (!error && data?.url) {
         if (data.order_id) setOrderId(data.order_id);
         // remember this browser's own order + status token so the Thanks
@@ -143,19 +164,8 @@ export default function CartPage() {
       const ctx = error?.context;
       let body = data;
       if (!body && ctx?.json) { try { body = await ctx.json(); } catch { /* not json */ } }
-      if (body?.error === 'stock' && Array.isArray(body.lines)) {
-        await reloadProducts(); // pull fresh inventory so the page tells the same story
-        setShortLines(body.lines);
-        if (window.fbq) window.fbq('trackCustom', 'CheckoutError', { kind: 'stock' });
-      } else if (body?.error === 'preorder_closed') {
-        setPayErr(`The ${body.campaign || 'preorder'} window has closed — preorder items can no longer be purchased. Nothing was charged and your cart is saved; remove the preorder items to check out the rest.`);
-        if (window.fbq) window.fbq('trackCustom', 'CheckoutError', { kind: 'preorder_closed' });
-      } else if (body?.error === 'limit') {
-        setPayErr(`${body.title} is limited to ${body.limit} per customer${body.already ? ` and this email has already ordered ${body.already}` : ''}. Lower the quantity and try again — nothing was charged.`);
-        if (window.fbq) window.fbq('trackCustom', 'CheckoutError', { kind: 'limit' });
-      } else if (body?.error === 'preorder_full') {
-        setPayErr(`The ${body.campaign || 'preorder'} has reached its production cap${body.available ? ` — only ${body.available} unit(s) remain` : ''}. Nothing was charged and your cart is saved.`);
-        if (window.fbq) window.fbq('trackCustom', 'CheckoutError', { kind: 'preorder_full' });
+      if (await handleCheckoutError(body)) {
+        // handled — the message above names the exact fix
       } else {
         setPayErr('Checkout didn’t open — nothing was charged and your cart is saved. Try again, or use a direct payment link below.');
         setShowLinks(true); // real per-product Stripe links as the escape hatch
@@ -168,13 +178,9 @@ export default function CartPage() {
     setBusy(false);
   }
 
-  /* Step 2b — PayPal capture finished client-side: record it and thank them. */
-  async function paypalPaid({ ref }) {
-    if (hasSupabase && orderId) {
-      // best-effort: anon can't update orders — reconcile in admin if this no-ops
-      await supabase.from('orders').update({ status: 'paid', stripe_ref: `paypal:${ref}` }).eq('id', orderId).then(() => {}, () => {});
-    }
-    nav(`/thanks?order=${orderId || ''}`);
+  /* Step 2b — PayPal: the server priced, captured and recorded the order */
+  function paypalPaid({ order_id }) {
+    nav(`/thanks?order=${order_id || orderId || ''}&paid=paypal`);
   }
 
   if (lines.length === 0 && step === 'cart') {
@@ -331,8 +337,12 @@ export default function CartPage() {
               <p className="form-note" style={{ textAlign: 'center' }}>{chargeReassurance()}</p>
               {problems.length > 0 && <p className="form-note">Fix the availability note above first — checkout re-checks real stock.</p>}
               <PayPalButtons
-                amount={cartTotal}
-                description={lines.map((l) => `${l.qty}x ${l.p.title}`).join(', ')}
+                getPayload={checkoutPayload}
+                disabled={busy || problems.length > 0}
+                onCreated={(id, token) => { setOrderId(id); if (id && token) saveOrderRef(id, token); }}
+                onCheckoutError={async (body) => {
+                  if (!(await handleCheckoutError(body))) setPayErr('PayPal didn’t open — nothing was charged and your cart is saved. Try again or use card checkout.');
+                }}
                 onPaid={paypalPaid}
               />
               {payErr && <p role="alert" style={{ color: '#e8a0a3', fontSize: 12 }}>{payErr}</p>}

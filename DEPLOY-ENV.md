@@ -114,10 +114,8 @@ Two code fixes came with it:
 
 - `VITE_ADMIN_PASSCODE` is now read in dev builds only. It was being
   compiled into the public JavaScript because Netlify has it set.
-- PayPal is off unless `VITE_PAYPAL_SERVER_CAPTURE=true`. The current
-  button captures money in the browser and records no order (no address,
-  no stock change, no email). Leave the flag unset until a server-side
-  capture function exists.
+- PayPal now runs server-side (see "PayPal" below). The old browser-only
+  capture, which recorded no order, is gone.
 
 **Cleanup in Netlify → Site configuration → Environment variables** — the
 site build needs only `VITE_SUPABASE_URL`, `VITE_SUPABASE_ANON_KEY` and
@@ -127,3 +125,29 @@ the rest from Netlify: `VITE_ADMIN_PASSCODE`, `ADMIN_LOGIN_PASSWORD`,
 `SUPABASE_SERVICE_ROLE_KEY`, `SUPABASE_ACCESS_TOKEN`, `RESEND_API_KEY`,
 `TWILIO_*`. They are used by Supabase Edge Functions, which have their own
 secret store; a copy in Netlify does nothing except widen exposure.
+
+## PayPal
+
+Flow: the cart's PayPal button calls `paypal-create-order` (prices the cart
+from the database with the same rules as Stripe, creates the pending order)
+→ the buyer approves in PayPal → `paypal-capture` checks the order id, the
+amount and the shipping country BEFORE capturing, then marks the order paid
+through the same code as the Stripe webhook (address saved, confirmation
+email, owner sale alert, stock decreased).
+
+The button stays hidden until Supabase has these Edge Function secrets:
+
+| Secret | Value |
+| --- | --- |
+| `PAYPAL_CLIENT_ID` | same as `VITE_PAYPAL_CLIENT_ID` (same PayPal app) |
+| `PAYPAL_CLIENT_SECRET` | developer.paypal.com → Apps & Credentials → your app |
+| `PAYPAL_ENV` | `live` for real money, `sandbox` for test accounts |
+
+Fill `PAYPAL_CLIENT_SECRET` (and `PAYPAL_ENV`) in `.env`, then run
+`npm run secrets:paypal` — it checks the credentials with PayPal, saves them
+in Supabase, and confirms the live function reports ready. Then add "PayPal"
+to Admin → Site Settings → Accepted payment methods so the logo shows.
+
+Limits: PayPal charges the US Standard (free over the threshold) or Canada
+Tracked rate — Priority shipping and Stripe promo codes are card-checkout
+only.

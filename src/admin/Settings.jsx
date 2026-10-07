@@ -49,7 +49,7 @@ const FIELDS = [
     ['supportResponse', 'Support response promise', 'text', 'e.g. "within 24 hours" — general support reply time, shown in footer, contact page, product page, tracking form. Only promise what you keep'],
     ['returnsResponse', 'Returns response promise', 'text', 'e.g. "within 48 hours" — reply time on RETURN requests specifically (contact page + refund policy). Can differ from general support'],
     ['freeReturns', 'Free return shipping', 'toggle', 'ON only if you truly pay return shipping on change-of-mind returns. OFF = customer covers it (defects/wrong items are always on us either way). Drives the returns wording on product, cart, and policy pages'],
-    ['payMethods', 'Accepted payment methods', 'text', 'Comma-separated, shown at cart + footer. List ONLY methods enabled in Stripe Dashboard → Payment methods (PayPal appears automatically when connected)'],
+    ['payMethods', 'Accepted payment methods', 'text', 'Comma-separated, shown at cart + footer. List ONLY methods enabled in Stripe Dashboard → Payment methods (add PayPal once its Supabase secrets are set)'],
     ['payLaterNote', 'Klarna pay-in-4 note', 'toggle', 'The "4 interest-free payments" line on product + cart. Keep on only while Klarna is enabled in your Stripe dashboard'],
   ]],
   ['Founder & business proof', [

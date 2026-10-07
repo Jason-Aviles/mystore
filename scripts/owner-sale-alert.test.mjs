@@ -86,17 +86,21 @@ test('sendOwnerSaleAlerts contains provider failures', async () => {
   assert.deepEqual(result, { email: 'failed', sms: 'skipped' });
 });
 
-test('Stripe checkout completion wires paid order data to private owner alerts', async () => {
-  const webhook = await readFile(
-    new URL('../supabase/functions/stripe-webhook/index.ts', import.meta.url),
-    'utf8',
-  );
+test('every paid order (Stripe + PayPal) wires into the private owner alerts', async () => {
+  const read = (rel) => readFile(new URL(rel, import.meta.url), 'utf8');
+  const core = await read('../supabase/functions/_shared/checkout-core.ts');
+  const webhook = await read('../supabase/functions/stripe-webhook/index.ts');
+  const paypal = await read('../supabase/functions/paypal-capture/index.ts');
 
-  assert.match(webhook, /import \{ sendOwnerSaleAlerts \}/);
-  assert.match(webhook, /OWNER_SALE_EMAIL/);
-  assert.match(webhook, /OWNER_SALE_PHONE/);
-  assert.match(webhook, /sendOwnerSaleAlerts\(\{/);
+  // the shared paid-order path sends the alert with the right secrets
+  assert.match(core, /import \{ sendOwnerSaleAlerts \}/);
+  assert.match(core, /sendOwnerSaleAlerts\(\{/);
+  assert.match(core, /ownerEmail:\s*Deno\.env\.get\('OWNER_SALE_EMAIL'\)/);
+  assert.match(core, /ownerPhone:\s*Deno\.env\.get\('OWNER_SALE_PHONE'\)/);
+
+  // both providers go through it, passing the real charged total
+  assert.match(webhook, /markOrderPaid\(\{/);
   assert.match(webhook, /totalCents:\s*session\.amount_total/);
-  assert.match(webhook, /ownerEmail:\s*Deno\.env\.get\('OWNER_SALE_EMAIL'\)/);
-  assert.match(webhook, /ownerPhone:\s*Deno\.env\.get\('OWNER_SALE_PHONE'\)/);
+  assert.match(paypal, /markOrderPaid\(\{/);
+  assert.match(paypal, /totalCents:/);
 });

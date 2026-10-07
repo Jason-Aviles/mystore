@@ -1,17 +1,15 @@
-import { hasPayPal } from '../components/PayPalButtons';
 /* Trust-content helpers — the ONE place display claims are derived.
    Rule: every customer-facing claim must trace to CONFIG (admin-editable,
-   verified by the owner) or to environment facts (PayPal key present).
+   verified by the owner).
    Components never hardcode "30-day returns" / payment logos again. */
 
 /** Payment methods to show. Base list is admin-verified against the Stripe
-    dashboard; PayPal appends itself ONLY when the PayPal button can render. */
+    dashboard. Add "PayPal" there once its Supabase secrets are set. */
 export function payMethodList(CONFIG) {
   const base = String(CONFIG.payMethods || '')
     .split(',')
     .map((s) => s.trim())
     .filter(Boolean);
-  if (hasPayPal && !base.includes('PayPal')) base.push('PayPal');
   return base;
 }
 
