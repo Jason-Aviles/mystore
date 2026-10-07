@@ -1,10 +1,14 @@
 import { useEffect, useRef, useState } from 'react';
 
-/* Real PayPal Smart Buttons — renders only when VITE_PAYPAL_CLIENT_ID is set.
-   Setup (free): developer.paypal.com → My Apps → Create App (Live) →
-   copy the Client ID into .env / Netlify env. Money lands in your PayPal
-   business account; no server needed for capture. */
-const CLIENT_ID = import.meta.env.VITE_PAYPAL_CLIENT_ID;
+/* PayPal Smart Buttons — OFF until a server-side capture exists.
+   This path captures in the browser: the amount is client-supplied, no
+   order row is written (anon can't touch orders), so no shipping address,
+   no stock decrement, no confirmation email — a customer could pay and the
+   store would have no record. Having VITE_PAYPAL_CLIENT_ID in Netlify is
+   therefore NOT enough: it also needs VITE_PAYPAL_SERVER_CAPTURE=true, which
+   should only be set once a paypal-capture edge function (server-priced
+   order + capture + order write, like create-checkout/stripe-webhook) ships. */
+const CLIENT_ID = import.meta.env.VITE_PAYPAL_SERVER_CAPTURE === 'true' ? import.meta.env.VITE_PAYPAL_CLIENT_ID : '';
 
 let sdkPromise = null;
 function loadSdk() {

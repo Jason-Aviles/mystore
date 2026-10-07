@@ -25,7 +25,10 @@ import '../styles/global.css';
           the public JS bundle, so anyone who reads it can sign into /admin on
           any deploy that is missing its Supabase vars. Unset = demo admin is
           locked, which is the safe failure. */
-const DEMO_PASSCODE = import.meta.env.VITE_ADMIN_PASSCODE || '';
+// DEV builds only. In a production build import.meta.env.DEV is the literal
+// false, so the passcode string is stripped from the bundle even when a host
+// (Netlify) has VITE_ADMIN_PASSCODE set — VITE_ values are otherwise public.
+const DEMO_PASSCODE = import.meta.env.DEV ? (import.meta.env.VITE_ADMIN_PASSCODE || '') : '';
 
 function useAdminAuth() {
   const [authed, setAuthed] = useState(() => sessionStorage.getItem('dd_admin') === '1');

@@ -2,6 +2,14 @@
   command = "npm run build"
   publish = "dist"
 
+# Netlify's secret scanner fails the build when an env var's value appears in
+# the repo or the output. These are PUBLIC by design — browser-side keys,
+# the project URL, and business email addresses printed on the site — so
+# they're excluded. Real secrets (service role, Stripe sk_/whsec_, Resend,
+# Twilio, access tokens, passwords) stay scanned and must never be omitted.
+[build.environment]
+  SECRETS_SCAN_OMIT_KEYS = "VITE_SUPABASE_URL,VITE_SUPABASE_ANON_KEY,VITE_META_PIXEL_ID,VITE_PAYPAL_CLIENT_ID,SUPABASE_URL,STRIPE_PUBLISHABLE_KEY,RESEND_FROM,OWNER_SALE_EMAIL,ADMIN_LOGIN_EMAIL"
+
 # Retire the legacy www storefront while preserving paths and query strings.
 [[redirects]]
   from = "https://www.darkdivine.store/*"

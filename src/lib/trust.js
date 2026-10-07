@@ -1,3 +1,4 @@
+import { hasPayPal } from '../components/PayPalButtons';
 /* Trust-content helpers — the ONE place display claims are derived.
    Rule: every customer-facing claim must trace to CONFIG (admin-editable,
    verified by the owner) or to environment facts (PayPal key present).
@@ -10,7 +11,7 @@ export function payMethodList(CONFIG) {
     .split(',')
     .map((s) => s.trim())
     .filter(Boolean);
-  if (import.meta.env.VITE_PAYPAL_CLIENT_ID && !base.includes('PayPal')) base.push('PayPal');
+  if (hasPayPal && !base.includes('PayPal')) base.push('PayPal');
   return base;
 }
 

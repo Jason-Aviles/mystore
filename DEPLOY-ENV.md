@@ -101,3 +101,29 @@ supabase secrets set OWNER_SALE_EMAIL=... OWNER_SALE_PHONE=... TWILIO_FROM=...
 - Resend sending domain is not verified, so no email actually sends yet.
 - Stripe is in **test mode**. Real cards will not charge until you swap in live
   keys and re-run `scripts/setup-stripe-codes.mjs`.
+
+## Netlify secret scanner (Oct 2026)
+
+The first deploy with Supabase failed with **"Secrets scanning found secrets
+in build."** Netlify compares every env var value against the repo and the
+built files. The public ones (Supabase URL + publishable key, Meta pixel,
+store email addresses) are meant to be there, so `netlify.toml` lists them
+in `SECRETS_SCAN_OMIT_KEYS`. Everything else is still scanned.
+
+Two code fixes came with it:
+
+- `VITE_ADMIN_PASSCODE` is now read in dev builds only. It was being
+  compiled into the public JavaScript because Netlify has it set.
+- PayPal is off unless `VITE_PAYPAL_SERVER_CAPTURE=true`. The current
+  button captures money in the browser and records no order (no address,
+  no stock change, no email). Leave the flag unset until a server-side
+  capture function exists.
+
+**Cleanup in Netlify → Site configuration → Environment variables** — the
+site build needs only `VITE_SUPABASE_URL`, `VITE_SUPABASE_ANON_KEY` and
+`VITE_META_PIXEL_ID` (and those are already in `.env.production`). Delete
+the rest from Netlify: `VITE_ADMIN_PASSCODE`, `ADMIN_LOGIN_PASSWORD`,
+`STRIPE_SECRET_KEY`, `STRIPE_WEBHOOK_SECRET`, `STRIPE_RESTRICTED_KEY`,
+`SUPABASE_SERVICE_ROLE_KEY`, `SUPABASE_ACCESS_TOKEN`, `RESEND_API_KEY`,
+`TWILIO_*`. They are used by Supabase Edge Functions, which have their own
+secret store; a copy in Netlify does nothing except widen exposure.
