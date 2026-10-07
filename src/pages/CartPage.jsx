@@ -9,7 +9,7 @@ import { hasSupabase, supabase } from '../lib/supabase';
 import { Flip, rollNumber, reducedMotion } from '../lib/motion';
 import { variantQty } from '../lib/catalog';
 import { payMethodList, returnsClaim, shipsClaim, freeShipActive, guaranteePoints, chargeReassurance } from '../lib/trust';
-import { saveOrderRef, shipWindowText, depositTerms, lineDueNow, lineBalanceLater, unlockCode } from '../lib/preorder';
+import { saveOrderRef, shipWindowText, cartShipWindowText, cartWindowsDiffer, depositTerms, lineDueNow, lineBalanceLater, unlockCode } from '../lib/preorder';
 import PayPalButtons from '../components/PayPalButtons';
 import { metaTrack } from '../lib/meta';
 import reviewSeed from '../data/imported-reviews.json';
@@ -232,7 +232,7 @@ export default function CartPage() {
                 <div className="v">{l.p.optionNames[0]}: {l.o1}{l.o2 ? ` · ${l.p.optionNames[1]}: ${l.o2}` : ''}</div>
                 {isPreorder(l.p) && (
                   <div className="v preorder-note">
-                    Preorder — made after the preorder closes.{shipWindowText(campaign) ? ` Est. ship ${shipWindowText(campaign)}.` : ''}
+                    Preorder — made after the preorder closes.{shipWindowText(campaign, l.p) ? ` Est. ship ${shipWindowText(campaign, l.p)}.` : ''}
                   </div>
                 )}
                 {(() => { const q = variantQty(l.p, l.o1, l.o2 || ''); return q > 0 && q <= 3
@@ -283,8 +283,8 @@ export default function CartPage() {
               <div className="preorder-cart-note" role="note">
                 <b>Preorder items in this cart.</b>{' '}
                 They’re made after the preorder closes{campaign?.closes_at ? ` (${new Date(campaign.closes_at).toLocaleDateString('en-US', { month: 'long', day: 'numeric' })})` : ''}
-                {shipWindowText(campaign) ? ` — estimated shipping ${shipWindowText(campaign)}` : ''}.
-                {mixed && ' Your order contains both preorder and ready-to-ship items; preorder items may ship separately.'}
+                {cartShipWindowText(campaign, pre.map((l) => l.p)) ? ` — estimated shipping ${cartShipWindowText(campaign, pre.map((l) => l.p))}` : ''}.
+                {(mixed || cartWindowsDiffer(campaign, pre.map((l) => l.p))) && ' Everything in this order ships together, in one package, when the last piece is ready — that’s the date above.'}
                 {' '}You’ll receive production updates by email, and you can cancel for a full refund any time before shipping.
               </div>
             );

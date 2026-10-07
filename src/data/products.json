@@ -1016,7 +1016,7 @@
     "handle": "emblem-hoodie",
     "title": "Emblem Hoodie",
     "sub": "Oversized — spiked D back, spike sleeve, hood print",
-    "price": 79.99,
+    "price": 89.99,
     "compare": null,
     "category": "essentials",
     "collection": "The Emblem",
@@ -1083,7 +1083,9 @@
     ],
     "stripeLink": "",
     "seoTitle": "Emblem Hoodie — Dark Divine",
-    "seoDescription": "Oversized black hoodie with the spiked D emblem across the back. Limited preorder."
+    "seoDescription": "Oversized black hoodie with the spiked D emblem across the back. Limited preorder.",
+    "estShipStart": "2027-01-05",
+    "estShipEnd": "2027-01-30"
   },
   {
     "handle": "emblem-crop-capri-set",
@@ -1161,6 +1163,8 @@
     ],
     "stripeLink": "",
     "seoTitle": "Emblem Crop Top + Capri Set — Dark Divine",
-    "seoDescription": "Square-neck crop top and capri leggings with the spiked D emblem. Limited preorder."
+    "seoDescription": "Square-neck crop top and capri leggings with the spiked D emblem. Limited preorder.",
+    "estShipStart": "2027-02-02",
+    "estShipEnd": "2027-02-26"
   }
 ]

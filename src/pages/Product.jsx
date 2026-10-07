@@ -354,7 +354,7 @@ export default function Product() {
               return (
                 <div className="stock-note preorder" role="status">
                   Preorder — this item is made after the preorder closes.
-                  {shipWindowText(campaign) ? ` Estimated shipping: ${shipWindowText(campaign)}.` : ''}
+                  {shipWindowText(campaign, p) ? ` Estimated shipping: ${shipWindowText(campaign, p)}.` : ''}
                 </div>
               );
             }
@@ -383,7 +383,7 @@ export default function Product() {
                 {campaign.opens_at && <li>Preorder {campaignLive(campaign) ? 'opened' : 'opens'} {opensText(campaign)}{campaign.closes_at ? ` · closes ${closesText(campaign)}` : ''}</li>}
                 {!campaign.opens_at && campaign.closes_at && <li>Preorder closes {closesText(campaign)}</li>}
                 {campaign.estimated_production_start && <li>Production begins ~{productionStartText(campaign)}</li>}
-                {shipWindowText(campaign) && <li>Estimated shipping: {shipWindowText(campaign)}</li>}
+                {shipWindowText(campaign, p) && <li>Estimated shipping: {shipWindowText(campaign, p)}</li>}
                 {p.perCustomerLimit != null && <li>Limit {p.perCustomerLimit} per customer</li>}
                 {(() => {
                   const t = depositTerms(p, campaign);

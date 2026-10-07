@@ -129,7 +129,7 @@ export default function CartDrawer() {
                   <div className="t">{p.title}</div>
                   <div className="v">{p.optionNames[0]}: {l.o1}{l.o2 ? ` · ${p.optionNames[1]}: ${l.o2}` : ''}</div>
                   {isPreorder(p) && (
-                    <div className="v preorder-note">Preorder — made after the preorder closes{shipWindowText(campaign) ? ` · est. ship ${shipWindowText(campaign)}` : ''}</div>
+                    <div className="v preorder-note">Preorder — made after the preorder closes{shipWindowText(campaign, p) ? ` · est. ship ${shipWindowText(campaign, p)}` : ''}</div>
                   )}
                   {q === 0
                     ? <div className="v line-warn" role="status">This size just sold out — remove it to check out</div>

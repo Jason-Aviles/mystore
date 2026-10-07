@@ -46,9 +46,33 @@ export function campaignLive(c) {
 const fmtDate = (d, opts = { month: 'short', day: 'numeric' }) =>
   d ? new Date(d.includes('T') ? d : d + 'T00:00:00').toLocaleDateString('en-US', opts) : '';
 
-export function shipWindowText(c) {
-  if (!c?.estimated_shipping_start || !c?.estimated_shipping_end) return '';
-  return `${fmtDate(c.estimated_shipping_start)} – ${fmtDate(c.estimated_shipping_end)}`;
+/** "Jan 5 – Jan 30, 2027". A piece can override its drop's window
+    (product estShipStart/estShipEnd) — e.g. hoodie in January, set in
+    February. The year shows when it isn't the current year. */
+export function shipWindowText(c, p = null) {
+  const s = p?.estShipStart && p?.estShipEnd ? p.estShipStart : c?.estimated_shipping_start;
+  const e = p?.estShipStart && p?.estShipEnd ? p.estShipEnd : c?.estimated_shipping_end;
+  if (!s || !e) return '';
+  const year = (d) => new Date(d + 'T00:00:00').getFullYear();
+  const tail = year(e) !== new Date().getFullYear() ? `, ${year(e)}` : '';
+  return `${fmtDate(s)} – ${fmtDate(e)}${tail}`;
+}
+
+/** For a cart: the LATEST window among its preorder pieces — a combined
+    order ships together when its last piece is ready. */
+export function cartShipWindowText(c, products) {
+  const ws = (products || []).map((p) => ({
+    s: p?.estShipStart && p?.estShipEnd ? p.estShipStart : c?.estimated_shipping_start,
+    e: p?.estShipStart && p?.estShipEnd ? p.estShipEnd : c?.estimated_shipping_end,
+  })).filter((w) => w.s && w.e);
+  if (!ws.length) return '';
+  const last = ws.reduce((a, b) => (b.e > a.e ? b : a));
+  return shipWindowText({ estimated_shipping_start: last.s, estimated_shipping_end: last.e });
+}
+
+/** Do the preorder pieces in this cart ship at different times? */
+export function cartWindowsDiffer(c, products) {
+  return new Set((products || []).map((p) => shipWindowText(c, p)).filter(Boolean)).size > 1;
 }
 export function productionStartText(c) { return fmtDate(c?.estimated_production_start, { month: 'long', day: 'numeric' }); }
 export function closesText(c) { return fmtDate(c?.closes_at, { month: 'long', day: 'numeric' }); }

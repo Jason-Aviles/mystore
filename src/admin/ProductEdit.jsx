@@ -458,6 +458,15 @@ export default function ProductEdit() {
                   onChange={(e) => set('maxPreorderUnits', e.target.value === '' ? null : Number(e.target.value))} />
               </div>
               <div>
+                <label>Ships — from (this piece)</label>
+                <input type="date" value={p.estShipStart || ''} onChange={(e) => set('estShipStart', e.target.value)} />
+              </div>
+              <div>
+                <label>Ships — to (this piece)</label>
+                <input type="date" value={p.estShipEnd || ''} onChange={(e) => set('estShipEnd', e.target.value)} />
+                <div className="hint">Blank = the drop’s shipping dates. Use when pieces ship at different times.</div>
+              </div>
+              <div>
                 <label>Deposit per unit ($)</label>
                 <input type="number" min="0" step="0.01" value={p.deposit ?? ''} placeholder="full price today"
                   onChange={(e) => set('deposit', e.target.value === '' ? null : Number(e.target.value))} />
@@ -500,5 +509,7 @@ function validateProduct(p) {
   if (p.perCustomerLimit != null && Number(p.perCustomerLimit) < 1) out.push('Max per customer must be 1 or more');
   if (p.maxPreorderUnits != null && Number(p.maxPreorderUnits) < 1) out.push('Production cap must be 1 or more');
   if ((p.variants || []).some((v) => Number(v[2]) < 0)) out.push('Stock can’t be negative');
+  if (Boolean(p.estShipStart) !== Boolean(p.estShipEnd)) out.push('Set both ship dates for this piece, or neither');
+  if (p.estShipStart && p.estShipEnd && p.estShipEnd < p.estShipStart) out.push('Ship “to” date must be after the “from” date');
   return out;
 }

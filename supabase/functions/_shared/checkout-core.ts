@@ -23,6 +23,7 @@ export type Line = {
   option1: string | null; option2: string | null;
   qty: number; price: number; balance: number;
   image: string | null; preorder: boolean; shipWindow: string | null; campaignId: string | null;
+  shipStart: string | null; shipEnd: string | null;
 };
 export type Prepared = {
   ok: true;
@@ -53,7 +54,7 @@ export async function prepareOrder(opts: {
   // ---- resolve every line against the real catalog ----
   const handles = [...new Set(items.map((i: any) => String(i.handle)))];
   const [{ data: prods }, { data: vars }, { data: settingsRow }] = await Promise.all([
-    supabase.from('products').select('handle, title, price, images, status, campaign_id, per_customer_limit, max_preorder_units, deposit').in('handle', handles),
+    supabase.from('products').select('handle, title, price, images, status, campaign_id, per_customer_limit, max_preorder_units, deposit, data').in('handle', handles),
     supabase.from('product_variants').select('product_handle, option1, option2, inventory_qty, price').in('product_handle', handles),
     supabase.from('site_settings').select('data').eq('id', 1).maybeSingle(),
   ]);
@@ -175,7 +176,11 @@ export async function prepareOrder(opts: {
       balance: balancePerUnit * qty,
       image: img ? (img.startsWith('http') ? img : `${site}${img}`) : null,
       preorder: Boolean(c),
-      shipWindow: c ? shipWindow(c) : null,
+      // a piece may ship on its own dates (product estShipStart/End)
+      shipStart: c ? (p.data?.estShipStart && p.data?.estShipEnd ? p.data.estShipStart : c.estimated_shipping_start ?? null) : null,
+      shipEnd: c ? (p.data?.estShipStart && p.data?.estShipEnd ? p.data.estShipEnd : c.estimated_shipping_end ?? null) : null,
+      shipWindow: c ? shipWindow(p.data?.estShipStart && p.data?.estShipEnd
+        ? { estimated_shipping_start: p.data.estShipStart, estimated_shipping_end: p.data.estShipEnd } : c) : null,
       campaignId: c?.id ?? null,
     });
   }
@@ -222,11 +227,13 @@ export async function prepareOrder(opts: {
     try { stripeCustomer = await opts.createStripeCustomer(email); } catch { /* invoice step surfaces it */ }
   }
 
+  // one package: the order ships when its LAST piece is ready
+  const maxDate = (k: 'shipStart' | 'shipEnd') => lines.map((l) => l[k]).filter(Boolean).sort().pop() ?? null;
   const preorderFields = cartCampaign ? {
     campaign_id: cartCampaign.id,
     production_status: 'received',
-    est_ship_start: cartCampaign.estimated_shipping_start ?? null,
-    est_ship_end: cartCampaign.estimated_shipping_end ?? null,
+    est_ship_start: maxDate('shipStart') ?? cartCampaign.estimated_shipping_start ?? null,
+    est_ship_end: maxDate('shipEnd') ?? cartCampaign.estimated_shipping_end ?? null,
     balance_due: balanceDue,
     balance_status: balanceDue > 0 ? 'pending' : 'none',
     ...(stripeCustomer ? { stripe_customer: stripeCustomer } : {}),
@@ -414,7 +421,8 @@ export function campaignLive(c: any) {
 export function shipWindow(c: any): string {
   if (!c?.estimated_shipping_start || !c?.estimated_shipping_end) return '';
   const f = (d: string) => new Date(d + 'T00:00:00').toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
-  return `${f(c.estimated_shipping_start)} – ${f(c.estimated_shipping_end)}`;
+  const y = new Date(c.estimated_shipping_end + 'T00:00:00').getFullYear();
+  return `${f(c.estimated_shipping_start)} – ${f(c.estimated_shipping_end)}${y !== new Date().getFullYear() ? `, ${y}` : ''}`;
 }
 
 export const corsHeaders = {

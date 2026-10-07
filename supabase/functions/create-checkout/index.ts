@@ -116,7 +116,7 @@ Deno.serve(async (req) => {
         ...(cartCampaign ? {
           campaign_id: cartCampaign.id,
           campaign: cartCampaign.slug,
-          est_ship_window: shipWindow(cartCampaign) || '',
+          est_ship_window: lines.filter((l) => l.shipWindow).map((l) => `${l.fullTitle}: ${l.shipWindow}`).join(' · ').slice(0, 480),
         } : {}),
       },
       success_url: `${site}/thanks?order=${orderId}&session_id={CHECKOUT_SESSION_ID}`,
