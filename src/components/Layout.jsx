@@ -11,6 +11,8 @@ import QuickView from './QuickView';
 import { Preloader, Cursor } from './MotionLayer';
 import usePageMotion from '../hooks/usePageMotion';
 import MotionControl from './MotionControl';
+import { BoilDefs } from './HandMade';
+import PreviewBar from './PreviewBar';
 
 /* Owner's call: the gate greets every FIRST visit to the site (any page),
    then never again — unlock persists in localStorage. The admin Site
@@ -36,6 +38,8 @@ export default function Layout() {
   return (
     <>
       <a className="skip-link" href="#main-content">Skip to main content</a>
+      <BoilDefs />
+      <PreviewBar />
       <Preloader paused={motionPaused} />
       {!motionPaused && <Cursor />}
       {pathname === '/' && <MotionControl />}

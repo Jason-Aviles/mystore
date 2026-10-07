@@ -8,6 +8,7 @@
 // Audience = email_signups.source filter ('all' = every consented address).
 // Unsubscribed rows are always skipped and an unsubscribe footer is added.
 import { createClient } from 'npm:@supabase/supabase-js@2';
+import { callerRole } from '../_shared/caller.ts';
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -18,6 +19,8 @@ Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') return new Response('ok', { headers: corsHeaders });
 
   try {
+    // sending mail to the whole list (or a test to any address) is admin-only
+    if ((await callerRole(req)) === 'public') return json({ ok: false, error: 'admin auth required' }, 401);
     const { campaign_id, test_to } = await req.json();
     const supabase = createClient(
       Deno.env.get('SUPABASE_URL')!,

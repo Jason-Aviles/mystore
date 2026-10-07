@@ -6,6 +6,7 @@ import { SplitText } from 'gsap/SplitText';
 import { useGSAP } from '@gsap/react';
 import { scramble } from '../lib/motion'; // side effect: registers Flip/Scramble/DrawSVG/Physics2D/Wiggle
 import { runFx } from '../lib/effects';
+import { wireHandMade } from '../components/HandMade';
 import { metaPageView } from '../lib/meta';
 
 gsap.registerPlugin(ScrollTrigger, ScrollSmoother, SplitText, useGSAP);
@@ -195,6 +196,8 @@ export default function usePageMotion(ready, motionPaused = false) {
 
       /* ---- THE EFFECTS ENGINE: dispatch every data-fx on this page ---- */
       runFx().forEach((fn) => cleanups.push(fn));
+      /* ---- HAND-MADE layer: sketch underlines + pen circles ---- */
+      cleanups.push(wireHandMade());
       gsap.fromTo('main', { opacity: 0, y: 44 }, { opacity: 1, y: 0, duration: 0.9, ease: 'power3.out', clearProps: 'opacity,transform', delay: 0.1 });
 
       /* ---- THE MONOCHROME WORLD RULE ----

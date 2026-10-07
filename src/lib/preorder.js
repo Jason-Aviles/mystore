@@ -18,6 +18,22 @@ export async function fetchCurrentCampaign() {
   return normalizeCampaignMedia(campaign);
 }
 
+/** The drop the admin FEATURED (site setting featuredDropId), with its
+    landing content: the published `content`, or `draft_content` when an
+    admin is previewing. Null when none is featured or it isn't visible. */
+export async function fetchFeaturedDrop(id, { draft = false } = {}) {
+  if (!hasSupabase || !id) return null;
+  const { data } = await supabase.from('preorder_campaigns').select('*').eq('id', id).maybeSingle();
+  if (!data) return null;
+  const drop = normalizeCampaignMedia(data);
+  return { ...drop, landing: (draft ? data.draft_content : data.content) || {} };
+}
+
+/** Drop statuses as the admin and customers read them. */
+export const DROP_STATUS_LABEL = {
+  draft: 'Draft', coming_soon: 'Upcoming', live: 'Preorder open', released: 'Released', closed: 'Preorder closed', archived: 'Archived',
+};
+
 /** live = status 'live' AND inside the open/close window right now. */
 export function campaignLive(c) {
   if (!c || c.status !== 'live') return false;
@@ -42,7 +58,7 @@ export function opensText(c) { return fmtDate(c?.opens_at, { month: 'long', day:
     THIS campaign. (Campaign products are preorders; nothing is ever
     labeled ready-to-ship when it isn't.) */
 export function isPreorderProduct(p, campaign) {
-  return Boolean(p?.campaignId && campaign && p.campaignId === campaign.id && campaign.status !== 'archived');
+  return Boolean(p?.campaignId && campaign && p.campaignId === campaign.id && !['archived', 'released'].includes(campaign.status));
 }
 
 /** Deposit breakdown for a preorder-deposit product, or null.

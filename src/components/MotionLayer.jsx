@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import gsap from 'gsap';
 import { useGSAP } from '@gsap/react';
+import BrandMark from './BrandMark';
 
 /* ============================================================
    MotionLayer — the cinematic chrome:
@@ -89,7 +90,7 @@ export function Preloader({ paused = false }) {
         { opacity: 1, scale: 1, rotation: 0, filter: 'blur(0px)', duration: 0.7, ease: 'power4.out' }, 1.45)
       .to('.pl-mark', { filter: 'drop-shadow(0 0 22px rgba(239,182,196,0.9))', duration: 0.18, yoyo: true, repeat: 1 }, 2.1)
       // beat 4 — the exit: text shears away, mark flies to the header, slats tear the screen open
-      .to(chars, { yPercent: -135, rotationX: 90, duration: 0.45, stagger: { each: 0.02, from: 'end' }, ease: 'power3.in' }, 2.45)
+      .to('.pl-word', { yPercent: -60, skewX: -14, opacity: 0, duration: 0.45, ease: 'steps(6)' }, 2.45)
       .to('.pl-script, .pl-line, .pl-count', { opacity: 0, duration: 0.25 }, 2.45)
       .call(handoff, [], 2.62)
       .to(slats, { yPercent: -103, duration: 0.6, stagger: 0.055, ease: 'power4.inOut' }, 2.72)
@@ -117,11 +118,7 @@ export function Preloader({ paused = false }) {
       <div className="pl-inner">
         <span className="logo-mark lg pl-mark" aria-hidden="true" />
         <div className="pl-script">Illuminate the darkness within</div>
-        <div className="pl-word">
-          {'DARK DIVINE'.split('').map((c, i) => (
-            <span className="pl-mask" key={i}><span className="pl-char">{c === ' ' ? ' ' : c}</span></span>
-          ))}
-        </div>
+        <div className="pl-word"><BrandMark placement="preloader" className="pl-wm" reveal="now" delay={0.5} decorative /></div>
         <div className="pl-line" />
         <div className="pl-count">000</div>
       </div>

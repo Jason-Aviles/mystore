@@ -1,10 +1,11 @@
 import { useEffect, useState } from 'react';
 import { DEFAULT_CONFIG } from '../lib/config';
 import { mergeHomepage } from '../lib/homeContent';
-import { adminGetSettings, adminReplaceSettings, uploadProductImage, uploadMedia, isLive } from './adminData';
+import { adminGetSettings, adminReplaceSettings, adminPublishSettings, adminDiscardDraft, adminSettingsStatus, uploadProductImage, uploadMedia, isLive } from './adminData';
 import LoadError from './LoadError';
 import HomepageEditor from './HomepageEditor';
 import { HOMEPAGE_FIELD_GROUPS } from './homepageFields';
+import BrandEditor from './BrandEditor';
 
 /* Site Settings — edit the storefront without touching code.
    Saved overrides merge over DEFAULT_CONFIG on every visitor load. */
@@ -78,6 +79,9 @@ const FIELDS = [
     ['instagram', 'Instagram URL', 'text', ''],
     ['instagramHandle', 'Instagram handle', 'text', 'e.g. @darkdivine.official'],
   ]],
+  ['Logos', [
+    ['brand', 'Logo placement', 'brand', 'One mark per spot — the emblem and the wordmark never sit side by side.'],
+  ]],
   ['Hero media', [
     ['heroVideoA', 'Hero video — Scene A', 'video', 'The looping clip behind the title. Upload or paste a URL. Keep it under 30MB — trim/compress first. Blank = the built-in broadcast clip.'],
     ['heroPosterA', 'Scene A poster', 'image', 'Still frame shown before the video loads — this is the first thing mobile visitors see, so pick a strong frame.'],
@@ -92,6 +96,20 @@ export default function Settings() {
   const [err, setErr] = useState('');
   const [loadError, setLoadError] = useState('');
   const [uploading, setUploading] = useState(false);
+  const [touched, setTouched] = useState(false);   // edits since the last draft save
+  const [status, setStatus] = useState({ dirty: false, publishedAt: null }); // draft vs live
+  const [busy, setBusy] = useState('');
+  const [notice, setNotice] = useState('');
+  const [confirmDiscard, setConfirmDiscard] = useState(false);
+  const refreshStatus = () => adminSettingsStatus().then(setStatus).catch(() => {});
+  useEffect(() => { refreshStatus(); }, []);
+  // leaving with unsaved edits asks first
+  useEffect(() => {
+    if (!touched) return undefined;
+    const warn = (e) => { e.preventDefault(); e.returnValue = ''; };
+    window.addEventListener('beforeunload', warn);
+    return () => window.removeEventListener('beforeunload', warn);
+  }, [touched]);
 
   async function pickImage(key, file) {
     if (!file) return;
@@ -146,7 +164,7 @@ export default function Settings() {
   if (loadError) return <LoadError error={loadError} />;
   if (!form) return <p style={{ color: 'var(--silver)' }}>Loading…</p>;
 
-  const set = (k, v) => { setForm((f) => ({ ...f, [k]: v })); setSaved(false); };
+  const set = (k, v) => { setForm((f) => ({ ...f, [k]: v })); setSaved(false); setTouched(true); };
 
   /* the 4-phase drop playbook as one-click presets (then hit Save):
      Tease/Waitlist = full lock (no guest browsing), countdown collects emails.
@@ -159,23 +177,61 @@ export default function Settings() {
     ['Live Drop', { gateEnabled: false, gateEntryEnabled: true, preorderOnlyLock: false, dropMode: true }],
     ['Off-season', { gateEnabled: false, gateEntryEnabled: false, preorderOnlyLock: false, dropMode: false }],
   ];
-  const applyPhase = (patch) => { setForm((f) => ({ ...f, ...patch })); setSaved(false); };
+  const applyPhase = (patch) => { setForm((f) => ({ ...f, ...patch })); setSaved(false); setTouched(true); };
   const phaseActive = (patch) => Object.entries(patch).every(([k, v]) => (form[k] ?? DEFAULT_CONFIG[k]) === v);
 
+  /* Save writes the DRAFT. Visitors see nothing until Publish. */
+  async function saveDraft() {
+    setErr(''); setNotice('');
+    const problems = validateSettings(form);
+    if (problems.length) { setErr(problems.join(' · ')); return false; }
+    // only persist keys that differ from the shipped defaults
+    const patch = {};
+    Object.keys(form).forEach((k) => {
+      if (JSON.stringify(form[k]) !== JSON.stringify(DEFAULT_CONFIG[k])) patch[k] = form[k];
+    });
+    await adminReplaceSettings(patch);
+    setSaved(true); setTouched(false);
+    await refreshStatus();
+    return true;
+  }
   async function save(e) {
     e.preventDefault();
-    setErr('');
+    setBusy('save');
+    try { if (await saveDraft()) setNotice(isLive ? 'Draft saved — not live yet. Preview it, then Publish.' : 'Saved in this browser.'); }
+    catch (ex) { setErr(ex.message || 'Save failed'); }
+    setBusy('');
+  }
+  async function preview() {
+    setBusy('preview');
     try {
-      // only persist keys that differ from the shipped defaults
-      const patch = {};
-      Object.keys(form).forEach((k) => {
-        if (JSON.stringify(form[k]) !== JSON.stringify(DEFAULT_CONFIG[k])) patch[k] = form[k];
-      });
-      await adminReplaceSettings(patch);
-      setSaved(true);
-    } catch (ex) {
-      setErr(ex.message || 'Save failed');
-    }
+      if (touched && !(await saveDraft())) { setBusy(''); return; }
+      window.open('/?preview=1', '_blank', 'noopener');
+      setNotice('Preview opened in a new tab — only you see the draft there.');
+    } catch (ex) { setErr(ex.message || 'Could not save the draft for preview'); }
+    setBusy('');
+  }
+  async function publish() {
+    setBusy('publish');
+    try {
+      if (touched && !(await saveDraft())) { setBusy(''); return; }
+      const at = await adminPublishSettings();
+      await refreshStatus();
+      setNotice(`Published ${new Date(at).toLocaleString()} — live for every visitor.`);
+    } catch (ex) { setErr(ex.message || 'Publish failed'); }
+    setBusy('');
+  }
+  async function discard() {
+    if (!confirmDiscard) { setConfirmDiscard(true); return; }
+    setConfirmDiscard(false); setBusy('discard');
+    try {
+      await adminDiscardDraft();
+      const fresh = await adminGetSettings();
+      setForm({ ...DEFAULT_CONFIG, ...fresh, homepage: mergeHomepage(fresh.homepage) });
+      setTouched(false); await refreshStatus();
+      setNotice('Draft discarded — the editor now matches the live site.');
+    } catch (ex) { setErr(ex.message || 'Discard failed'); }
+    setBusy('');
   }
 
   // datetime-local wants "YYYY-MM-DDTHH:mm" local time
@@ -219,7 +275,9 @@ export default function Settings() {
             {fields.map(([key, label, type, hint]) => (
               <label key={key} className="settings-field">
                 <span className="lbl">{label}</span>
-                {type === 'textarea' ? (
+                {type === 'brand' ? (
+                  <BrandEditor value={form.brand} onChange={(v) => set('brand', v)} />
+                ) : type === 'textarea' ? (
                   <textarea rows={3} value={form[key] ?? ''} onChange={(e) => set(key, e.target.value)} />
                 ) : type === 'number' ? (
                   <input type="number" value={form[key] ?? 0} onChange={(e) => set(key, Number(e.target.value))} />
@@ -293,12 +351,44 @@ export default function Settings() {
           Product cards still come from Products, and customer reviews still come from Reviews.
         </p>
         <HomepageEditor value={form.homepage} onChange={(homepage) => set('homepage', homepage)} onError={setErr} />
-        <div style={{ display: 'flex', gap: 12, alignItems: 'center' }}>
-          <button className="btn" type="submit">Save Settings</button>
-          {saved && <span className="pill ok">Saved — refresh the store to see it</span>}
-          {err && <span style={{ color: '#e8a0a3', fontSize: 13 }}>{err}</span>}
+        <div className="publish-bar" role="region" aria-label="Save and publish">
+          <span className={`pill ${touched ? '' : status.dirty ? 'info' : 'ok'}`}>
+            {touched ? 'Unsaved edits' : status.dirty ? 'Draft has unpublished changes' : 'Everything is published'}
+          </span>
+          <button className="btn btn-ghost btn-sm" type="submit" disabled={Boolean(busy)}>{busy === 'save' ? 'Saving…' : 'Save draft'}</button>
+          {isLive && <button className="btn btn-ghost btn-sm" type="button" onClick={preview} disabled={Boolean(busy)}>{busy === 'preview' ? 'Opening…' : 'Preview'}</button>}
+          {isLive && (
+            <button className="btn btn-sm" type="button" onClick={publish} disabled={Boolean(busy) || (!touched && !status.dirty)}>
+              {busy === 'publish' ? 'Publishing…' : 'Publish'}
+            </button>
+          )}
+          {isLive && status.dirty && !touched && (
+            <button className="btn btn-ghost btn-sm" type="button" onClick={discard} disabled={Boolean(busy)}>
+              {confirmDiscard ? 'Click again to discard' : 'Discard draft'}
+            </button>
+          )}
+          {status.publishedAt && <small>Last published {new Date(status.publishedAt).toLocaleString()}</small>}
+          {notice && <span className="pb-notice" role="status">{notice}</span>}
+          {err && <span className="pb-err" role="alert">{err}</span>}
         </div>
       </form>
     </>
   );
+}
+
+/* Blocks a save that would put something broken in front of customers. */
+function validateSettings(f) {
+  const out = [];
+  const num = (k, min, label) => {
+    if (f[k] !== '' && f[k] != null && (Number.isNaN(Number(f[k])) || Number(f[k]) < min)) out.push(`${label} must be ${min} or more`);
+  };
+  num('freeShipThreshold', 0, 'Free shipping threshold');
+  num('returnsDays', 0, 'Return window');
+  num('processingDays', 0, 'Processing time');
+  num('popupDelaySec', 0, 'Popup delay');
+  if (f.dropDate && Number.isNaN(Date.parse(f.dropDate))) out.push('Drop date is not a valid date');
+  if (f.saleEndsAt && Number.isNaN(Date.parse(f.saleEndsAt))) out.push('Sale end is not a valid date');
+  if (f.supportEmail && !/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(f.supportEmail)) out.push('Contact email looks wrong');
+  if (f.instagram && !/^https?:\/\//.test(f.instagram)) out.push('Instagram URL must start with https://');
+  return out;
 }

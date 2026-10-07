@@ -1,9 +1,10 @@
 import { createContext, useContext, useEffect, useMemo, useState, useCallback } from 'react';
 import { fetchProducts, money, variantQty } from '../lib/catalog';
-import { DEFAULT_CONFIG, fetchSiteSettings } from '../lib/config';
+import { DEFAULT_CONFIG, fetchSiteSettings, previewRequested } from '../lib/config';
+import { supabase as sb, hasSupabase as sbOn } from '../lib/supabase';
 import { mergeHomepage } from '../lib/homeContent';
 import { initMetaPixel, metaTrack } from '../lib/meta';
-import { fetchCurrentCampaign, readUnlock, saveUnlock, isPreorderProduct } from '../lib/preorder';
+import { fetchCurrentCampaign, fetchFeaturedDrop, readUnlock, saveUnlock, isPreorderProduct } from '../lib/preorder';
 import { MOTION_STORAGE_KEY, readSavedMotionPause, resolveMotionPaused } from '../lib/motionPreference';
 
 const Ctx = createContext(null);
@@ -33,18 +34,80 @@ export function StoreProvider({ children }) {
   const [quickView, setQuickView] = useState(null); // product handle or null
   const [toast, setToast] = useState('');
   const [settings, setSettings] = useState({});
+  // preview: 'off' | 'draft' (signed-in admin sees the unpublished draft) | 'signin' (asked, not signed in)
+  const [preview, setPreview] = useState('off');
+  const [featuredDrop, setFeaturedDrop] = useState(null);
+  const [clock, setClock] = useState(() => Date.now()); // bumped when a countdown expires
   const [userMotionPaused, setUserMotionPaused] = useState(readSavedMotionPause);
   const [systemReducedMotion, setSystemReducedMotion] = useState(() => window.matchMedia('(prefers-reduced-motion: reduce)').matches);
   const motionPaused = resolveMotionPaused(userMotionPaused, systemReducedMotion);
 
-  // admin-saved overrides merge over the shipped defaults
-  const CONFIG = useMemo(() => ({
-    ...DEFAULT_CONFIG,
-    ...settings,
-    homepage: mergeHomepage(settings.homepage),
-  }), [settings]);
+  // admin-saved overrides merge over the shipped defaults; a FEATURED drop
+  // then feeds every existing drop surface (gate, homepage timer, Drop page,
+  // announcement bar) through the same keys they already read
+  const CONFIG = useMemo(() => {
+    const base = { ...DEFAULT_CONFIG, ...settings, homepage: mergeHomepage(settings.homepage) };
+    const d = featuredDrop;
+    if (!d) return base;
+    const L = d.landing || {};
+    const cd = L.countdown || {};
+    const countdownAt = cd.enabled ? cd.at || '' : '';
+    const expired = Boolean(countdownAt) && clock >= Date.parse(countdownAt);
+    const out = {
+      ...base,
+      dropName: L.heading || d.name || base.dropName,
+      dropDescription: L.description || '',
+      dropImage: L.heroImage || d.hero_image_url || base.dropImage,
+      dropButtonText: L.buttonText || '',
+      dropButtonHref: L.buttonHref || '',
+      dropDate: countdownAt,
+      countdownHidden: !cd.enabled,
+      countdownLabel: cd.label || '',
+      countdownExpiredText: cd.expiredText || '',
+      countdownTz: cd.tz || '',
+      featuredDropId: d.id,
+      featuredDropStatus: d.status,
+      ...(L.announcement ? { anncText: L.announcement } : {}),
+    };
+    // countdown hit zero with "unlock the store" on: the gate and the
+    // preorder-only lock step aside for everyone, automatically
+    if (expired && cd.unlockOnExpiry) {
+      out.gateEnabled = false;
+      out.preorderOnlyLock = false;
+      out.storeUnlockedByCountdown = true;
+    }
+    return out;
+  }, [settings, featuredDrop, clock]);
 
-  useEffect(() => { fetchSiteSettings().then(setSettings).catch(() => {}); }, []);
+  // re-evaluate the instant the featured countdown reaches zero
+  useEffect(() => {
+    const at = Date.parse(featuredDrop?.landing?.countdown?.at || '');
+    if (Number.isNaN(at) || at <= Date.now()) return undefined;
+    const wait = Math.min(at - Date.now() + 250, 2147483000);
+    const t = setTimeout(() => setClock(Date.now()), wait);
+    return () => clearTimeout(t);
+  }, [featuredDrop, clock]);
+
+  useEffect(() => {
+    let alive = true;
+    (async () => {
+      const wantPreview = previewRequested();
+      let isAdmin = false;
+      if (wantPreview && sbOn) {
+        const { data } = await sb.auth.getSession();
+        isAdmin = Boolean(data?.session);
+      }
+      const s = await fetchSiteSettings({ draft: wantPreview && isAdmin }).catch(() => null);
+      if (!alive) return;
+      if (s) setSettings(s);
+      if (s?.featuredDropId) {
+        const d = await fetchFeaturedDrop(s.featuredDropId, { draft: wantPreview && isAdmin }).catch(() => null);
+        if (alive) setFeaturedDrop(d);
+      }
+      setPreview(wantPreview ? (isAdmin ? 'draft' : 'signin') : 'off');
+    })();
+    return () => { alive = false; };
+  }, []);
   useEffect(() => {
     const query = window.matchMedia('(prefers-reduced-motion: reduce)');
     const update = () => setSystemReducedMotion(query.matches);
@@ -56,7 +119,10 @@ export function StoreProvider({ children }) {
     if (motionPaused) document.querySelectorAll('video').forEach((video) => video.pause());
     return () => document.documentElement.classList.remove('motion-paused');
   }, [motionPaused]);
-  useEffect(() => { fetchCurrentCampaign().then(setCampaign).catch(() => {}); }, []);
+  useEffect(() => {
+    if (featuredDrop && ['coming_soon', 'live'].includes(featuredDrop.status)) { setCampaign(featuredDrop); return; }
+    fetchCurrentCampaign().then(setCampaign).catch(() => {});
+  }, [featuredDrop]);
   /* remember OFF: purge any permanent unlock left over from when remember
      was on — the gate must greet this browser again on its next visit
      (the current session stays unlocked so nobody gets locked mid-browse) */
@@ -67,8 +133,11 @@ export function StoreProvider({ children }) {
     }
   }, [CONFIG.gateRemember]);
   useEffect(() => { if (CONFIG.metaPixelId) initMetaPixel(CONFIG.metaPixelId); }, [CONFIG.metaPixelId]);
-  useEffect(() => { fetchProducts().then((p) => { setProducts(p); setLoading(false); }); }, []);
-  const reloadProducts = useCallback(() => fetchProducts().then(setProducts), []);
+  // admin preview also loads DRAFT products, so a drop's unreleased pieces
+  // can be checked on the real pages before they go live
+  const previewDrafts = preview === 'draft';
+  useEffect(() => { fetchProducts({ includeDrafts: previewDrafts }).then((p) => { setProducts(p); setLoading(false); }); }, [previewDrafts]);
+  const reloadProducts = useCallback(() => fetchProducts({ includeDrafts: previewDrafts }).then(setProducts), [previewDrafts]);
 
   useEffect(() => { ls.set('dd_cart', cart); ls.set('dd_cart_touched', Date.now()); }, [cart]);
   useEffect(() => { ls.set('dd_wish', wishlist); }, [wishlist]);
@@ -163,8 +232,8 @@ export function StoreProvider({ children }) {
     unlocked, unlock, subscribed, markSubscribed,
     campaign, isPreorder,
     cartOpen, setCartOpen, quickView, setQuickView, toast, showToast,
-    motionPaused, systemReducedMotion, toggleMotion,
-  }), [products, loading, CONFIG, cart, wishlist, recent, unlocked, subscribed, cartOpen, quickView, toast, motionPaused, systemReducedMotion,
+    motionPaused, systemReducedMotion, toggleMotion, preview, featuredDrop,
+  }), [preview, featuredDrop, products, loading, CONFIG, cart, wishlist, recent, unlocked, subscribed, cartOpen, quickView, toast, motionPaused, systemReducedMotion,
        byHandle, addToCart, setQty, removeLine, cartCount, cartTotal, toggleWish, markViewed,
        unlock, markSubscribed, showToast, reloadProducts, campaign, isPreorder, toggleMotion]);
 

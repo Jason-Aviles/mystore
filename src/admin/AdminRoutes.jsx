@@ -104,7 +104,7 @@ const NAV = [
   ['/admin/products', 'Products', false],
   ['/admin/orders', 'Orders', false],
   ['/admin/support', 'Support', false],
-  ['/admin/preorders', 'Preorders', false],
+  ['/admin/preorders', 'Drops & Preorders', false],
   ['/admin/customers', 'Customers', false],
   ['/admin/reviews', 'Reviews', false],
   ['/admin/signups', 'The List', false],

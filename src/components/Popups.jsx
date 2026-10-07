@@ -26,12 +26,26 @@ export default function Popups() {
     if (!enabled || subscribed || !unlocked) return;
     const last = Number(localStorage.getItem('dd_pop_at') || 0);
     if (Date.now() - last < 7 * 864e5) return;
-    const t = setTimeout(() => {
+    /* polite timing: after the delay, wait until the visitor has STOPPED
+       scrolling for a beat — never slam a modal over someone mid-scroll —
+       and never on product, cart, checkout or order pages */
+    const quietPages = /^\/(product|cart|thanks|order-status|admin)/;
+    let idle;
+    let armed = false;
+    const fire = () => {
+      if (quietPages.test(window.location.pathname)) return;
       localStorage.setItem('dd_pop_at', String(Date.now()));
       setVariant('timed');
       setOpen(true);
-    }, delay);
-    return () => clearTimeout(t);
+      cleanup();
+    };
+    const onActivity = () => { if (!armed) return; clearTimeout(idle); idle = setTimeout(fire, 1400); };
+    const cleanup = () => { clearTimeout(idle); window.removeEventListener('scroll', onActivity, true); window.removeEventListener('wheel', onActivity, true); window.removeEventListener('touchmove', onActivity, true); };
+    window.addEventListener('scroll', onActivity, { passive: true, capture: true });
+    window.addEventListener('wheel', onActivity, { passive: true, capture: true });
+    window.addEventListener('touchmove', onActivity, { passive: true, capture: true });
+    const t = setTimeout(() => { armed = true; onActivity(); }, delay);
+    return () => { clearTimeout(t); cleanup(); };
   }, [enabled, subscribed, unlocked, delay]);
 
   useEffect(() => {

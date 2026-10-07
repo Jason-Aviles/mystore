@@ -20,6 +20,7 @@
 //   • every send stamps last_message_at
 //   • STOP is honored immediately and logged to consent_events
 import { createClient } from 'npm:@supabase/supabase-js@2';
+import { callerRole } from '../_shared/caller.ts';
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -59,13 +60,9 @@ Deno.serve(async (req) => {
   // ---- outbound: admin JWT required ----
   try {
     const authHeader = req.headers.get('Authorization') ?? '';
-    const userClient = createClient(
-      Deno.env.get('SUPABASE_URL')!,
-      Deno.env.get('SUPABASE_ANON_KEY')!,
-      { global: { headers: { Authorization: authHeader } } },
-    );
-    const { data: userData } = await userClient.auth.getUser();
-    if (!userData?.user) return json({ ok: false, error: 'admin auth required' }, 401);
+    // admins on the allowlist (or another function) only — a merely
+    // signed-in account is NOT enough (see _shared/caller.ts)
+    if ((await callerRole(req)) === 'public') return json({ ok: false, error: 'admin auth required' }, 401);
 
     const SID = Deno.env.get('TWILIO_ACCOUNT_SID');
     const TOKEN = Deno.env.get('TWILIO_AUTH_TOKEN');

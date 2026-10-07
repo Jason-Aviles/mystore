@@ -26,6 +26,7 @@ function csv(name, head, rows) {
 export default function Orders() {
   const [orders, setOrders] = useState([]);
   const [filter, setFilter] = useState('all');
+  const [kind, setKind] = useState('all'); // all | preorder | regular
   const [loadError, setLoadError] = useState('');
   const load = () => adminListOrders()
     .then((list) => { setOrders(list); setLoadError(''); })
@@ -66,15 +67,17 @@ export default function Orders() {
     await adminUpdateOrder(o.id, { tracking });
   }
 
-  const visible = filter === 'all' ? orders : orders.filter((o) => o.status === filter);
+  const visible = (filter === 'all' ? orders : orders.filter((o) => o.status === filter))
+    .filter((o) => (kind === 'all' ? true : kind === 'preorder' ? Boolean(o.campaign_id) : !o.campaign_id));
+  const preorderCount = orders.filter((o) => o.campaign_id).length;
 
   function exportCsv() {
     csv('darkdivine-orders.csv',
-      ['order', 'email', 'status', 'items', 'total', 'ship_name', 'ship_phone', 'address1', 'address2', 'city', 'state', 'zip', 'country', 'tracking', 'placed'],
+      ['order', 'email', 'status', 'type', 'items', 'total', 'ship_name', 'ship_phone', 'address1', 'address2', 'city', 'state', 'zip', 'country', 'tracking', 'placed'],
       visible.map((o) => {
         const s = o.shipping || {};
         return [
-          String(o.id).slice(0, 8).toUpperCase(), o.customer_email, o.status || 'pending',
+          String(o.id).slice(0, 8).toUpperCase(), o.customer_email, o.status || 'pending', o.campaign_id ? 'preorder' : 'regular',
           (o.order_items || o.items || []).map((it) => `${it.qty}x ${it.title} ${[it.option1, it.option2].filter(Boolean).join('/')}`).join('; '),
           Number(o.total || 0).toFixed(2),
           s.name || '', s.phone || '', s.line1 || '', s.line2 || '', s.city || '', s.state || '', s.postal_code || '', s.country || '',
@@ -103,6 +106,12 @@ export default function Orders() {
         issue the refund in the Stripe dashboard → set it to <b>refunded</b>. The status trail is your paper trail.
       </div>
 
+      <div className="filter-bar" style={{ marginBottom: 8 }}>
+        {[['all', 'All orders'], ['regular', 'Regular'], ['preorder', `Preorders (${preorderCount})`]].map(([k, l]) => (
+          <button key={k} className={kind === k ? 'sel' : ''} onClick={() => setKind(k)}>{l}</button>
+        ))}
+        {kind === 'preorder' && <a className="btn btn-ghost btn-sm" href="/admin/preorders" style={{ marginLeft: 'auto' }}>Production stages, balances &amp; updates → Drops</a>}
+      </div>
       <div className="filter-bar">
         {['all', ...STATUSES].map((s) => (
           <button key={s} className={filter === s ? 'sel' : ''} onClick={() => setFilter(s)}>{s.replace('_', ' ')}</button>
@@ -120,7 +129,9 @@ export default function Orders() {
                 <tr key={o.id}>
                   <td>
                     <b>#{String(o.id).slice(0, 8)}</b>
+                    {o.campaign_id && <> <span className="pill info" title="Made after the preorder closes — manage stages in Drops">PREORDER</span></>}
                     <div style={{ fontSize: 11, color: 'var(--silver)' }}>{o.created_at ? new Date(o.created_at).toLocaleDateString() : ''}</div>
+                    {o.campaign_id && o.production_status && <div style={{ fontSize: 11, color: 'var(--silver)' }}>Stage: {o.production_status.replace(/_/g, ' ')}</div>}
                   </td>
                   <td>{o.customer_email}</td>
                   <td style={{ fontSize: 11.5, maxWidth: 190 }}>

@@ -6,6 +6,9 @@ import Countdown from '../components/Countdown';
 import Reveal from '../components/Reveal';
 import Logo3D from '../components/Logo3D';
 import NextDrop from '../components/NextDrop';
+import { HandWordmark } from '../components/HandMade';
+import BrandMark from '../components/BrandMark';
+import { brandFor } from '../lib/brand';
 import FilmStrip from '../components/FilmStrip';
 import ScrollSerpent from '../components/ScrollSerpent';
 import { ReviewCard } from '../components/Reviews';
@@ -93,6 +96,7 @@ export default function Home() {
     showToast('Welcome to the list');
   }
 
+  const heroBrand = brandFor(CONFIG.brand, 'hero');
   return (
     <>
       {/* the serpent rides the whole page — drawn by scroll, behind everything */}
@@ -110,9 +114,14 @@ export default function Home() {
             <span className="vhs-scan" />
           </div>
           <div className="hs-kinetic">
-            <h1 className="hs-title" aria-label={HOME.heroBrandTitle.replace('|', ' ')}>
-              {HOME.heroBrandTitle.split('|').map((line, index) => (
-                <span className="line" key={`${line}-${index}`}><span className="w">{line}</span></span>
+            <h1 className="hs-title hand" aria-label={HOME.heroBrandTitle.replace('|', ' ')} style={{ width: `min(${heroBrand.size}vw, 1180px)` }}>
+              {heroBrand.show && (heroBrand.mark === 'wordmark' ? (
+                <>
+                  <span className="line"><span className="w"><HandWordmark half="left" reveal="now" delay={0.55} decorative /></span></span>
+                  <span className="line"><span className="w"><HandWordmark half="right" reveal="now" delay={0.75} decorative /></span></span>
+                </>
+              ) : (
+                <span className="line"><span className="w"><BrandMark placement="hero" reveal="now" animated decorative /></span></span>
               ))}
             </h1>
             <span className="hs-script">{CONFIG.heroScript} {HOME.heroScriptSuffix}</span>

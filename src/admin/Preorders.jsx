@@ -1,7 +1,10 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { supabase, hasSupabase } from '../lib/supabase';
-import { isLive, uploadProductImage } from './adminData';
+import { isLive, uploadProductImage, adminGetSettings, adminReplaceSettings } from './adminData';
+import PublishBar from './PublishBar';
+import { COMMON_ZONES, zonedToUtcIso, utcToZonedLocal, formatInZone } from '../lib/tz';
+import { DROP_STATUS_LABEL } from '../lib/preorder';
 
 /* "Black, Bone · S–XL" — what a product actually offers, at a glance */
 function optionSummary(p) {
@@ -18,7 +21,15 @@ function optionSummary(p) {
    tables. Status changes here are what the storefront gate, PDP badges and
    checkout window-enforcement read — there is no second switch anywhere. */
 
-const STATUSES = ['draft', 'coming_soon', 'live', 'closed', 'archived'];
+const STATUSES = ['draft', 'coming_soon', 'live', 'released', 'closed', 'archived'];
+const STATUS_HELP = {
+  draft: 'Hidden from everyone.',
+  coming_soon: 'Announced — the gate collects emails, nothing can be bought yet.',
+  live: 'Preorder open — code holders can buy inside the open/close window.',
+  released: 'Out now — pieces sell as normal in-stock items (no preorder rules).',
+  closed: 'Preorder closed — no more orders; existing orders continue.',
+  archived: 'Retired.',
+};
 const STAGES = [
   ['received', 'Preorder received'],
   ['preorder_closed', 'Preorder closed'],
@@ -48,10 +59,59 @@ const EMPTY = {
   opens_at: '', closes_at: '',
   estimated_production_start: '', estimated_shipping_start: '', estimated_shipping_end: '',
   access_required: true, max_orders: '', max_units: '', hero_image_url: '', terms: '',
+  // landing page + countdown — saved to draft_content, live after Publish
+  l_heading: '', l_description: '', l_heroImage: '', l_buttonText: '', l_buttonHref: '', l_announcement: '',
+  cd_enabled: false, cd_local: '', cd_tz: 'America/New_York', cd_label: '', cd_expired: '', cd_unlock: false,
 };
+
+function landingFrom(form) {
+  return {
+    heading: form.l_heading.trim(),
+    description: form.l_description.trim(),
+    heroImage: form.l_heroImage.trim(),
+    buttonText: form.l_buttonText.trim(),
+    buttonHref: form.l_buttonHref.trim(),
+    announcement: form.l_announcement.trim(),
+    countdown: {
+      enabled: Boolean(form.cd_enabled),
+      local: form.cd_local,
+      tz: form.cd_tz,
+      at: form.cd_enabled && form.cd_local ? zonedToUtcIso(form.cd_local, form.cd_tz) : '',
+      label: form.cd_label.trim(),
+      expiredText: form.cd_expired.trim(),
+      unlockOnExpiry: Boolean(form.cd_unlock),
+    },
+  };
+}
+
+/** Problems that must be fixed before a drop can be saved. */
+function validateDrop(f) {
+  const out = [];
+  if (!f.name.trim()) out.push('Name is required');
+  if (f.opens_at && f.closes_at && Date.parse(f.closes_at) <= Date.parse(f.opens_at)) out.push('Closes must be after Opens');
+  if (f.estimated_shipping_start && f.estimated_shipping_end && f.estimated_shipping_end < f.estimated_shipping_start) out.push('Shipping end must be after shipping start');
+  if (f.max_orders !== '' && Number(f.max_orders) < 1) out.push('Max orders must be 1 or more');
+  if (f.max_units !== '' && Number(f.max_units) < 1) out.push('Max units must be 1 or more');
+  if (f.cd_enabled && !f.cd_local) out.push('Countdown is on — pick its date and time');
+  if (f.cd_enabled && f.cd_local && !zonedToUtcIso(f.cd_local, f.cd_tz)) out.push('Countdown date is not valid');
+  if (f.l_buttonText.trim() && f.l_buttonHref.trim() && !/^(https?:\/\/|\/)/.test(f.l_buttonHref.trim())) out.push('Button link must start with / or https://');
+  if (['live', 'coming_soon'].includes(f.status) && !f.l_heading.trim() && !f.name.trim()) out.push('A visible drop needs a heading');
+  return out;
+}
 
 const toForm = (c) => ({
   ...EMPTY, ...c,
+  ...(() => {
+    const L = c.draft_content || {};
+    const cd = L.countdown || {};
+    return {
+      l_heading: L.heading || '', l_description: L.description || '', l_heroImage: L.heroImage || '',
+      l_buttonText: L.buttonText || '', l_buttonHref: L.buttonHref || '', l_announcement: L.announcement || '',
+      cd_enabled: Boolean(cd.enabled), cd_tz: cd.tz || 'America/New_York',
+      cd_local: cd.local || (cd.at ? utcToZonedLocal(cd.at, cd.tz || 'America/New_York') : ''),
+      cd_label: cd.label || '', cd_expired: cd.expiredText || '', cd_unlock: Boolean(cd.unlockOnExpiry),
+    };
+  })(),
   opens_at: c.opens_at ? c.opens_at.slice(0, 16) : '',
   closes_at: c.closes_at ? c.closes_at.slice(0, 16) : '',
   max_orders: c.max_orders ?? '', max_units: c.max_units ?? '',
@@ -89,6 +149,9 @@ export default function Preorders() {
   const [busy, setBusy] = useState(false);
   const [newCode, setNewCode] = useState({ code: '', label: '', max_uses: '' });
   const [newUpdate, setNewUpdate] = useState({ title: '', body: '', stage: '' });
+  const [featuredId, setFeaturedId] = useState(null);   // featured drop in the DRAFT settings
+  const [pubKey, setPubKey] = useState(0);              // re-check publish status after saves
+  const [formErrors, setFormErrors] = useState([]);
   const heroFile = useRef(null);
   const [heroBusy, setHeroBusy] = useState(false);
 
@@ -108,6 +171,19 @@ export default function Preorders() {
     setCampaigns(data || []);
   }
   useEffect(() => { if (hasSupabase) loadCampaigns(); }, []);
+  useEffect(() => { if (hasSupabase) adminGetSettings().then((s) => setFeaturedId(s.featuredDropId || null)).catch(() => {}); }, [pubKey]);
+
+  /* featuring is a SITE setting, so it rides the same draft → publish flow */
+  async function setFeatured(id) {
+    const overrides = await adminGetSettings();
+    const next = { ...overrides };
+    if (id) next.featuredDropId = id; else delete next.featuredDropId;
+    await adminReplaceSettings(next);
+    setFeaturedId(id);
+    setPubKey((k) => k + 1);
+    flash(id ? 'Featured in the draft — Preview it, then Publish to make it live' : 'Unfeatured in the draft — Publish to apply');
+  }
+
 
   useEffect(() => {
     if (!hasSupabase || !selId) return;
@@ -134,6 +210,9 @@ export default function Preorders() {
 
   async function saveCampaign(e) {
     e.preventDefault();
+    const problems = validateDrop(form);
+    setFormErrors(problems);
+    if (problems.length) return;
     setBusy(true);
     const row = {
       name: form.name.trim(),
@@ -150,6 +229,7 @@ export default function Preorders() {
       max_units: form.max_units === '' ? null : Number(form.max_units),
       hero_image_url: form.hero_image_url || null,
       terms: form.terms || null,
+      draft_content: landingFrom(form), // landing + countdown: draft until Publish
       updated_at: new Date().toISOString(),
     };
     const q = form.id
@@ -160,7 +240,8 @@ export default function Preorders() {
     if (error) { flash(`Save failed: ${error.message}`); return; }
     setForm(null);
     await loadCampaigns();
-    flash('Campaign saved');
+    setPubKey((k) => k + 1);
+    flash('Drop saved. Status, dates and caps are live now; landing page + countdown are a draft — Preview, then Publish.');
   }
 
   async function setStatus(c, status) {
@@ -288,7 +369,7 @@ export default function Preorders() {
   if (form) {
     return (
       <>
-        <div className="admin-head"><h1 className="display">{form.id ? 'Edit Campaign' : 'New Campaign'}</h1></div>
+        <div className="admin-head"><h1 className="display">{form.id ? 'Edit Drop' : 'New Drop'}</h1></div>
         <form className="admin-form" onSubmit={saveCampaign} style={{ maxWidth: 680 }}>
           <fieldset>
             <legend>Campaign</legend>
@@ -303,12 +384,46 @@ export default function Preorders() {
             </div>
             <label>Status
               <select value={form.status} onChange={(e) => setForm({ ...form, status: e.target.value })}>
-                {STATUSES.map((s) => <option key={s} value={s}>{s}</option>)}
+                {STATUSES.map((s) => <option key={s} value={s}>{DROP_STATUS_LABEL[s]}</option>)}
               </select>
+              <small>{STATUS_HELP[form.status]}</small>
             </label>
             <label className="consent-row" style={{ margin: '4px 0' }}>
               <input type="checkbox" checked={form.access_required !== false} onChange={(e) => setForm({ ...form, access_required: e.target.checked })} />
               <span>Access code required to enter (private preorder)</span>
+            </label>
+          </fieldset>
+          <fieldset>
+            <legend>Landing page (draft until you Publish)</legend>
+            <label>Heading<input value={form.l_heading} maxLength={80} onChange={(e) => setForm({ ...form, l_heading: e.target.value })} placeholder={form.name || 'THE EMBLEM — DROP 003'} /><small>Shown on the gate, homepage timer, Drop page and announcement bar. Blank = the drop name.</small></label>
+            <label>Description<textarea rows={3} maxLength={600} value={form.l_description} onChange={(e) => setForm({ ...form, l_description: e.target.value })} /></label>
+            <label>Hero image<input value={form.l_heroImage} onChange={(e) => setForm({ ...form, l_heroImage: e.target.value })} placeholder="Blank = the hero image above" /></label>
+            <div className="row two">
+              <label>Button text<input value={form.l_buttonText} maxLength={40} onChange={(e) => setForm({ ...form, l_buttonText: e.target.value })} placeholder="Shop the drop" /></label>
+              <label>Button link<input value={form.l_buttonHref} onChange={(e) => setForm({ ...form, l_buttonHref: e.target.value })} placeholder="Blank = first piece in the drop" /></label>
+            </div>
+            <label>Announcement bar (optional)<input value={form.l_announcement} maxLength={140} onChange={(e) => setForm({ ...form, l_announcement: e.target.value })} placeholder="Blank = the normal free-shipping line" /></label>
+          </fieldset>
+          <fieldset>
+            <legend>Countdown (draft until you Publish)</legend>
+            <label className="consent-row" style={{ margin: '4px 0' }}>
+              <input type="checkbox" checked={form.cd_enabled} onChange={(e) => setForm({ ...form, cd_enabled: e.target.checked })} />
+              <span>Show the countdown on the gate, homepage and Drop page</span>
+            </label>
+            <div className="row two">
+              <label>Date &amp; time<input type="datetime-local" value={form.cd_local} onChange={(e) => setForm({ ...form, cd_local: e.target.value })} /></label>
+              <label>Time zone
+                <select value={form.cd_tz} onChange={(e) => setForm({ ...form, cd_tz: e.target.value })}>
+                  {COMMON_ZONES.map(([z, l]) => <option key={z} value={z}>{l}</option>)}
+                </select>
+              </label>
+            </div>
+            {form.cd_enabled && form.cd_local && <small>Counts down to <b>{formatInZone(zonedToUtcIso(form.cd_local, form.cd_tz), form.cd_tz)}</b> — the same moment for every visitor, wherever they are.</small>}
+            <label>Label above the timer<input value={form.cd_label} maxLength={60} onChange={(e) => setForm({ ...form, cd_label: e.target.value })} placeholder="Preorder opens in" /></label>
+            <label>Message when it hits zero<input value={form.cd_expired} maxLength={60} onChange={(e) => setForm({ ...form, cd_expired: e.target.value })} placeholder="DROP IS LIVE" /></label>
+            <label className="consent-row" style={{ margin: '4px 0' }}>
+              <input type="checkbox" checked={form.cd_unlock} onChange={(e) => setForm({ ...form, cd_unlock: e.target.checked })} />
+              <span>When it hits zero, unlock the store (turns off the gate and preorder-only mode automatically)</span>
             </label>
           </fieldset>
           <fieldset>
@@ -329,8 +444,9 @@ export default function Preorders() {
             <textarea rows={4} value={form.terms} onChange={(e) => setForm({ ...form, terms: e.target.value })}
               placeholder="Items are made after the preorder closes. Cancel any time before shipping for a full refund…" />
           </fieldset>
+          {formErrors.length > 0 && <div className="note-banner" role="alert"><b>Fix before saving:</b> {formErrors.join(' · ')}</div>}
           <div style={{ display: 'flex', gap: 10 }}>
-            <button className="btn" type="submit" disabled={busy}>{busy ? 'Saving…' : 'Save Campaign'}</button>
+            <button className="btn" type="submit" disabled={busy}>{busy ? 'Saving…' : 'Save Drop'}</button>
             <button className="btn btn-ghost" type="button" onClick={() => setForm(null)}>Cancel</button>
           </div>
         </form>
@@ -346,7 +462,10 @@ export default function Preorders() {
         <div className="admin-head">
           <h1 className="display">{sel.name}</h1>
           <div style={{ display: 'flex', gap: 8 }}>
-            <button className="btn btn-ghost btn-sm" onClick={() => setSelId(null)}>← All campaigns</button>
+            <button className="btn btn-ghost btn-sm" onClick={() => setSelId(null)}>← All drops</button>
+            {featuredId === sel.id
+              ? <button className="btn btn-ghost btn-sm" onClick={() => setFeatured(null)}>★ Featured — unfeature</button>
+              : <button className="btn btn-ghost btn-sm" onClick={() => setFeatured(sel.id)}>☆ Feature on the storefront</button>}
             <button className="btn btn-sm" onClick={() => setForm(toForm(sel))}>Edit</button>
           </div>
         </div>
@@ -354,9 +473,11 @@ export default function Preorders() {
 
         <div className="filter-bar" style={{ marginBottom: 14 }}>
           {STATUSES.map((s) => (
-            <button key={s} className={sel.status === s ? 'sel' : ''} onClick={() => setStatus(sel, s)}>{s}</button>
+            <button key={s} className={sel.status === s ? 'sel' : ''} onClick={() => setStatus(sel, s)} title={STATUS_HELP[s]}>{DROP_STATUS_LABEL[s]}</button>
           ))}
         </div>
+        <p style={{ fontSize: 12, color: 'var(--silver)', margin: '-6px 0 14px' }}>{STATUS_HELP[sel.status]} Status changes apply immediately.</p>
+        <PublishBar refreshKey={pubKey} previewPath="/drop" />
 
         <div className="stat-cards" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))', gap: 10, marginBottom: 22 }}>
           {[['Paid orders', stats.paidCount], ['Units ordered', stats.units], ['Revenue', `$${stats.revenue.toFixed(2)}`],
@@ -547,10 +668,11 @@ export default function Preorders() {
   return (
     <>
       <div className="admin-head">
-        <h1 className="display">Preorders</h1>
-        <button className="btn btn-sm" onClick={() => setForm({ ...EMPTY })}>New Campaign</button>
+        <h1 className="display">Drops &amp; Preorders</h1>
+        <button className="btn btn-sm" onClick={() => setForm({ ...EMPTY })}>New Drop</button>
       </div>
       {msg && <div className="note-banner">{msg}</div>}
+      <PublishBar refreshKey={pubKey} previewPath="/drop" />
       {campaigns.length === 0 ? (
         <p className="empty-note">
           No preorder campaigns yet. Create one, assign products to it, add access codes — the storefront gate switches to
@@ -563,8 +685,8 @@ export default function Preorders() {
             <tbody>
               {campaigns.map((c) => (
                 <tr key={c.id}>
-                  <td><b>{c.name}</b><br /><span style={{ fontSize: 12, color: 'var(--silver)' }}>{c.slug}</span></td>
-                  <td><span className={`pill ${c.status === 'live' ? 'ok' : 'info'}`}>{c.status}</span></td>
+                  <td><b>{featuredId === c.id ? '★ ' : ''}{c.name}</b><br /><span style={{ fontSize: 12, color: 'var(--silver)' }}>{featuredId === c.id ? 'Featured on the storefront · ' : ''}{c.slug}</span></td>
+                  <td><span className={`pill ${['live', 'released'].includes(c.status) ? 'ok' : 'info'}`}>{DROP_STATUS_LABEL[c.status] || c.status}</span></td>
                   <td style={{ fontSize: 12 }}>{c.opens_at ? new Date(c.opens_at).toLocaleString() : '—'}</td>
                   <td style={{ fontSize: 12 }}>{c.closes_at ? new Date(c.closes_at).toLocaleString() : '—'}</td>
                   <td style={{ fontSize: 12 }}>{c.estimated_shipping_start ? `${c.estimated_shipping_start} → ${c.estimated_shipping_end || '?'}` : '—'}</td>

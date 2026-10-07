@@ -173,7 +173,11 @@ h1, h2, h3, .display {
 
 /* ---------- announcement bar ---------- */
 .annc {
-  background: var(--bone); color: var(--void);
+  /* was a bright bone strip that fought the dark site — now ink with a
+     pink/mint hairline, like the edge of a printed sleeve */
+  background: #0f0b0d; color: var(--bone);
+  border-bottom: 1px solid transparent;
+  border-image: linear-gradient(90deg, transparent, var(--red), var(--green), transparent) 1;
   font-size: 11px; font-weight: 700; letter-spacing: 0.18em; text-transform: uppercase;
   text-align: center; padding: 8px var(--gutter);
 }
@@ -2050,7 +2054,7 @@ input, textarea { caret-color: var(--red); }
   position: absolute; inset: 0; background: #101012; pointer-events: none; z-index: 3;
   border: 1px solid var(--line);
 }
-.fx-heat { --heat: 1; }
+.fx-heat { --heat: 0; } /* true product colour at rest — phones can't hover */
 .fx-heat img, .fx-heat video {
   filter: sepia(calc(var(--heat) * 0.9)) hue-rotate(calc(var(--heat) * -46deg)) saturate(calc(1 + var(--heat) * 1.6)) contrast(calc(1 + var(--heat) * 0.12));
   transition: none;
@@ -2470,3 +2474,92 @@ input, textarea { caret-color: var(--red); }
 }
 /* iOS < 16 has no overflow:clip — fall back so nothing can drag sideways */
 @supports not (overflow: clip) { html, body { overflow-x: hidden; } }
+
+/* ============ HAND-MADE LAYER (Oct 2026) ============ */
+.boil-defs { position: absolute; width: 0; height: 0; overflow: hidden; pointer-events: none; }
+.hand-wm { display: block; width: 100%; height: auto; overflow: visible; cursor: pointer; -webkit-tap-highlight-color: transparent; }
+
+/* header: ONE mark — the emblem, a touch bigger, boils on hover */
+.logo-solo .logo-mark { width: 34px; height: 34px; }
+.logo-solo:hover .logo-mark { filter: url(#dd-boil-hard) drop-shadow(0 0 8px rgba(239,182,196,.55)); transform: rotate(-6deg) scale(1.1); }
+@media (max-width: 899px) { .logo-solo .logo-mark { width: 30px; height: 30px; } }
+
+/* hero: the wordmark split along its cross, DARK | DIVINE side by side */
+.hs-title.hand { display: flex; justify-content: center; align-items: center; gap: 0; width: min(94vw, 1180px); margin: 0 auto; }
+.hs-title.hand .line { display: block; flex: 1 1 50%; overflow: visible; }
+.hs-title.hand .w {
+  display: block; font-size: inherit; -webkit-text-stroke: 0; text-shadow: none;
+  background: none !important; animation: none !important; color: inherit;
+  filter: drop-shadow(0 6px 30px rgba(0,0,0,.55));
+}
+
+/* preloader + gate + footer wordmarks */
+.pl-word .pl-wm { width: min(86vw, 640px); margin: 0 auto; }
+.gate .logo-big .gate-wm { width: min(84vw, 460px); margin: 0 auto; filter: drop-shadow(0 0 18px rgba(239,182,196,.22)); }
+.foot-brand .foot-wm { width: min(100%, 300px); margin-bottom: 4px; }
+@media (max-width: 640px) and (max-height: 620px) { .gate .logo-big .gate-wm { width: 62vw; } }
+
+/* sketch underline: a marker stroke drawn under section headings */
+.has-sketch { position: relative; }
+.sketch-line {
+  position: absolute; left: -2%; bottom: -0.18em; width: min(104%, 520px); height: 0.32em; min-height: 12px;
+  overflow: visible; pointer-events: none; filter: url(#dd-boil);
+}
+.sketch-line path { fill: none; stroke: var(--red); stroke-width: 3.2; stroke-linecap: round; stroke-linejoin: round; vector-effect: non-scaling-stroke; }
+.section-head.split .sketch-line, .page-head .sketch-line { width: min(100%, 420px); }
+
+/* pen circle: a rough loop scrawled around a button on hover */
+.btn { position: relative; }
+.pen-circle { position: absolute; inset: -14px -16px; width: calc(100% + 32px); height: calc(100% + 28px); overflow: visible; pointer-events: none; z-index: 3; filter: url(#dd-boil); }
+.pen-circle path { fill: none; stroke: var(--green); stroke-width: 2.4; stroke-linecap: round; vector-effect: non-scaling-stroke; }
+
+.motion-paused .sketch-line, .motion-paused .pen-circle { display: none; }
+@media (prefers-reduced-motion: reduce) { .sketch-line, .pen-circle { display: none; } .hand-wm .hw-art { filter: none; } }
+
+/* preview mode bar — draft settings on screen */
+.preview-bar {
+  position: fixed; left: 50%; bottom: calc(14px + env(safe-area-inset-bottom, 0px)); transform: translateX(-50%);
+  z-index: 2000; display: flex; flex-wrap: wrap; align-items: center; justify-content: center; gap: 8px 14px;
+  width: max-content; max-width: calc(100% - 24px); padding: 10px 14px;
+  background: #1a0f13; border: 1px solid var(--red); box-shadow: 0 10px 40px rgba(0,0,0,.6);
+  font-size: 12px; color: var(--bone);
+}
+.preview-bar b { color: var(--red); letter-spacing: .18em; }
+.preview-bar .pb-btn { font-size: 11px; letter-spacing: .12em; text-transform: uppercase; padding: 6px 10px; background: var(--red); color: var(--void); border: 0; text-decoration: none; cursor: pointer; }
+.preview-bar .pb-btn.ghost { background: transparent; color: var(--bone); border: 1px solid var(--line); }
+
+/* admin: sticky save / preview / publish bar */
+.publish-bar {
+  position: sticky; bottom: 0; z-index: 20; display: flex; flex-wrap: wrap; align-items: center; gap: 10px;
+  padding: 12px 14px; margin-top: 18px; background: rgba(12, 12, 14, .96); border-top: 1px solid var(--line);
+  backdrop-filter: blur(6px);
+}
+.publish-bar small { color: var(--silver); font-size: 11px; }
+.publish-bar .pb-notice { color: var(--green); font-size: 13px; }
+.publish-bar .pb-err { color: #e8a0a3; font-size: 13px; flex-basis: 100%; }
+.countdown-wrap { display: grid; gap: 10px; justify-items: inherit; }
+.countdown-label { font-size: 11px; letter-spacing: .22em; text-transform: uppercase; color: var(--red); }
+
+/* BrandMark — per-placement logo (admin → Site Settings → Logos) */
+.brand-mark { display: inline-block; line-height: 0; }
+.brand-mark .hand-wm { width: 100%; }
+.foot-brand .brand-mark { display: block; margin-bottom: 4px; }
+.gate .logo-big .brand-mark { display: block; margin: 0 auto; }
+.pl-word .brand-mark { display: block; margin: 0 auto; }
+.dv-copy .dv-mark { display: block; margin-bottom: 14px; }
+.hs-title.hand .brand-mark { display: block; margin: 0 auto; }
+.brand-editor { display: grid; gap: 8px; width: 100%; }
+.be-row { display: grid; grid-template-columns: minmax(150px, 1.2fr) auto minmax(150px, 1fr) minmax(160px, 1.2fr); gap: 12px; align-items: center; padding: 10px 0; border-bottom: 1px solid var(--line); }
+.be-name small { display: block; color: var(--silver); font-size: 11px; margin-top: 2px; }
+.be-show { display: flex; align-items: center; gap: 6px; font-size: 12px; }
+.be-size { display: flex; align-items: center; gap: 10px; font-size: 12px; color: var(--bone-dim); }
+.be-size input { flex: 1; }
+.be-note { color: var(--silver); }
+@media (max-width: 760px) { .be-row { grid-template-columns: 1fr 1fr; } .be-name { grid-column: 1 / -1; } }
+.badge.draft-badge { background: #1a0f13; color: var(--red); border: 1px dashed var(--red); }
+/* serif headings, hand-made: the marker underline draws on scroll; on hover
+   the letters themselves start to boil like ink redrawn on twos */
+@media (hover: hover) and (prefers-reduced-motion: no-preference) {
+  .section-head h2:hover, .page-head h1:hover { filter: url(#dd-boil); }
+}
+.motion-paused .section-head h2:hover, .motion-paused .page-head h1:hover { filter: none; }

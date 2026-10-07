@@ -1,5 +1,6 @@
 import { normalizeSiteSettings } from './media';
 import { DEFAULT_HOMEPAGE } from './homeContent';
+import { BRAND_DEFAULTS } from './brand';
 export { normalizeMediaUrl, normalizeSiteSettings } from './media';
 
 /* Site configuration.
@@ -85,6 +86,7 @@ export const DEFAULT_CONFIG = {
   metaPixelId: import.meta.env.VITE_META_PIXEL_ID || '',
   justSoldPopups: true, // corner toasts from real paid orders
   homepage: DEFAULT_HOMEPAGE,
+  brand: BRAND_DEFAULTS, // logo placement — see src/lib/brand.js
 };
 
 // Back-compat: modules that want the static defaults.
@@ -107,12 +109,31 @@ export function replaceLocalSettings(overrides) {
     falls back to the shipped defaults, but adminSaveSettings MUST see the
     failure: it merges the current row with your patch, so a silently-empty
     read would upsert the patch alone and wipe every other saved setting. */
-export async function fetchSiteSettings() {
+export const SETTINGS_PUBLISHED = 1;
+export const SETTINGS_DRAFT = 2;
+
+export async function fetchSiteSettings({ draft = false } = {}) {
   const { supabase, hasSupabase } = await import('./supabase');
   if (hasSupabase) {
-    const { data, error } = await supabase.from('site_settings').select('data').eq('id', 1).maybeSingle();
+    if (draft) {
+      // the draft row is admin-only (RLS); anyone else gets nothing back and
+      // falls through to the published settings below
+      const { data } = await supabase.from('site_settings').select('data').eq('id', SETTINGS_DRAFT).maybeSingle();
+      if (data) return normalizeSiteSettings(data.data || {});
+    }
+    const { data, error } = await supabase.from('site_settings').select('data').eq('id', SETTINGS_PUBLISHED).maybeSingle();
     if (error) throw new Error(`Site settings could not be loaded from Supabase — ${error.message}`);
     return normalizeSiteSettings(data?.data || {});
   }
   return localSettings();
+}
+
+/* ---- preview mode: ?preview=1 turns it on for this tab, ?preview=0 off ---- */
+export function previewRequested() {
+  try {
+    const q = new URLSearchParams(window.location.search).get('preview');
+    if (q === '1') sessionStorage.setItem('dd_preview', '1');
+    if (q === '0') sessionStorage.removeItem('dd_preview');
+    return sessionStorage.getItem('dd_preview') === '1';
+  } catch { return false; }
 }

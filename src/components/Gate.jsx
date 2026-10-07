@@ -6,7 +6,7 @@ import { saveEmailSignup, saveSmsSignup, validateAccessCode } from '../lib/marke
 import { submitGate, campaignLive, shipWindowText, productionStartText, closesText, opensText } from '../lib/preorder';
 import { wiggle, scramble, reducedMotion } from '../lib/motion';
 import Countdown from './Countdown';
-import EmblemFX from './EmblemFX';
+import BrandMark from './BrandMark';
 
 /* Private preorder gate — two modes, both driven by REAL campaign rows:
      coming_soon → email collection only (no code field, gate stays locked)
@@ -150,10 +150,14 @@ export default function Gate({ onDone, onUtilityNavigate }) {
     open(() => { unlock(); onDone?.(); showToast('You’re on the list — next code hits your inbox'); });
   }
 
-  const heading = campaign ? campaign.name : CONFIG.dropName;
-  const countTarget = live
-    ? campaign?.closes_at                       // live: count down to close
-    : (campaign?.opens_at || CONFIG.dropDate);  // coming soon: count to open
+  // a FEATURED drop speaks with its own landing heading + admin countdown
+  const featured = Boolean(CONFIG.featuredDropId);
+  const heading = featured ? CONFIG.dropName : (campaign ? campaign.name : CONFIG.dropName);
+  const countTarget = featured && CONFIG.dropDate
+    ? CONFIG.dropDate                           // the countdown the admin set
+    : live
+      ? campaign?.closes_at                     // live: count down to close
+      : (campaign?.opens_at || CONFIG.dropDate); // coming soon: count to open
   const entryEnabled = CONFIG.gateEntryEnabled !== false;
 
   function submitVisibleForm(e) {
@@ -172,12 +176,11 @@ export default function Gate({ onDone, onUtilityNavigate }) {
       <div className="gate-shutter top" aria-hidden="true" />
       <div className="gate-shutter bottom" aria-hidden="true" />
       <div className="inner">
-        <EmblemFX size={120} entrance="now" className="gate-emblem" />
-        <h2 className="logo-big" id="gate-title"><span className="logo-word" role="img" aria-label="Dark Divine" /></h2>
+        <h2 className="logo-big" id="gate-title" aria-label="Dark Divine"><BrandMark placement="gate" className="gate-wm" reveal="now" delay={0.35} animated /></h2>
         <div className="script-line">Illuminate the darkness within</div>
         <div className="gate-tease" aria-hidden="true">
           <span className="gt-tape">{campaign ? 'PRIVATE PREORDER' : (CONFIG.dropMode !== false ? CONFIG.dropName : 'DARK DIVINE')}</span>
-          <img src={campaign?.hero_image_url || CONFIG.dropImage || '/media/editorial/cafe-fit.webp'} alt="" fetchPriority="high" />
+          <img src={(featured && CONFIG.dropImage) || campaign?.hero_image_url || CONFIG.dropImage || '/media/editorial/cafe-fit.webp'} alt="" fetchPriority="high" />
         </div>
         <div className="lbl" ref={lblRef}>
           {campaign ? `Private Preorder — ${heading}` : `Private Access — ${heading}`}

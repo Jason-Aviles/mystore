@@ -6,6 +6,7 @@ import { useStore } from '../context/StoreContext';
 import { Bag, Heart, Menu, Search } from './Icons';
 import MegaMenu from './MegaMenu';
 import SearchOverlay from './SearchOverlay';
+import BrandMark from './BrandMark';
 
 const LINKS = [
   ['/', 'Home'],
@@ -80,7 +81,7 @@ export default function Header() {
         <div className="wrap bar">
           <button className="icon-btn nav-toggle" aria-label="Open menu" aria-expanded={menuOpen}
             data-cursor="open" onClick={() => setMenuOpen(true)}><Menu /></button>
-          <Link className="logo" to="/"><span className="logo-mark" aria-hidden="true" /><span className="logo-word" role="img" aria-label="Dark Divine" /></Link>
+          <Link className="logo logo-solo" to="/" aria-label="Dark Divine — home"><BrandMark placement="header" /></Link>
           <nav className="main-nav" aria-label="Main">
             {LINKS.filter(([to]) => to !== '/drop' || CONFIG.dropMode !== false).map(([to, label]) => (
               <NavLink key={to} to={to} end={to === '/'} className={({ isActive }) => (isActive ? 'active' : '')}>

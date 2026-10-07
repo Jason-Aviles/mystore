@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import gsap from 'gsap';
+import { useStore } from '../context/StoreContext';
 
 /* one cell — the number slides out/in like a split-flap when it changes */
 function Cell({ label, value }) {
@@ -25,16 +26,18 @@ function Cell({ label, value }) {
 }
 
 export default function Countdown({ target }) {
+  const { CONFIG } = useStore();
   const [now, setNow] = useState(Date.now());
   useEffect(() => {
     const t = setInterval(() => setNow(Date.now()), 1000);
     return () => clearInterval(t);
   }, []);
 
+  if (CONFIG.countdownHidden) return null; // admin switched the featured drop's countdown off
   const t = new Date(target).getTime();
   if (Number.isNaN(t)) return null; // unset/invalid date must not render NaN cells
   const d = t - now;
-  if (d <= 0) return <div className="drop-live">DROP IS LIVE</div>;
+  if (d <= 0) return <div className="drop-live">{CONFIG.countdownExpiredText || 'DROP IS LIVE'}</div>;
 
   const cells = [
     ['Days', Math.floor(d / 864e5)],
@@ -44,8 +47,11 @@ export default function Countdown({ target }) {
   ];
   const urgent = d < 864e5; // under 24h: the countdown starts burning
   return (
-    <div className={`countdown ${urgent ? 'urgent' : ''}`} aria-label="Time until the drop">
-      {cells.map(([l, v]) => <Cell key={l} label={l} value={v} />)}
+    <div className="countdown-wrap">
+      {CONFIG.countdownLabel && <div className="countdown-label">{CONFIG.countdownLabel}</div>}
+      <div className={`countdown ${urgent ? 'urgent' : ''}`} aria-label={CONFIG.countdownLabel || 'Time until the drop'}>
+        {cells.map(([l, v]) => <Cell key={l} label={l} value={v} />)}
+      </div>
     </div>
   );
 }

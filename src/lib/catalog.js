@@ -47,7 +47,8 @@ function fromDb(row, variants) {
   });
 }
 
-export async function fetchProducts() {
+/** includeDrafts: admin preview only — RLS returns drafts to admins alone. */
+export async function fetchProducts({ includeDrafts = false } = {}) {
   if (hasSupabase) {
     const [{ data: prods, error: e1 }, { data: vars, error: e2 }] = await Promise.all([
       supabase.from('products').select('*').order('created_at'),
@@ -56,7 +57,7 @@ export async function fetchProducts() {
     if (!e1 && !e2 && prods?.length) {
       // drafts (e.g. an upcoming preorder still being set up) stay admin-only,
       // even when the admin is signed in on this browser
-      return prods.filter((p) => (p.status || 'active') === 'active').map((p) => fromDb(p, vars || []));
+      return prods.filter((p) => (p.status || 'active') === 'active' || (includeDrafts && p.status === 'draft')).map((p) => fromDb(p, vars || []));
     }
     // fall through to seed if the tables are empty or unreachable
   }

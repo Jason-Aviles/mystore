@@ -222,6 +222,8 @@ export default function ProductEdit() {
 
   async function save(e) {
     e.preventDefault();
+    const problems = validateProduct(p);
+    if (problems.length) { setMsg('Save failed: ' + problems.join(' · ')); return; }
     setBusy(true);
     setMsg('');
     try {
@@ -482,4 +484,21 @@ export default function ProductEdit() {
       </form>
     </>
   );
+}
+
+/* What must be true before a product can be saved — a broken product page
+   or an unpayable price never reaches a customer. */
+function validateProduct(p) {
+  const out = [];
+  const price = Number(p.price);
+  if (!p.title?.trim()) out.push('Title is required');
+  if (!(price > 0)) out.push('Price must be more than $0');
+  if (p.compare && Number(p.compare) <= price) out.push('Compare-at price must be higher than the price (or blank)');
+  if ((p.status || 'active') === 'active' && !(p.images || []).length) out.push('A live product needs at least one photo');
+  if (!(p.options1 || []).length) out.push('Add at least one size (or One Size)');
+  if (p.deposit != null && p.deposit !== '' && !(Number(p.deposit) > 0 && Number(p.deposit) < price)) out.push('Deposit must be more than $0 and less than the price');
+  if (p.perCustomerLimit != null && Number(p.perCustomerLimit) < 1) out.push('Max per customer must be 1 or more');
+  if (p.maxPreorderUnits != null && Number(p.maxPreorderUnits) < 1) out.push('Production cap must be 1 or more');
+  if ((p.variants || []).some((v) => Number(v[2]) < 0)) out.push('Stock can’t be negative');
+  return out;
 }

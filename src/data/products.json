@@ -1048,6 +1048,8 @@
     ],
     "options2": null,
     "images": [
+      "/media/products/emblem-hoodie-front.webp",
+      "/media/products/emblem-hoodie-back.webp",
       "/media/products/emblem-hoodie-back-1.webp",
       "/media/products/emblem-hoodie-back-2.webp"
     ],
@@ -1122,6 +1124,10 @@
     ],
     "options2": null,
     "images": [
+      "/media/products/emblem-top-front.webp",
+      "/media/products/emblem-top-front-back.webp",
+      "/media/products/emblem-leggings-front.webp",
+      "/media/products/emblem-leggings-back.webp",
       "/media/products/emblem-set-front.webp",
       "/media/products/emblem-set-back.webp"
     ],

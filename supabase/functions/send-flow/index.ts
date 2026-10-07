@@ -11,6 +11,7 @@
 // Dedup: unique (email, flow, dedup_key) row in flow_sends — insert-first.
 // Toggles: site_settings.data.flows.<flow> === false disables a flow.
 import { createClient } from 'npm:@supabase/supabase-js@2';
+import { callerRole } from '../_shared/caller.ts';
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -266,7 +267,9 @@ Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') return new Response('ok', { headers: corsHeaders });
 
   try {
-    const { flow, email, vars = {} } = await req.json();
+    const body = await req.json();
+    const { flow, email } = body;
+    let vars = body.vars ?? {};
     const def = FLOWS[flow];
     const to = String(email ?? '').trim().toLowerCase();
     if (!def || !to.includes('@')) return json({ ok: false, error: 'bad flow or email' }, 400);
@@ -275,6 +278,19 @@ Deno.serve(async (req) => {
       Deno.env.get('SUPABASE_URL')!,
       Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!,
     );
+
+    // The storefront may only trigger the WELCOME email, only for an address
+    // that just joined the list, and can't inject any text or links. Every
+    // other flow (order, shipping, balance…) comes from the server or an
+    // admin — otherwise anyone could send official mail with their own links.
+    if ((await callerRole(req)) === 'public') {
+      if (flow !== 'welcome') return json({ ok: false, error: 'not allowed' }, 403);
+      const since = new Date(Date.now() - 15 * 60 * 1000).toISOString();
+      const { data: fresh } = await supabase.from('email_signups')
+        .select('email').eq('email', to).gte('created_at', since).maybeSingle();
+      if (!fresh) return json({ ok: false, error: 'not allowed' }, 403);
+      vars = {};
+    }
     const RESEND_KEY = Deno.env.get('RESEND_API_KEY');
     const FROM = Deno.env.get('RESEND_FROM') ?? 'contact@darkdivine.store';
     if (!RESEND_KEY) return json({ ok: false, error: 'RESEND_API_KEY not set' }, 500);

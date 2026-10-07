@@ -270,21 +270,63 @@ export async function adminSaveCampaign(c) {
 }
 
 /* ---------- site settings (admin-editable storefront config) ---------- */
+/* Site settings live in two rows: 1 = PUBLISHED (visitors), 2 = DRAFT.
+   The Settings editor reads + writes the DRAFT; Publish copies it live. */
 export async function adminGetSettings() {
   const { fetchSiteSettings } = await import('../lib/config');
-  return fetchSiteSettings();
+  return fetchSiteSettings({ draft: true });
 }
 
+/** Operational switches (email flows) take effect immediately: they are
+    merged into BOTH rows so publishing a draft can never undo them. */
 export async function adminSaveSettings(patch) {
   if (isLive) {
-    const current = await adminGetSettings();
-    const { error } = await supabase.from('site_settings')
-      .upsert({ id: 1, data: { ...current, ...patch }, updated_at: new Date().toISOString() });
-    if (error) throw error;
+    const rows = liveRows('Site settings', await supabase.from('site_settings').select('id, data').in('id', [1, 2]));
+    const now = new Date().toISOString();
+    for (const id of [1, 2]) {
+      const current = rows.find((r) => r.id === id)?.data || {};
+      const { error } = await supabase.from('site_settings').upsert({ id, data: { ...current, ...patch }, updated_at: now });
+      if (error) throw error;
+    }
     return;
   }
   const { saveLocalSettings } = await import('../lib/config');
   saveLocalSettings(patch);
+}
+
+/** Copy the draft over the published settings (admin-only RPC). */
+export async function adminPublishSettings() {
+  if (!isLive) return new Date().toISOString(); // demo: saves already apply locally
+  const { data, error } = await supabase.rpc('publish_site_settings');
+  if (error) throw new Error(`Publish failed — ${error.message}`);
+  return data;
+}
+
+/** Throw away unpublished edits: draft := published. */
+export async function adminDiscardDraft() {
+  if (!isLive) return;
+  const rows = liveRows('Site settings', await supabase.from('site_settings').select('id, data').eq('id', 1));
+  const { error } = await supabase.from('site_settings')
+    .upsert({ id: 2, data: rows[0]?.data || {}, updated_at: new Date().toISOString() });
+  if (error) throw error;
+}
+
+/** { dirty, publishedAt, draftUpdatedAt } — does the draft differ from live? */
+export async function adminSettingsStatus() {
+  if (!isLive) return { dirty: false, publishedAt: null, draftUpdatedAt: null };
+  const rows = liveRows('Site settings', await supabase.from('site_settings').select('id, data, updated_at, published_at').in('id', [1, 2]));
+  const pub = rows.find((r) => r.id === 1);
+  const draft = rows.find((r) => r.id === 2);
+  const canon = (o) => JSON.stringify(o ?? {}, Object.keys(o ?? {}).sort());
+  // a drop's landing page / countdown edits are drafts too
+  const { data: drops } = await supabase.from('preorder_campaigns').select('content, draft_content');
+  const dropsDirty = (drops || []).some((d) => JSON.stringify(d.content ?? {}) !== JSON.stringify(d.draft_content ?? {}));
+  return {
+    dirty: canon(pub?.data) !== canon(draft?.data) || dropsDirty,
+    dropsDirty,
+    publishedAt: pub?.published_at || null,
+    draftUpdatedAt: draft?.updated_at || null,
+  };
 }
 
 /** Replace the complete override snapshot from Site Settings.
@@ -292,8 +334,9 @@ export async function adminSaveSettings(patch) {
     removes values that were reset to their shipped defaults. */
 export async function adminReplaceSettings(overrides) {
   if (isLive) {
+    // saves the DRAFT — nothing changes for visitors until Publish
     const { error } = await supabase.from('site_settings')
-      .upsert({ id: 1, data: overrides, updated_at: new Date().toISOString() });
+      .upsert({ id: 2, data: overrides, updated_at: new Date().toISOString() });
     if (error) throw error;
     return;
   }

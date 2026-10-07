@@ -475,3 +475,125 @@ alter table products add column if not exists campaign_id uuid references preord
 alter table products add column if not exists per_customer_limit integer;   -- max units one customer may preorder
 alter table products add column if not exists max_preorder_units integer;   -- production cap for the whole run
 alter table products add column if not exists deposit numeric(10,2);        -- optional per-unit deposit price
+
+-- ===== Oct 2026: admin allowlist (see migrations/20261007120000_admin_allowlist.sql) =====
+-- Admin allowlist (Oct 2026 security fix).
+-- Before this, every admin policy was `to authenticated using (true)` and
+-- public sign-up was open: ANY account anyone created had full admin power
+-- (customers, orders, prices, settings). Sign-up is now disabled in Auth
+-- settings AND every admin policy checks this allowlist, so even a stray
+-- authenticated account gets nothing.
+
+create table if not exists admins (
+  email text primary key,
+  created_at timestamptz default now()
+);
+alter table admins enable row level security;
+-- no policies on purpose: only the service role and is_admin() read it
+
+create or replace function is_admin() returns boolean
+language sql stable security definer set search_path = public as $$
+  select exists (
+    select 1 from admins
+    where lower(email) = lower(coalesce(auth.jwt() ->> 'email', ''))
+  );
+$$;
+revoke all on function is_admin() from public;
+grant execute on function is_admin() to anon, authenticated, service_role;
+
+-- every policy granted to `authenticated` now requires is_admin()
+do $$
+declare p record;
+begin
+  for p in
+    select schemaname, tablename, policyname, cmd
+    from pg_policies
+    where schemaname in ('public', 'storage') and roles = '{authenticated}'
+  loop
+    if p.cmd in ('SELECT', 'DELETE') then
+      execute format('alter policy %I on %I.%I using (is_admin())', p.policyname, p.schemaname, p.tablename);
+    elsif p.cmd = 'INSERT' then
+      execute format('alter policy %I on %I.%I with check (is_admin() and %s)', p.policyname, p.schemaname, p.tablename,
+        coalesce((select with_check from pg_policies x where x.schemaname = p.schemaname and x.tablename = p.tablename and x.policyname = p.policyname), 'true'));
+    else
+      execute format('alter policy %I on %I.%I using (is_admin()) with check (is_admin())', p.policyname, p.schemaname, p.tablename);
+    end if;
+  end loop;
+end $$;
+
+-- ===== Oct 2026: settings draft/publish (see migrations/20261007130000_settings_draft_publish.sql) =====
+-- Draft → Preview → Publish for site settings (Oct 2026).
+--   id 1 = PUBLISHED (what every visitor and every edge function reads)
+--   id 2 = DRAFT     (admin edits land here; admins can preview it)
+-- Publishing copies the draft over the published row in one statement.
+
+alter table site_settings add column if not exists published_at timestamptz;
+-- was single_row (id = 1); now exactly the published + draft rows
+alter table site_settings drop constraint if exists single_row;
+alter table site_settings drop constraint if exists site_settings_two_rows;
+alter table site_settings add constraint site_settings_two_rows check (id in (1, 2));
+
+insert into site_settings (id, data, updated_at)
+  values (1, '{}'::jsonb, now()) on conflict (id) do nothing;
+insert into site_settings (id, data, updated_at)
+  select 2, data, now() from site_settings where id = 1
+  on conflict (id) do nothing;
+
+-- visitors may read ONLY the published row; the draft is admin-only
+drop policy if exists "public read settings" on site_settings;
+create policy "public read settings" on site_settings for select using (id = 1);
+
+create or replace function publish_site_settings() returns timestamptz
+language plpgsql security definer set search_path = public as $$
+declare stamp timestamptz := now();
+begin
+  if not is_admin() then raise exception 'admin only' using errcode = '42501'; end if;
+  update site_settings
+     set data = (select data from site_settings where id = 2),
+         updated_at = stamp, published_at = stamp
+   where id = 1;
+  update site_settings set published_at = stamp where id = 2;
+  return stamp;
+end $$;
+revoke all on function publish_site_settings() from public;
+grant execute on function publish_site_settings() to authenticated;
+
+-- ===== Oct 2026: drops (see migrations/20261007140000_drops.sql) =====
+-- Drops (Oct 2026): preorder campaigns become the store's "drops".
+--   status: draft · coming_soon (Upcoming) · live (Preorder open) ·
+--           released (out now, sells normally) · closed · archived
+--   content       = PUBLISHED landing page + countdown (what visitors see)
+--   draft_content = admin edits; publish_site_settings() copies it live
+-- Which drop is featured lives in site_settings.data.featuredDropId, so it
+-- goes through the same draft → preview → publish flow as every setting.
+
+alter table preorder_campaigns drop constraint if exists preorder_campaigns_status_check;
+alter table preorder_campaigns add constraint preorder_campaigns_status_check
+  check (status in ('draft', 'coming_soon', 'live', 'released', 'closed', 'archived'));
+
+alter table preorder_campaigns add column if not exists content jsonb not null default '{}'::jsonb;
+alter table preorder_campaigns add column if not exists draft_content jsonb not null default '{}'::jsonb;
+
+-- visitors may read any drop that is announced or out (never drafts)
+drop policy if exists "public read visible preorder campaigns" on preorder_campaigns;
+create policy "public read visible preorder campaigns" on preorder_campaigns
+  for select using (status in ('coming_soon', 'live', 'released', 'closed'));
+
+-- publish now also pushes every drop's draft landing page live
+create or replace function publish_site_settings() returns timestamptz
+language plpgsql security definer set search_path = public as $$
+declare stamp timestamptz := now();
+begin
+  if not is_admin() then raise exception 'admin only' using errcode = '42501'; end if;
+  update site_settings
+     set data = (select data from site_settings where id = 2),
+         updated_at = stamp, published_at = stamp
+   where id = 1;
+  update site_settings set published_at = stamp where id = 2;
+  update preorder_campaigns
+     set content = draft_content, updated_at = stamp
+   where content is distinct from draft_content;
+  return stamp;
+end $$;
+revoke all on function publish_site_settings() from public;
+grant execute on function publish_site_settings() to authenticated;

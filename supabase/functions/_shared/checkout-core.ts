@@ -61,7 +61,12 @@ export async function prepareOrder(opts: {
   const { data: campaigns } = campaignIds.length
     ? await supabase.from('preorder_campaigns').select('*').in('id', campaignIds)
     : { data: [] };
-  const campaignOf = (p: any) => (campaigns || []).find((c: any) => c.id === p.campaign_id) || null;
+  // a RELEASED drop sells its pieces as normal in-stock items — only drops
+  // still in a preorder state apply preorder windows, limits and deposits
+  const campaignOf = (p: any) => {
+    const c = (campaigns || []).find((x: any) => x.id === p.campaign_id) || null;
+    return c && c.status !== 'released' ? c : null;
+  };
   // a preorder that is no longer open must never be sellable — the window
   // is enforced HERE, not by trusting the storefront's clock
   for (const p of prods || []) {

@@ -20,6 +20,7 @@ const IGNORED_DIRECTORIES = new Set([
   // gitignored raw source art (full-size logo/campaign originals); the
   // web-ready copies live in public/media
   'new logos',
+  'more product images for pre orders',
 ]);
 
 function mp4DurationSeconds(buffer) {

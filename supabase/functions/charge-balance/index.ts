@@ -12,6 +12,7 @@
 // Deploy: supabase functions deploy charge-balance --use-api
 import Stripe from 'npm:stripe@16';
 import { createClient } from 'npm:@supabase/supabase-js@2';
+import { callerRole } from '../_shared/caller.ts';
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -24,13 +25,9 @@ Deno.serve(async (req) => {
   try {
     // ---- admin check ----
     const authHeader = req.headers.get('Authorization') ?? '';
-    const userClient = createClient(
-      Deno.env.get('SUPABASE_URL')!,
-      Deno.env.get('SUPABASE_ANON_KEY')!,
-      { global: { headers: { Authorization: authHeader } } },
-    );
-    const { data: userData } = await userClient.auth.getUser();
-    if (!userData?.user) return json({ ok: false, error: 'admin auth required' }, 401);
+    // admins on the allowlist (or another function) only — a merely
+    // signed-in account is NOT enough (see _shared/caller.ts)
+    if ((await callerRole(req)) === 'public') return json({ ok: false, error: 'admin auth required' }, 401);
 
     const { order_id } = await req.json();
     if (!order_id) return json({ ok: false, error: 'order_id required' }, 400);

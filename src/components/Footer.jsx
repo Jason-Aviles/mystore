@@ -5,6 +5,7 @@ import { saveEmailSignup } from '../lib/marketing';
 import { RATING_AVG, TOTAL_SHOPIFY_RATINGS, REVIEW_PROVENANCE } from '../lib/reviews';
 import { payMethodList } from '../lib/trust';
 import { Lock } from './Icons';
+import BrandMark from './BrandMark';
 
 export default function Footer() {
   const { CONFIG, markSubscribed, showToast } = useStore();
@@ -27,7 +28,7 @@ export default function Footer() {
       <div className="wrap">
         <div className="foot-grid">
           <div className="foot-brand">
-            <span className="logo"><span className="logo-mark" aria-hidden="true" /><span className="logo-word" role="img" aria-label="Dark Divine" /></span>
+            <BrandMark placement="footer" className="foot-wm" />
             <p>Limited-run streetwear. Cut in small numbers, released in drops, never restocked.</p>
             {done ? (
               <p style={{ color: 'var(--bone)' }}>You're in. Code <b>{CONFIG.welcomeCode}</b> = 10% off.</p>

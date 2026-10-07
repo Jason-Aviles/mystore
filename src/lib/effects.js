@@ -430,8 +430,12 @@ function hatch(el) {
 /* -- HEAT VISION: pit-viper thermal — media glows infrared until the cursor "cools" it to true color -- */
 function heatVision(el) {
   el.classList.add('fx-heat');
-  const onEnter = () => gsap.to(el, { '--heat': 0, duration: 1.1, ease: 'power2.out' });
-  const onLeave = () => gsap.to(el, { '--heat': 1, duration: 1.6, ease: 'power2.inOut' });
+  // product photos must show TRUE colour by default (phones never hover);
+  // the thermal look is a brief hover flourish that cools back to true
+  const onEnter = () => gsap.timeline({ overwrite: true })
+    .to(el, { '--heat': 0.55, duration: 0.35, ease: 'power2.out' })
+    .to(el, { '--heat': 0, duration: 1.2, ease: 'power2.inOut' });
+  const onLeave = () => gsap.to(el, { '--heat': 0, duration: 0.4, overwrite: true });
   el.addEventListener('mouseenter', onEnter);
   el.addEventListener('mouseleave', onLeave);
   return () => { el.removeEventListener('mouseenter', onEnter); el.removeEventListener('mouseleave', onLeave); };

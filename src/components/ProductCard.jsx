@@ -24,6 +24,7 @@ export default function ProductCard({ p }) {
           {p.images[1] && <img className="alt" src={p.images[1]} alt="" loading="lazy" />}
         </div>
         <div className="badges">
+          {p.status === 'draft' && <span className="badge draft-badge" title="Only visible in admin preview">Draft</span>}
           {gone
             ? <span className="badge">Sold out</span>
             : pre
