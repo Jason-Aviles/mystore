@@ -45,7 +45,9 @@ export default function PayPalButtons({ getPayload, onCreated, onCheckoutError, 
     if (!CLIENT_ID || !hasSupabase) return;
     let alive = true;
     supabase.functions.invoke('paypal-create-order', { body: { probe: true } })
-      .then(({ data }) => { if (alive && data?.configured) setHidden(false); })
+      // same app on both sides, or no button: a browser on one PayPal app and
+      // a server on another (e.g. sandbox vs live) can never complete a payment
+      .then(({ data }) => { if (alive && data?.configured && data.client_id === CLIENT_ID) setHidden(false); })
       .catch(() => {});
     return () => { alive = false; };
   }, []);

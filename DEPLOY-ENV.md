@@ -143,9 +143,19 @@ The button stays hidden until Supabase has these Edge Function secrets:
 | `PAYPAL_CLIENT_SECRET` | developer.paypal.com → Apps & Credentials → your app |
 | `PAYPAL_ENV` | `live` for real money, `sandbox` for test accounts |
 
-Fill `PAYPAL_CLIENT_SECRET` (and `PAYPAL_ENV`) in `.env`, then run
+**The `BAA…` client ID that was in `.env`/Netlify is a SANDBOX (test) app**
+(verified Oct 2026: PayPal's sandbox issues it tokens, the live API refuses
+it). It can never take real money. Get the live pair: developer.paypal.com
+→ switch the toggle to **Live** → Apps & Credentials → your app (or Create
+App, type Merchant) → copy its Client ID (starts with `A`) and Secret.
+
+Put the live Client ID in `PAYPAL_CLIENT_ID` and the Secret in
+`PAYPAL_CLIENT_SECRET` (keep `PAYPAL_ENV=live`) in `.env`, then run
 `npm run secrets:paypal` — it checks the credentials with PayPal, saves them
-in Supabase, and confirms the live function reports ready. Then add "PayPal"
+in Supabase, confirms the live function reports ready, and writes the same
+client ID into `.env.production` + `netlify.env` — commit and push after.
+The button only appears when the browser's client ID matches the server's,
+so a stale Netlify value can't produce a half-sandbox checkout. Then add "PayPal"
 to Admin → Site Settings → Accepted payment methods so the logo shows.
 
 Limits: PayPal charges the US Standard (free over the threshold) or Canada

@@ -21,7 +21,13 @@ Deno.serve(async (req) => {
     const { order_id, email, items, origin, country, probe } = await req.json();
     // the storefront asks first, so the button never shows before the
     // server-side secrets exist (no half-working PayPal window)
-    if (probe) return json({ configured: paypalConfigured(), env: Deno.env.get('PAYPAL_ENV') === 'live' ? 'live' : 'sandbox' });
+    if (probe) {
+      return json({
+        configured: paypalConfigured(),
+        env: Deno.env.get('PAYPAL_ENV') === 'live' ? 'live' : 'sandbox',
+        client_id: Deno.env.get('PAYPAL_CLIENT_ID') || null, // public value — lets the button verify it matches
+      });
+    }
     if (!paypalConfigured()) return json({ error: 'paypal_not_configured' }, 503);
     if (!items?.length) return json({ error: 'empty cart' }, 400);
 
