@@ -107,7 +107,9 @@ export default function MegaMenu({ open, onClose }) {
     <div className="megamenu" ref={root} role="dialog" aria-modal="true" aria-label="Menu">
       <div className="mm-inner">
         <div className="mm-links">
-          {LINKS.map(([to, label, img], i) => (
+          {LINKS.filter(([to]) => to !== '/drop' || CONFIG.dropMode !== false)
+            .map(([to, label, img]) => [to, to === '/drop' ? (CONFIG.dropNavLabel || label) : label, img])
+            .map(([to, label, img], i) => (
             <div className="mm-line" key={to}>
               <button className="mm-link" onMouseEnter={(e) => { preview(img); wave(e); }} onFocus={() => preview(img)} onClick={() => go(to)}>
                 <i>{String(i + 1).padStart(2, '0')}</i>

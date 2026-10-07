@@ -43,7 +43,7 @@ export default function Footer() {
           <div>
             <h4 data-fx="venomDrip">Shop</h4>
             <Link to="/shop">Shop all</Link>
-            {CONFIG.dropMode !== false && <Link to="/drop">City of Sins drop</Link>}
+            {CONFIG.dropMode !== false && <Link to="/drop">{CONFIG.dropNavLabel || 'The Drop'}</Link>}
             <Link to="/collection/essentials">Core essentials</Link>
             <Link to="/size-guide">Size guide</Link>
           </div>

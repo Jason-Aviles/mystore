@@ -83,7 +83,9 @@ export default function Header() {
             data-cursor="open" onClick={() => setMenuOpen(true)}><Menu /></button>
           <Link className="logo logo-solo" to="/" aria-label="Dark Divine — home"><BrandMark placement="header" /></Link>
           <nav className="main-nav" aria-label="Main">
-            {LINKS.filter(([to]) => to !== '/drop' || CONFIG.dropMode !== false).map(([to, label]) => (
+            {LINKS.filter(([to]) => to !== '/drop' || CONFIG.dropMode !== false)
+              .map(([to, label]) => [to, to === '/drop' ? (CONFIG.dropNavLabel || label) : label])
+              .map(([to, label]) => (
               <NavLink key={to} to={to} end={to === '/'} className={({ isActive }) => (isActive ? 'active' : '')}>
                 <span className="roll"><span data-text={label}>{label}</span></span>
               </NavLink>

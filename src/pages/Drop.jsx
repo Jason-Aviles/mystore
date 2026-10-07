@@ -17,7 +17,7 @@ export default function Drop() {
 
   const dropPieces = featuredDrop ? products.filter((p) => p.campaignId === featuredDrop.id) : [];
   const eyebrow = featuredDrop
-    ? ({ coming_soon: 'Coming Soon', live: 'Private Preorder', released: 'Out Now', closed: 'Preorder Closed' }[featuredDrop.status] || DROP_STATUS_LABEL[featuredDrop.status] || 'The Drop')
+    ? ({ coming_soon: 'Coming Soon', live: featuredDrop.access_required === false ? 'Preorder Open' : 'Private Preorder', released: 'Out Now', closed: 'Preorder Closed' }[featuredDrop.status] || DROP_STATUS_LABEL[featuredDrop.status] || 'The Drop')
     : 'Coming Soon';
   const href = CONFIG.dropButtonHref || (dropPieces[0] ? `/product/${dropPieces[0].handle}` : '');
   const cta = CONFIG.dropButtonText && href

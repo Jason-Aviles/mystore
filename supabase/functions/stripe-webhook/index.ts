@@ -34,7 +34,14 @@ Deno.serve(async (req) => {
     return new Response(`Webhook signature verification failed: ${e}`, { status: 400 });
   }
 
-  if (event.type === 'checkout.session.completed') {
+  // Delayed methods (bank debits etc.) complete the session before the money
+  // clears: payment_status is 'unpaid' then, and Stripe sends
+  // async_payment_succeeded once it lands. Only a settled payment marks paid.
+  const sessionEvent = event.type === 'checkout.session.completed'
+    || event.type === 'checkout.session.async_payment_succeeded';
+  const settled = sessionEvent
+    && (event.data.object as Stripe.Checkout.Session).payment_status !== 'unpaid';
+  if (sessionEvent && settled) {
     const session = event.data.object as Stripe.Checkout.Session;
     const orderId = session.metadata?.order_id;
 

@@ -19,6 +19,7 @@ const FIELDS = [
   ]],
   ['Drop', [
     ['dropMode', 'Drop mode', 'toggle', 'Master switch. Off hides every countdown, The Drop link, and drop wording across the whole site'],
+    ['dropNavLabel', 'Menu tab name', 'choice:The Drop|Preorder', 'What the drop tab is called in the header, mobile menu, and footer. Pick one or type your own'],
     ['dropName', 'Drop name', 'text', 'Shown on the gate, homepage timer, Drop page, and announcement bar'],
     ['dropDate', 'Drop date & time', 'datetime', 'The countdown target'],
     ['dropImage', 'Drop picture', 'image', 'Shown on the gate, the homepage timer panel, and the Drop page'],
@@ -328,6 +329,14 @@ export default function Settings() {
                     </span>
                     <input type="text" inputMode="url" placeholder="…or paste a video URL" value={form[key] ?? ''}
                       onChange={(e) => set(key, e.target.value)} style={{ marginTop: 6 }} />
+                  </span>
+                ) : type.startsWith('choice:') ? (
+                  <span className="choice-row">
+                    {type.slice(7).split('|').map((opt) => (
+                      <button key={opt} type="button" className={`btn btn-sm ${form[key] === opt ? '' : 'btn-ghost'}`}
+                        aria-pressed={form[key] === opt} onClick={() => set(key, opt)}>{opt}</button>
+                    ))}
+                    <input type="text" value={form[key] ?? ''} onChange={(e) => set(key, e.target.value)} aria-label={label} />
                   </span>
                 ) : type === 'toggle' ? (
                   <span className="toggle-row">
