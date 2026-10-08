@@ -27,3 +27,18 @@
   for = "/media/*"
   [headers.values]
     Cache-Control = "public, max-age=31536000, immutable"
+
+# Vite fingerprints every JS/CSS file name with a content hash, so a file at
+# a given URL never changes — let browsers keep it for a year instead of
+# revalidating each chunk on every page view.
+[[headers]]
+  for = "/assets/*"
+  [headers.values]
+    Cache-Control = "public, max-age=31536000, immutable"
+
+[[headers]]
+  for = "/*"
+  [headers.values]
+    X-Content-Type-Options = "nosniff"
+    Referrer-Policy = "strict-origin-when-cross-origin"
+    X-Frame-Options = "SAMEORIGIN"

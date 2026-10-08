@@ -216,7 +216,7 @@ test('site settings save while built-in relative media is selected', async () =>
   await page.goto(`${ORIGIN}/admin/settings`, { waitUntil: 'networkidle' });
   const setting = page.locator('.settings-field').filter({ hasText: 'Preorder-only storefront' });
   await setting.locator('input[type="checkbox"]').check();
-  await page.getByRole('button', { name: 'Save Settings' }).click();
+  await page.getByRole('button', { name: 'Save draft' }).click();
   await page.locator('.pill.ok').waitFor();
 
   const stored = await page.evaluate(() => JSON.parse(localStorage.getItem('dd_site_settings') || '{}'));
@@ -245,7 +245,7 @@ test('turning preorder-only mode off removes the saved backend override', async 
   assert.equal(await toggle.isChecked(), true);
 
   await toggle.uncheck();
-  await page.getByRole('button', { name: 'Save Settings' }).click();
+  await page.getByRole('button', { name: 'Save draft' }).click();
   await page.locator('.pill.ok').waitFor();
   await page.reload({ waitUntil: 'networkidle' });
 

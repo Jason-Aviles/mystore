@@ -189,11 +189,11 @@ export default function Gate({ onDone, onUtilityNavigate }) {
         <div className={`gate-teases ${featured && CONFIG.dropImage2 ? 'pair' : ''}`} aria-hidden="true">
           <div className="gate-tease">
             <span className="gt-tape">{campaign ? (codeNeeded || !live ? 'PRIVATE PREORDER' : 'PREORDER OPEN') : (CONFIG.dropMode !== false ? CONFIG.dropName : 'DARK DIVINE')}</span>
-            <img src={(featured && CONFIG.dropImage) || campaign?.hero_image_url || CONFIG.dropImage || '/media/editorial/cafe-fit.webp'} alt="" fetchPriority="high" />
+            <img src={(featured && CONFIG.dropImage) || campaign?.hero_image_url || CONFIG.dropImage || '/media/editorial/cafe-fit.webp'} alt="" fetchpriority="high" />
           </div>
           {featured && CONFIG.dropImage2 && (
             <div className="gate-tease second">
-              <img src={CONFIG.dropImage2} alt="" fetchPriority="high" />
+              <img src={CONFIG.dropImage2} alt="" fetchpriority="high" />
             </div>
           )}
         </div>

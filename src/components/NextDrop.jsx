@@ -40,7 +40,7 @@ export default function NextDrop() {
             <p className="nd-done" role="status">You're on the list — you'll hear first when it opens.</p>
           ) : (
             <form className="nd-form" onSubmit={join}>
-              <input type="email" required autoComplete="email" placeholder="Email for first access"
+              <input type="email" name="email" required autoComplete="email" placeholder="Email for first access"
                 aria-label="Email for first access" value={email} onChange={(e) => setEmail(e.target.value)} />
               <button className="btn" type="submit" disabled={state === 'busy'}>{state === 'busy' ? 'Joining…' : 'Get first access'}</button>
             </form>

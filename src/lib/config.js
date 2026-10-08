@@ -10,7 +10,6 @@ export { normalizeMediaUrl, normalizeSiteSettings } from './media';
    whole storefront updates without a redeploy. */
 
 export const DEFAULT_CONFIG = {
-  brand: 'Dark Divine',
   domain: 'https://darkdivine.store',
   lowStockThreshold: 12, // "Only X left" appears at or below this many total units
   freeShipThreshold: 100,

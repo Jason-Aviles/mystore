@@ -19,7 +19,6 @@ checkout, Resend email marketing, Twilio-ready SMS structure. Deploys to Netlify
 ├── emails/             5 HTML email templates (welcome, abandoned cart ×2, drop, thank-you, back-in-stock)
 ├── cvs/                your Shopify exports (source data)
 ├── public/images/      brand + product images (downloaded from Shopify CDN)
-└── legacy-static/      the earlier static-HTML version, kept for reference
 ```
 
 ## Run it now (no accounts needed)

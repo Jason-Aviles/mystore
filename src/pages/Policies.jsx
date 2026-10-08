@@ -133,7 +133,7 @@ export function PrivacyPolicy() {
 
 export function TermsPolicy() {
   const { CONFIG } = useStore();
-  const identity = CONFIG.legalBusinessName || CONFIG.brand || 'Dark Divine';
+  const identity = CONFIG.legalBusinessName || 'Dark Divine'; // CONFIG.brand is the logo-placement object, not a name
   const jurisdiction = [CONFIG.businessCity, CONFIG.businessRegion].filter(Boolean).join(', ');
   return (
     <PageShell eyebrow="Legal" title="Terms of Service">
