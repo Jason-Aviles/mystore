@@ -11,6 +11,7 @@
 import Stripe from 'npm:stripe@16';
 import { createClient } from 'npm:@supabase/supabase-js@2';
 import { markOrderPaid } from '../_shared/checkout-core.ts';
+import { zoneOf } from '../_shared/shipping.ts';
 // The paid-order side effects (address, email, owner alert, inventory) live in
 // _shared/checkout-core.ts — paypal-capture runs the exact same code.
 
@@ -99,6 +100,26 @@ Deno.serve(async (req) => {
         totalCents: session.amount_total,
         currency: session.currency,
       });
+
+      // ---- which shipping service they paid for (drives the label) ----
+      // Stripe can't re-price by address, so flag an order whose address
+      // landed outside the zone it was quoted for (e.g. quoted free
+      // contiguous-US, shipped to Alaska) for the owner to sort out.
+      try {
+        const rateRef = (session as any).shipping_cost?.shipping_rate;
+        const rate = typeof rateRef === 'string' ? await stripe.shippingRates.retrieve(rateRef) : rateRef;
+        const { data: ord } = await supabase.from('orders').select('shipping_quote').eq('id', found.id).maybeSingle();
+        const q = ord?.shipping_quote || {};
+        const zone = shipping?.country ? zoneOf(shipping.country, shipping.postal_code) : null;
+        await supabase.from('orders').update({
+          shipping_quote: {
+            ...q,
+            chosen: rate?.metadata?.service || null,
+            paid_cents: (session as any).shipping_cost?.amount_total ?? null,
+            zone_mismatch: Boolean(q.source === 'shippo' && q.zone && zone && zone !== q.zone),
+          },
+        }).eq('id', found.id);
+      } catch (e) { console.error('shipping choice', String(e)); }
     }
   }
 

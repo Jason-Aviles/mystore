@@ -11,7 +11,8 @@
 //      Stripe webhook uses: address saved, confirmation email, owner alert,
 //      inventory decrement (_shared/checkout-core.ts markOrderPaid)
 import { createClient } from 'npm:@supabase/supabase-js@2';
-import { markOrderPaid, standardShippingCents, json, corsHeaders } from '../_shared/checkout-core.ts';
+import { markOrderPaid, json, corsHeaders } from '../_shared/checkout-core.ts';
+import { zoneOf } from '../_shared/shipping.ts';
 import { paypal, paypalConfigured } from '../_shared/paypal.ts';
 
 const cents = (v: unknown) => Math.round(Number(v || 0) * 100);
@@ -25,7 +26,7 @@ Deno.serve(async (req) => {
 
     const supabase = createClient(Deno.env.get('SUPABASE_URL')!, Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!);
     const { data: order } = await supabase.from('orders')
-      .select('id, status, total, stripe_ref, access_token').eq('id', order_id).maybeSingle();
+      .select('id, status, total, stripe_ref, access_token, shipping_quote').eq('id', order_id).maybeSingle();
     if (!order || order.stripe_ref !== `paypal:${paypal_order_id}`) return json({ error: 'order_mismatch' }, 404);
     // a retry after success: report the finished order, change nothing
     if (order.status !== 'pending') return json({ ok: true, order_id: order.id, access_token: order.access_token, already: true });
@@ -45,13 +46,16 @@ Deno.serve(async (req) => {
     if (!['US', 'CA'].includes(country)) {
       return json({ error: 'ship_unsupported', country }, 409);
     }
-    const { data: settingsRow } = await supabase.from('site_settings').select('data').eq('id', 1).maybeSingle();
-    const threshold = Number(settingsRow?.data?.freeShipThreshold ?? 100);
+    // the rate charged must be the one quoted for THIS destination: same
+    // country, and (live quotes) the same zone — a free contiguous-US rate
+    // can't ship to Alaska/Hawaii/territories
+    const q = order.shipping_quote || {};
     const shippingCharged = cents(unit.amount?.breakdown?.shipping?.value);
-    if (shippingCharged !== standardShippingCents(country as 'US' | 'CA', itemTotal / 100, threshold)) {
-      // e.g. cart priced US shipping but the PayPal address is in Canada
-      return json({ error: 'ship_country', country }, 409);
-    }
+    if (q.country && q.country !== country) return json({ error: 'ship_country', country }, 409);
+    // zones only apply to live ZIP quotes; flat rates behave exactly as before
+    const zoneMatters = q.source === 'shippo';
+    if (zoneMatters && q.zone && zoneOf(country, addr.postal_code) !== q.zone) return json({ error: 'ship_zone', country }, 409);
+    if (q.options?.[0] && shippingCharged !== q.options[0].cents) return json({ error: 'ship_country', country }, 409);
 
     // ---- 4: capture (idempotent on our order id) ----
     let cap = await paypal(`/v2/checkout/orders/${encodeURIComponent(paypal_order_id)}/capture`, {

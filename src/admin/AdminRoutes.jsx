@@ -15,6 +15,7 @@ import ReviewsAdmin from './ReviewsAdmin';
 import Settings from './Settings';
 import Flows from './Flows';
 import Preorders from './Preorders';
+import Shipping from './Shipping';
 import Account from './Account';
 import '../styles/global.css';
 
@@ -104,6 +105,7 @@ const NAV = [
   ['/admin', 'Dashboard', true],
   ['/admin/products', 'Products', false],
   ['/admin/orders', 'Orders', false],
+  ['/admin/shipping', 'Shipping', false],
   ['/admin/support', 'Support', false],
   ['/admin/preorders', 'Drops & Preorders', false],
   ['/admin/customers', 'Customers', false],
@@ -185,6 +187,7 @@ export default function AdminRoutes() {
           <Route path="products/new" element={<ProductEdit />} />
           <Route path="products/:handle" element={<ProductEdit />} />
           <Route path="orders" element={<Orders />} />
+          <Route path="shipping" element={<Shipping />} />
           <Route path="support" element={<Support />} />
           <Route path="preorders" element={<Preorders />} />
           <Route path="account" element={<Account />} />

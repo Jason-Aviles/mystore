@@ -11,11 +11,9 @@
 //   private owner sale alert, inventory decrement. stripe-webhook and
 //   paypal-capture both call it. Idempotent: only a PENDING order moves.
 import { sendOwnerSaleAlerts } from './owner-sale-alert.mjs';
-
-export const US_STANDARD_CENTS = 695;   // $6.95 · 3–7 business days (free over threshold)
-export const US_PRIORITY_CENTS = 1495;  // $14.95 · 2–3 business days
-export const CA_TRACKED_CENTS = 1495;   // $14.95 · 7–14 business days
-// Rates mirror the published shipping policy (src/pages/Policies.jsx).
+import { quoteShipping, cleanZip, type Quote } from './shipping.ts';
+export { US_STANDARD_CENTS, US_PRIORITY_CENTS, CA_TRACKED_CENTS } from './shipping.ts';
+export type { Quote } from './shipping.ts';
 
 type Fail = { ok: false; status: number; body: Record<string, unknown> };
 export type Line = {
@@ -24,6 +22,7 @@ export type Line = {
   qty: number; price: number; balance: number;
   image: string | null; preorder: boolean; shipWindow: string | null; campaignId: string | null;
   shipStart: string | null; shipEnd: string | null;
+  weightOz: number | null;
 };
 export type Prepared = {
   ok: true;
@@ -31,6 +30,8 @@ export type Prepared = {
   lines: Line[]; subtotal: number; balanceDue: number;
   shipTo: 'US' | 'CA'; freeShipThreshold: number;
   cartCampaign: any | null; stripeCustomer: string | null;
+  /** shipping the customer may choose from; options[0] = standard */
+  quote: Quote;
 };
 
 export async function prepareOrder(opts: {
@@ -39,6 +40,8 @@ export async function prepareOrder(opts: {
   email?: string | null;
   items: any[];
   country?: string | null;
+  /** ZIP / postal code from the cart — required when live rates are on */
+  zip?: string | null;
   site: string;
   /** creates a Stripe customer for deposit orders (balance is invoiced later) */
   createStripeCustomer?: (email: string) => Promise<string | null>;
@@ -50,6 +53,7 @@ export async function prepareOrder(opts: {
   const fail = (status: number, body: Record<string, unknown>): Fail => ({ ok: false, status, body });
   if (!items?.length) return fail(400, { error: 'empty cart' });
   const shipTo: 'US' | 'CA' = opts.country === 'CA' ? 'CA' : 'US';
+  const zip = cleanZip(shipTo, opts.zip);
 
   // ---- resolve every line against the real catalog ----
   const handles = [...new Set(items.map((i: any) => String(i.handle)))];
@@ -182,6 +186,7 @@ export async function prepareOrder(opts: {
       shipWindow: c ? shipWindow(p.data?.estShipStart && p.data?.estShipEnd
         ? { estimated_shipping_start: p.data.estShipStart, estimated_shipping_end: p.data.estShipEnd } : c) : null,
       campaignId: c?.id ?? null,
+      weightOz: Number(p.data?.weightOz) > 0 ? Number(p.data.weightOz) : null,
     });
   }
   if (short.length) return fail(409, { error: 'stock', lines: short });
@@ -215,6 +220,18 @@ export async function prepareOrder(opts: {
     : null;
   const balanceDue = lines.reduce((s, l) => s + (l.balance || 0), 0);
 
+  // live carrier rates need the destination ZIP before payment (hosted
+  // checkout can't re-price after the address is typed)
+  if (settings.shipLiveRates === true && !zip) return fail(400, { error: 'zip_required' });
+  const quote = await quoteShipping({
+    supabase, settings, country: shipTo, zip, subtotal, threshold: freeShipThreshold,
+    items: lines.map((l) => ({ qty: l.qty, weightOz: l.weightOz })),
+  });
+  const shipping_quote = {
+    source: quote.source, country: quote.country, zip: quote.zip, zone: quote.zone, weight_oz: quote.weightOz ?? null,
+    options: quote.options.map((o) => ({ id: o.id, cents: o.cents, cost_cents: o.costCents ?? null, token: o.token ?? null })),
+  };
+
   // reuse this shopper's pending order on retry (keeps one Stripe customer)
   let existingOrder: { id: string; status: string; access_token: string; stripe_customer: string | null } | null = null;
   if (order_id) {
@@ -245,7 +262,7 @@ export async function prepareOrder(opts: {
     orderId = existingOrder.id;
     accessToken = existingOrder.access_token;
     await supabase.from('order_items').delete().eq('order_id', orderId);
-    await supabase.from('orders').update({ total: subtotal, customer_email: email, updated_at: new Date().toISOString(), ...preorderFields }).eq('id', orderId);
+    await supabase.from('orders').update({ total: subtotal, customer_email: email, shipping_quote, updated_at: new Date().toISOString(), ...preorderFields }).eq('id', orderId);
   }
   if (!orderId) {
     const { data: customer } = email
@@ -256,6 +273,7 @@ export async function prepareOrder(opts: {
       customer_id: customer?.id ?? null,
       status: 'pending',
       total: subtotal,
+      shipping_quote,
       ...preorderFields,
     }).select('id, access_token').single();
     if (orderErr || !order) return fail(500, { error: 'could not record the order' });
@@ -269,14 +287,8 @@ export async function prepareOrder(opts: {
 
   return {
     ok: true, orderId: orderId!, accessToken: accessToken!, lines, subtotal, balanceDue,
-    shipTo, freeShipThreshold, cartCampaign, stripeCustomer,
+    shipTo, freeShipThreshold, cartCampaign, stripeCustomer, quote,
   };
-}
-
-/** The standard (cheapest published) shipping charge for a cart, in cents. */
-export function standardShippingCents(shipTo: 'US' | 'CA', subtotal: number, freeShipThreshold: number) {
-  if (shipTo === 'CA') return CA_TRACKED_CENTS;
-  return subtotal >= freeShipThreshold ? 0 : US_STANDARD_CENTS;
 }
 
 export type Shipping = {

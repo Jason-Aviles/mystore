@@ -267,7 +267,7 @@ function renderTemplate(html: string, vars: Record<string, string>) {
 // (l.0.0.k1e.1.t.zke…). Mirrors src/lib/botTrap.jsx suspiciousEmail.
 function dotSpam(email: string) {
   const [local = '', domain = ''] = email.split('@');
-  return /^(gmail|googlemail).com$/.test(domain) && (local.split('+')[0].match(/./g) || []).length >= 3;
+  return /^(gmail|googlemail)\.com$/.test(domain) && (local.split('+')[0].match(/\./g) || []).length >= 3;
 }
 
 Deno.serve(async (req) => {

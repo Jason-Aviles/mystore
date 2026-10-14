@@ -58,11 +58,21 @@ export function ShippingPolicy() {
       <h2 className="display">Processing</h2>
       <p>Orders ship from the US within {CONFIG.processingDays} business days. During a drop weekend, allow up to 4 business days — every piece is checked and packed by hand.</p>
       <h2 className="display">Rates &amp; Delivery</h2>
-      <ul>
-        <li><b>US Standard</b> — $6.95, free over ${CONFIG.freeShipThreshold} · 3–7 business days</li>
-        <li><b>US Priority</b> — $14.95 · 2–3 business days</li>
-        <li><b>Canada</b> — $14.95 tracked · 7–14 business days</li>
-      </ul>
+      {CONFIG.shipLiveRates ? (
+        <ul>
+          <li><b>US Standard</b> (USPS Ground Advantage) — free over ${CONFIG.freeShipThreshold} to the contiguous US; otherwise the carrier’s rate for your ZIP · about 2–5 business days</li>
+          <li><b>Faster options</b> — USPS Priority, Priority Express and UPS 2nd Day / Next Day Air at the carrier’s rate for your ZIP</li>
+          <li><b>Alaska, Hawaii, US territories &amp; military addresses</b> — carrier rate for your ZIP (free shipping doesn’t apply)</li>
+          <li><b>Canada</b> — USPS International, tracked, at the carrier’s rate for your postal code</li>
+        </ul>
+      ) : (
+        <ul>
+          <li><b>US Standard</b> — $6.95, free over ${CONFIG.freeShipThreshold} · 3–7 business days</li>
+          <li><b>US Priority</b> — $14.95 · 2–3 business days</li>
+          <li><b>Canada</b> — $14.95 tracked · 7–14 business days</li>
+        </ul>
+      )}
+      {CONFIG.shipLiveRates && <p>Enter your ZIP or postal code in the cart to see every rate before you pay. Shipping is quoted for that ZIP, so please ship to the same one.</p>}
       <p>Checkout currently ships to the US and Canada. Somewhere else? Email <a href={`mailto:${CONFIG.supportEmail}`}>{CONFIG.supportEmail}</a> before ordering and we'll see what we can arrange.</p>
       <p>Canadian orders may be subject to customs duties set by your country — those are collected by your carrier, not by us.</p>
       <h2 className="display">Tracking</h2>

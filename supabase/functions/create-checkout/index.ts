@@ -21,10 +21,7 @@
 //   supabase functions deploy create-checkout
 import Stripe from 'npm:stripe@16';
 import { createClient } from 'npm:@supabase/supabase-js@2';
-import {
-  prepareOrder, shipWindow, json, corsHeaders,
-  US_STANDARD_CENTS, US_PRIORITY_CENTS, CA_TRACKED_CENTS,
-} from '../_shared/checkout-core.ts';
+import { prepareOrder, json, corsHeaders } from '../_shared/checkout-core.ts';
 // Cart pricing, stock, preorder rules and the pending order all live in
 // _shared/checkout-core.ts — PayPal (paypal-create-order) uses the same code.
 
@@ -32,7 +29,7 @@ Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') return new Response('ok', { headers: corsHeaders });
 
   try {
-    const { order_id, email, items, origin, country, access_code } = await req.json();
+    const { order_id, email, items, origin, country, zip, access_code } = await req.json();
     if (!items?.length) return json({ error: 'empty cart' }, 400);
 
     const stripeKey = Deno.env.get('STRIPE_SECRET_KEY');
@@ -46,11 +43,11 @@ Deno.serve(async (req) => {
 
     const site = origin || 'https://darkdivine.store';
     const prepared = await prepareOrder({
-      supabase, order_id, email, items, country, site, accessCode: access_code,
+      supabase, order_id, email, items, country, zip, site, accessCode: access_code,
       createStripeCustomer: async (e) => (await stripe.customers.create({ email: e })).id,
     });
     if (!prepared.ok) return json(prepared.body, prepared.status);
-    const { orderId, accessToken, lines, subtotal, shipTo, freeShipThreshold, cartCampaign, stripeCustomer } = prepared;
+    const { orderId, accessToken, lines, shipTo, cartCampaign, stripeCustomer, quote } = prepared;
 
     const line_items = lines.map((l) => ({
       quantity: l.qty,
@@ -72,29 +69,18 @@ Deno.serve(async (req) => {
       },
     }));
 
-    // Only the rates the shipping policy actually publishes, for the country
-    // the customer told us — nobody can pick a US rate for a Canadian address.
-    const shipping_options = shipTo === 'CA'
-      ? [{
-          shipping_rate_data: {
-            display_name: 'Canada Tracked (7–14 business days)',
-            type: 'fixed_amount' as const,
-            fixed_amount: { amount: CA_TRACKED_CENTS, currency: 'usd' },
-          },
-        }]
-      : [{
-          shipping_rate_data: {
-            display_name: subtotal >= freeShipThreshold ? 'US Standard (3–7 business days) — Free' : 'US Standard (3–7 business days)',
-            type: 'fixed_amount' as const,
-            fixed_amount: { amount: subtotal >= freeShipThreshold ? 0 : US_STANDARD_CENTS, currency: 'usd' },
-          },
-        }, {
-          shipping_rate_data: {
-            display_name: 'US Priority (2–3 business days)',
-            type: 'fixed_amount' as const,
-            fixed_amount: { amount: US_PRIORITY_CENTS, currency: 'usd' },
-          },
-        }];
+    // Only the rates quoted for the country (and ZIP) the customer gave in
+    // the cart — real carrier rates when live rates are on, otherwise the
+    // published flat rates. The service id rides along in metadata so the
+    // webhook knows which label to buy.
+    const shipping_options = quote.options.map((o) => ({
+      shipping_rate_data: {
+        display_name: o.label.slice(0, 100),
+        type: 'fixed_amount' as const,
+        fixed_amount: { amount: o.cents, currency: 'usd' },
+        metadata: { service: o.id, zone: quote.zone, zip: quote.zip ?? '' },
+      },
+    }));
 
     // No payment_method_types passed on purpose: Stripe automatically offers
     // every method you enable in Dashboard → Settings → Payment methods

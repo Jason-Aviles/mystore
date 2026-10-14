@@ -31,12 +31,41 @@ function cartReview(lines) {
    If stock changed while the cart sat, the server names the exact lines
    and this page offers a one-click fix. The cart is never cleared by an
    error — only by a completed purchase. */
+/* ZIP format check — the server re-checks and prices from its own data */
+function zipValid(country, zip) {
+  const z = String(zip || '').trim().toUpperCase();
+  return country === 'CA' ? /^[A-Z]\d[A-Z] ?\d[A-Z]\d$/.test(z) : /^\d{5}(-\d{4})?$/.test(z);
+}
+
+/* live carrier rates for the cart + ZIP, from the same quote checkout charges */
+function useShipRates(enabled, country, zip, cart) {
+  const [state, setState] = useState({ loading: false, options: [] });
+  const key = enabled ? JSON.stringify([country, zip.trim(), cart.map((l) => [l.handle, l.o1, l.o2, l.qty])]) : '';
+  useEffect(() => {
+    if (!key || !hasSupabase) { setState({ loading: false, options: [] }); return; }
+    let live = true;
+    setState((s) => ({ ...s, loading: true }));
+    const t = setTimeout(async () => {
+      const { data } = await supabase.functions.invoke('shipping-rates', {
+        body: { country, zip: zip.trim(), items: cart.map((l) => ({ handle: l.handle, option1: l.o1, option2: l.o2 || null, qty: l.qty })) },
+      }).catch(() => ({ data: null }));
+      if (live) setState({ loading: false, options: data?.options || [] });
+    }, 450);
+    return () => { live = false; clearTimeout(t); };
+  }, [key]); // eslint-disable-line react-hooks/exhaustive-deps
+  return state;
+}
+
 export default function CartPage() {
   const { cart, byHandle, money, setQty, removeLine, cartTotal, CONFIG, reloadProducts, showToast, campaign, isPreorder } = useStore();
   const nav = useNavigate();
   const [email, setEmail] = useState('');
   const [optIn, setOptIn] = useState(false); // marketing consent — never pre-checked
   const [country, setCountry] = useState('US'); // published rates exist for US + Canada only
+  const [zip, setZip] = useState('');
+  const liveRates = CONFIG.shipLiveRates === true;
+  const zipOk = zipValid(country, zip);
+  const rates = useShipRates(liveRates && zipOk, country, zip, cart);
   const [step, setStep] = useState('cart'); // cart | pay
   const [orderId, setOrderId] = useState(null);
   const [busy, setBusy] = useState(false);
@@ -117,6 +146,7 @@ export default function CartPage() {
     email: email.toLowerCase(),
     origin: window.location.origin,
     country,
+    zip: zip.trim() || null,
     access_code: unlockCode(), // checkout re-verifies it for code-only preorders
     items: lines.map((l) => ({ handle: l.handle, option1: l.o1, option2: l.o2 || null, qty: l.qty })),
   });
@@ -133,6 +163,9 @@ export default function CartPage() {
     } else if (body?.error === 'limit') {
       setPayErr(`${body.title} is limited to ${body.limit} per customer${body.already ? ` and this email has already ordered ${body.already}` : ''}. Lower the quantity and try again — nothing was charged.`);
       if (window.fbq) window.fbq('trackCustom', 'CheckoutError', { kind: 'limit' });
+    } else if (body?.error === 'zip_required') {
+      setStep('cart');
+      setPayErr('Enter your ZIP / postal code so we can price shipping — nothing was charged.');
     } else if (body?.error === 'code_required') {
       setPayErr('This preorder is private — enter your access code at the gate first. Nothing was charged.');
     } else if (body?.error === 'store_locked') {
@@ -305,7 +338,26 @@ export default function CartPage() {
                     aria-pressed={country === code} onClick={() => setCountry(code)}>{name}</button>
                 ))}
               </div>
-              {country === 'CA' && <p className="form-note" style={{ textAlign: 'left' }}>Canada Tracked — $14.95 · 7–14 business days. Duties, if any, are collected by your carrier.</p>}
+              {liveRates && (
+                <div className="ship-zip">
+                  <input type="text" required inputMode={country === 'US' ? 'numeric' : 'text'} autoComplete="postal-code"
+                    placeholder={country === 'US' ? 'ZIP code (for shipping rates)' : 'Postal code (for shipping rates)'}
+                    aria-label={country === 'US' ? 'ZIP code' : 'Postal code'} maxLength={country === 'US' ? 10 : 7}
+                    value={zip} onChange={(e) => setZip(e.target.value)} />
+                  {zipOk && (
+                    <div className="ship-rates" aria-live="polite">
+                      {rates.loading ? <span className="form-note">Checking carrier rates…</span>
+                        : rates.options.length ? rates.options.map((o) => (
+                          <div key={o.id} className="ship-rate"><span>{o.label.replace(/ — Free$/, '')}</span><b>{o.cents === 0 ? 'Free' : money(o.cents / 100)}</b></div>
+                        )) : <span className="form-note">Shipping is priced on the payment page.</span>}
+                    </div>
+                  )}
+                  <p className="form-note" style={{ textAlign: 'left', margin: 0 }}>
+                    Pick your speed on the payment page. Ship to the same ZIP you enter here{country === 'CA' ? ' — duties, if any, are collected by your carrier' : ''}.
+                  </p>
+                </div>
+              )}
+              {!liveRates && country === 'CA' && <p className="form-note" style={{ textAlign: 'left' }}>Canada Tracked — $14.95 · 7–14 business days. Duties, if any, are collected by your carrier.</p>}
               <button className="btn btn-block" type="submit" disabled={busy} style={{ position: 'relative', overflow: 'hidden' }}>
                 {busy ? 'One moment…' : 'Continue to Payment'}
                 <span className="pay-sheen" aria-hidden="true" />

@@ -296,6 +296,12 @@ export default function ProductEdit() {
             <input type="url" placeholder="https://buy.stripe.com/…" value={p.stripeLink} onChange={(e) => set('stripeLink', e.target.value)} />
             <div className="hint">Buy It Now uses this. Create at dashboard.stripe.com/payment-links.</div>
           </div>
+          <div>
+            <label>Packed weight (oz, one unit)</label>
+            <input type="number" min="0" step="0.1" value={p.weightOz ?? ''} placeholder="uses the Shipping default"
+              onChange={(e) => set('weightOz', e.target.value === '' ? null : Number(e.target.value))} />
+            <div className="hint">Folded piece + tissue/tags, weighed on a scale. Drives shipping rates and labels (16 oz = 1 lb). The box is added on the Shipping page.</div>
+          </div>
         </div>
         <div className="row three">
           {[['featured', 'Featured (homepage)'], ['bestseller', 'Best seller'], ['newArrival', 'New arrival']].map(([k, label]) => (

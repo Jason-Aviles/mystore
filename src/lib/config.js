@@ -13,6 +13,7 @@ export const DEFAULT_CONFIG = {
   domain: 'https://darkdivine.store',
   lowStockThreshold: 12, // "Only X left" appears at or below this many total units
   freeShipThreshold: 100,
+  shipLiveRates: false, // real carrier rates by ZIP at checkout (Shippo) — admin Site Settings
   dropMode: true,
   dropNavLabel: 'The Drop', // the /drop tab's name in the menu — admin can switch to "Preorder"       // master switch — off hides countdowns, drop links, drop language everywhere
   dropName: 'THE EMBLEM — DROP 003',

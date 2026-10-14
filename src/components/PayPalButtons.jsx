@@ -91,6 +91,8 @@ export default function PayPalButtons({ getPayload, onCreated, onCheckoutError, 
           if (body?.error === 'declined' && body.restart) return actions.restart(); // pick another card in PayPal
           if (body?.error === 'ship_country') {
             setErr(`Your PayPal shipping address is in ${body.country === 'CA' ? 'Canada' : 'the US'}, but the cart is set to ship to ${body.country === 'CA' ? 'the US' : 'Canada'}. Nothing was charged — switch “Ship to” above and pay again.`);
+          } else if (body?.error === 'ship_zone') {
+            setErr('Your PayPal shipping address is in a different shipping zone (e.g. Alaska, Hawaii, a territory or military address) than the ZIP entered above. Nothing was charged — enter that address’s ZIP above and pay again.');
           } else if (body?.error === 'ship_unsupported') {
             setErr('We currently ship to the US and Canada only. Nothing was charged — email us about other countries.');
           } else {

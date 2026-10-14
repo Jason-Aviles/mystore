@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { Fragment, useEffect, useState } from 'react';
 import { adminListOrders, adminUpdateOrder, isLive } from './adminData';
 import LoadError from './LoadError';
 import { supabase } from '../lib/supabase';
@@ -23,11 +23,102 @@ function csv(name, head, rows) {
   URL.revokeObjectURL(a.href);
 }
 
+const SERVICE_NAMES = {
+  standard: 'Standard', priority: 'Priority', express: 'Express', ups_2day: 'UPS 2nd Day', ups_next: 'UPS Next Day',
+};
+
+async function callLabel(body) {
+  const { data, error } = await supabase.functions.invoke('shipping-label', { body });
+  if (data) return data;
+  try { return (await error?.context?.json?.()) || { ok: false, error: error?.message }; } catch { return { ok: false, error: error?.message }; }
+}
+
+/* Buy a Shippo label for one order: rates for its real address, the
+   service the customer paid for pre-selected, live labels confirmed first. */
+function ShipPanel({ order: o, onDone }) {
+  const [test, setTest] = useState(false);
+  const [box, setBox] = useState('');
+  const [weight, setWeight] = useState('');
+  const [res, setRes] = useState(null);
+  const [pick, setPick] = useState('');
+  const [busy, setBusy] = useState(false);
+  const [err, setErr] = useState('');
+  const q = o.shipping_quote || {};
+
+  async function loadRates() {
+    setBusy(true); setErr('');
+    const r = await callLabel({ action: 'rates', order_id: o.id, test, box: box || undefined, weight_oz: weight || undefined });
+    setBusy(false);
+    if (!r?.ok) { setErr(r?.gaps ? `Shipping setup missing: ${r.gaps.join(', ')} — see the Shipping page` : (r?.error || 'Could not get rates')); return; }
+    setRes(r); setPick(r.recommended || r.rates[0]?.id || '');
+  }
+  async function buy() {
+    const rate = res?.rates.find((x) => x.id === pick);
+    if (!rate) return;
+    if (!test && !window.confirm(`Buy a REAL ${rate.carrier} ${rate.service} label for ${rate.amount}? Shippo charges your account, the order is marked shipped, and the customer gets the tracking email.`)) return;
+    setBusy(true); setErr('');
+    const r = await callLabel({ action: 'buy', order_id: o.id, rate_id: rate.id, test });
+    setBusy(false);
+    if (!r?.ok) { setErr(r?.error || 'Label not bought'); return; }
+    if (r.label?.url) window.open(r.label.url, '_blank', 'noopener');
+    onDone();
+  }
+  async function voidLabel() {
+    if (!window.confirm('Void this label? Only if it was never used — Shippo refunds unused labels within a few days.')) return;
+    setBusy(true);
+    const r = await callLabel({ action: 'refund', order_id: o.id });
+    setBusy(false);
+    if (!r?.ok) setErr(r?.error || 'Could not void'); else onDone();
+  }
+
+  return (
+    <div className="ship-panel">
+      <div style={{ fontSize: 12, color: 'var(--silver)', marginBottom: 8 }}>
+        Customer paid for: <b style={{ color: 'var(--bone)' }}>{SERVICE_NAMES[q.chosen] || 'Standard'}</b>
+        {q.paid_cents != null && <> (${(q.paid_cents / 100).toFixed(2)})</>}
+        {q.source && <> · quoted {q.source === 'shippo' ? 'live rates' : 'flat rates'}{q.zip ? ` for ${q.zip}` : ''}</>}
+        {q.zone_mismatch && <div style={{ color: '#e8a0a3', marginTop: 4 }}>⚠ The address is in a different shipping zone than the ZIP quoted at checkout (e.g. Alaska/Hawaii on a free contiguous-US rate). Decide before buying: absorb it, or contact the customer.</div>}
+      </div>
+      {o.label?.url && (
+        <div style={{ fontSize: 12, marginBottom: 8 }}>
+          {o.label.test ? 'Test label' : 'Label'}: <a href={o.label.url} target="_blank" rel="noopener noreferrer">Print PDF</a>
+          {' '}· {o.label.carrier} {o.label.service} · ${o.label.cost} · {o.label.tracking_number}
+          {o.label.refund_status ? <> · <b>void: {o.label.refund_status}</b></> : !o.label.test && <> · <button type="button" className="btn btn-ghost btn-sm" onClick={voidLabel} disabled={busy}>Void label</button></>}
+        </div>
+      )}
+      <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', alignItems: 'center' }}>
+        <input type="number" min="1" placeholder="Weight oz (auto)" value={weight} onChange={(e) => setWeight(e.target.value)} style={{ width: 140, padding: '6px 8px', fontSize: 12 }} />
+        <input type="text" placeholder="Box name (auto)" value={box} onChange={(e) => setBox(e.target.value)} style={{ width: 150, padding: '6px 8px', fontSize: 12 }} />
+        <label style={{ display: 'flex', gap: 6, alignItems: 'center', fontSize: 12, textTransform: 'none', letterSpacing: 0 }}>
+          <input type="checkbox" checked={test} onChange={(e) => { setTest(e.target.checked); setRes(null); }} style={{ width: 'auto' }} /> Test label (free, fake)
+        </label>
+        <button type="button" className="btn btn-ghost btn-sm" onClick={loadRates} disabled={busy}>{busy && !res ? 'Getting rates…' : 'Get rates'}</button>
+      </div>
+      {res && (
+        <div style={{ marginTop: 10 }}>
+          <div style={{ fontSize: 11.5, color: 'var(--silver)', marginBottom: 6 }}>{res.parcel.weight_oz} oz · {res.parcel.box || 'default box'}{res.test ? ' · TEST' : ''}</div>
+          {res.rates.map((r) => (
+            <label key={r.id} style={{ display: 'flex', gap: 8, alignItems: 'center', fontSize: 12.5, textTransform: 'none', letterSpacing: 0, margin: '2px 0' }}>
+              <input type="radio" name={`rate-${o.id}`} checked={pick === r.id} onChange={() => setPick(r.id)} style={{ width: 'auto' }} />
+              {r.carrier} {r.service} — <b>${r.amount}</b>{r.days ? ` · ${r.days}d` : ''}{r.id === res.recommended ? ' ← what they paid for' : ''}
+            </label>
+          ))}
+          <button type="button" className="btn btn-sm" style={{ marginTop: 8 }} onClick={buy} disabled={busy || !pick}>
+            {busy ? 'Buying…' : test ? 'Buy test label' : 'Buy label & mark shipped'}
+          </button>
+        </div>
+      )}
+      {err && <p style={{ color: '#e8a0a3', fontSize: 12, margin: '8px 0 0' }}>{err}</p>}
+    </div>
+  );
+}
+
 export default function Orders() {
   const [orders, setOrders] = useState([]);
   const [filter, setFilter] = useState('all');
   const [kind, setKind] = useState('all'); // all | preorder | regular
   const [loadError, setLoadError] = useState('');
+  const [shipOpen, setShipOpen] = useState(null);
   const load = () => adminListOrders()
     .then((list) => { setOrders(list); setLoadError(''); })
     .catch((e) => setLoadError(e.message));
@@ -126,7 +217,8 @@ export default function Orders() {
             <thead><tr><th>Order</th><th>Customer</th><th>Ship to</th><th>Items</th><th>Total</th><th>Status</th><th>Tracking</th><th>Note</th></tr></thead>
             <tbody>
               {visible.map((o) => (
-                <tr key={o.id}>
+                <Fragment key={o.id}>
+                <tr>
                   <td>
                     <b>#{String(o.id).slice(0, 8)}</b>
                     {o.campaign_id && <> <span className="pill info" title="Made after the preorder closes — manage stages in Drops">PREORDER</span></>}
@@ -162,6 +254,13 @@ export default function Orders() {
                     <input type="text" defaultValue={o.tracking || ''} placeholder="Tracking #"
                       style={{ padding: '8px 10px', fontSize: 12, minWidth: 120 }}
                       onBlur={(e) => saveTracking(o, e.target.value)} />
+                    {isLive && o.shipping && ['paid', 'shipped'].includes(o.status) && (
+                      <button type="button" className="btn btn-ghost btn-sm" style={{ marginTop: 6 }}
+                        onClick={() => setShipOpen(shipOpen === o.id ? null : o.id)}>
+                        {shipOpen === o.id ? 'Close' : o.label?.url && !o.label.test ? 'Label' : 'Ship…'}
+                      </button>
+                    )}
+                    {o.shipping_quote?.zone_mismatch && <div style={{ color: '#e8a0a3', fontSize: 11 }}>⚠ zone mismatch</div>}
                   </td>
                   <td>
                     <input type="text" defaultValue={o.note || ''} placeholder="Internal note"
@@ -169,6 +268,10 @@ export default function Orders() {
                       onBlur={(e) => saveNote(o, e.target.value)} />
                   </td>
                 </tr>
+                {shipOpen === o.id && (
+                  <tr><td colSpan={8}><ShipPanel order={o} onDone={() => { setShipOpen(null); load(); }} /></td></tr>
+                )}
+                </Fragment>
               ))}
             </tbody>
           </table>

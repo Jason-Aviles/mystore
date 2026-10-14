@@ -39,7 +39,8 @@ const FIELDS = [
     ['preorderOnlyLock', 'Preorder-only storefront', 'toggle', 'On = visitors can use only the private preorder, its products, cart, checkout, tracking, and policy pages'],
   ]],
   ['Store', [
-    ['freeShipThreshold', 'Free shipping threshold ($)', 'number', 'US orders over this amount ship free. Set 0 to turn the free-shipping meter off everywhere'],
+    ['freeShipThreshold', 'Free shipping threshold ($)', 'number', 'Contiguous-US orders over this amount ship free (standard). Set 0 to turn free shipping and the meter off'],
+    ['shipLiveRates', 'Live carrier rates at checkout', 'toggle', 'On = the cart asks for a ZIP and charges real Shippo rates (USPS/UPS upgrades). Fill in Shipping (ship-from address, boxes) and product weights first. Off = the flat rates on the Shipping policy'],
     ['lowStockThreshold', 'Low-stock alert level', 'number', 'Product pages say Only X left when total units fall to this number or below'],
     ['welcomeCode', 'Welcome discount code', 'text', 'Shown after email signup and in the welcome email — run scripts/setup-stripe-codes.mjs so it works at checkout'],
     ['reviewPopups', 'Review popups', 'toggle', 'Corner cards featuring your real verified reviews'],

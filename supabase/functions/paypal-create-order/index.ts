@@ -6,19 +6,18 @@
 // approval belongs to this exact order and amount.
 //
 // Shipping: PayPal collects the address in its own window; we charge the
-// published standard rate for the country the customer chose in the cart
-// (US Standard, free over the threshold · Canada Tracked). paypal-capture
-// refuses — before any money moves — if the PayPal address is in a
-// different country than the rate that was charged.
+// standard rate quoted for the country/ZIP the customer gave in the cart.
+// paypal-capture refuses — before any money moves — if the PayPal address
+// is in a different country or shipping zone than the rate charged.
 import { createClient } from 'npm:@supabase/supabase-js@2';
 import Stripe from 'npm:stripe@16';
-import { prepareOrder, standardShippingCents, json, corsHeaders } from '../_shared/checkout-core.ts';
+import { prepareOrder, json, corsHeaders } from '../_shared/checkout-core.ts';
 import { paypal, paypalConfigured, money } from '../_shared/paypal.ts';
 
 Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') return new Response('ok', { headers: corsHeaders });
   try {
-    const { order_id, email, items, origin, country, probe, access_code } = await req.json();
+    const { order_id, email, items, origin, country, zip, probe, access_code } = await req.json();
     // the storefront asks first, so the button never shows before the
     // server-side secrets exist (no half-working PayPal window)
     if (probe) {
@@ -36,16 +35,18 @@ Deno.serve(async (req) => {
     const site = origin || 'https://darkdivine.store';
 
     const prepared = await prepareOrder({
-      supabase, order_id, email, items, country, site, accessCode: access_code,
+      supabase, order_id, email, items, country, zip, site, accessCode: access_code,
       // deposit balances are invoiced through Stripe, whatever paid the deposit
       createStripeCustomer: stripeKey
         ? async (e) => (await new Stripe(stripeKey).customers.create({ email: e })).id
         : undefined,
     });
     if (!prepared.ok) return json(prepared.body, prepared.status);
-    const { orderId, accessToken, lines, subtotal, shipTo, freeShipThreshold } = prepared;
+    const { orderId, accessToken, lines, shipTo, quote } = prepared;
 
-    const shippingCents = standardShippingCents(shipTo, subtotal, freeShipThreshold);
+    // PayPal has no carrier picker: it pays the standard rate quoted for the
+    // cart's country/ZIP (paypal-capture checks the address matches)
+    const shippingCents = quote.options[0].cents;
     const itemTotal = lines.reduce((s, l) => s + Math.round(l.price * 100) * l.qty, 0);
     const totalCents = itemTotal + shippingCents;
 
