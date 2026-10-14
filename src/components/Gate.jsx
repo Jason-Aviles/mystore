@@ -7,6 +7,7 @@ import { submitGate, campaignLive, shipWindowText, productionStartText, closesTe
 import { wiggle, scramble, reducedMotion } from '../lib/motion';
 import Countdown from './Countdown';
 import BrandMark from './BrandMark';
+import { BotTrap, isBotSubmit } from '../lib/botTrap';
 
 /* Private preorder gate — two modes, both driven by REAL campaign rows:
      coming_soon → email collection only (no code field, gate stays locked)
@@ -39,6 +40,7 @@ export default function Gate({ onDone, onUtilityNavigate }) {
   const [joined, setJoined] = useState(false); // coming-soon success state
   const root = useRef(null);
   const codeRef = useRef(null);
+  const formRef = useRef(null);
   const lblRef = useRef(null);
 
   const live = campaignLive(campaign);
@@ -85,6 +87,15 @@ export default function Gate({ onDone, onUtilityNavigate }) {
     e.preventDefault();
     setBusy(true);
     setErr('');
+    // bot (or a rare false positive): save and email nothing. Without a
+    // required code the preorder is public anyway, so let it through
+    // rather than risk stranding a real customer.
+    if (isBotSubmit(formRef.current, email)) {
+      setBusy(false);
+      if (codeNeeded && (live || !campaign)) { setErr('That code isn’t active. Join the list to get the next one.'); return; }
+      open(() => { campaign ? unlock(campaign, '') : unlock(); onDone?.(); if (campaign && live) navigate('/drop'); });
+      return;
+    }
 
     // ---- campaign path: everything goes through the Edge Function ----
     if (campaign) {
@@ -140,6 +151,7 @@ export default function Gate({ onDone, onUtilityNavigate }) {
   async function joinList() {
     if (!email) { setErr('Drop your email first — codes go out to the list.'); wiggle(root.current?.querySelector('input[type="email"]')); return; }
     setBusy(true);
+    if (isBotSubmit(formRef.current, email)) { setBusy(false); setJoined(true); return; }
     if (campaign) {
       // record through the Edge Function so campaign + consent land in the audit log
       await submitGate({ email, phone, emailConsent, smsConsent: Boolean(phone.trim()) && smsConsent, campaignSlug: campaign.slug });
@@ -228,7 +240,8 @@ export default function Gate({ onDone, onUtilityNavigate }) {
               : <>Your access code arrives by email before the drop opens.</>}</p>
           </div>
         ) : (
-          <form onSubmit={submitVisibleForm}>
+          <form onSubmit={submitVisibleForm} ref={formRef}>
+            <BotTrap />
             <input type="email" name="email" required placeholder="EMAIL ADDRESS" aria-label="Email address" autoComplete="email" spellCheck="false"
               value={email} onChange={(e) => setEmail(e.target.value)} />
             <label className="consent-row gate-consent">

@@ -27,6 +27,13 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
+// Gmail ignores dots; signup bots pad strangers' addresses with them
+// (l.0.0.k1e.1.t.zke…). Mirrors src/lib/botTrap.jsx suspiciousEmail.
+function dotSpam(email: string) {
+  const [local = '', domain = ''] = email.split('@');
+  return /^(gmail|googlemail).com$/.test(domain) && (local.split('+')[0].match(/./g) || []).length >= 3;
+}
+
 Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') return new Response('ok', { headers: corsHeaders });
 
@@ -84,7 +91,11 @@ Deno.serve(async (req) => {
       if (!codeRow) return json({ ok: false, mode, error: 'invalid_code' }, 401);
     }
 
+    // dotted-Gmail bot: code rules above still applied; save + email nothing
+    const spam = dotSpam(to);
+
     // ---- record signup + consent (explicit checkbox values only) ----
+    if (!spam) {
     const meta = {
       campaign: campaign?.slug ?? null,
       campaign_id: campaign?.id ?? null,
@@ -137,6 +148,7 @@ Deno.serve(async (req) => {
         }),
       });
     } catch { /* email failure must never block access */ }
+    }
 
     return json({
       ok: true,

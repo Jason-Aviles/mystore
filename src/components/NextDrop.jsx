@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { useStore } from '../context/StoreContext';
 import { saveEmailSignup } from '../lib/marketing';
+import { BotTrap, isBotSubmit } from '../lib/botTrap';
 import EmblemFX from './EmblemFX';
 import Reveal from './Reveal';
 import Countdown from './Countdown';
@@ -20,6 +21,7 @@ export default function NextDrop() {
   async function join(e) {
     e.preventDefault();
     if (!email.trim()) return;
+    if (isBotSubmit(e.currentTarget, email)) { setState('done'); return; }
     setState('busy');
     try {
       await saveEmailSignup({ email, source: 'next_drop', meta: { drop: CONFIG.nextDropName } });
@@ -40,6 +42,7 @@ export default function NextDrop() {
             <p className="nd-done" role="status">You're on the list — you'll hear first when it opens.</p>
           ) : (
             <form className="nd-form" onSubmit={join}>
+              <BotTrap />
               <input type="email" name="email" required autoComplete="email" placeholder="Email for first access"
                 aria-label="Email for first access" value={email} onChange={(e) => setEmail(e.target.value)} />
               <button className="btn" type="submit" disabled={state === 'busy'}>{state === 'busy' ? 'Joining…' : 'Get first access'}</button>

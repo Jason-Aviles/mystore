@@ -14,6 +14,7 @@ import ScrollSerpent from '../components/ScrollSerpent';
 import { ReviewCard } from '../components/Reviews';
 import { fetchReviews, SHOPIFY_RATING_COUNTS, TOTAL_SHOPIFY_RATINGS, RATING_AVG, productAvg } from '../lib/reviews';
 import { saveEmailSignup, saveSmsSignup } from '../lib/marketing';
+import { BotTrap, isBotSubmit } from '../lib/botTrap';
 import { payMethodList } from '../lib/trust';
 import { formatHomepageText, mergeHomepage } from '../lib/homeContent';
 
@@ -89,8 +90,10 @@ export default function Home() {
 
   async function submitSignup(e) {
     e.preventDefault();
-    await saveEmailSignup({ email, source: 'popup', consent: true, meta: { placement: 'homepage_signup' } });
-    if (phone && smsConsent) await saveSmsSignup({ phone, consent: true });
+    if (!isBotSubmit(e.currentTarget, email)) {
+      await saveEmailSignup({ email, source: 'popup', consent: true, meta: { placement: 'homepage_signup' } });
+      if (phone && smsConsent) await saveSmsSignup({ phone, consent: true });
+    }
     markSubscribed();
     setSignedUp(true);
     showToast('Welcome to the list');
@@ -354,6 +357,7 @@ export default function Home() {
               <p style={{ color: 'var(--bone)', fontWeight: 600 }}>{homeText(HOME.signupSuccessText)}</p>
             ) : (
               <form onSubmit={submitSignup}>
+                <BotTrap />
                 <div className="signup-form">
                   <input type="email" name="email" required placeholder={HOME.signupEmailPlaceholder} aria-label={HOME.signupEmailPlaceholder} autoComplete="email" spellCheck="false"
                     value={email} onChange={(e) => setEmail(e.target.value)} />

@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useStore } from '../context/StoreContext';
 import { saveEmailSignup } from '../lib/marketing';
+import { BotTrap, isBotSubmit } from '../lib/botTrap';
 import { RATING_AVG, TOTAL_SHOPIFY_RATINGS, REVIEW_PROVENANCE } from '../lib/reviews';
 import { payMethodList } from '../lib/trust';
 import { Lock } from './Icons';
@@ -14,7 +15,7 @@ export default function Footer() {
 
   async function submit(e) {
     e.preventDefault();
-    await saveEmailSignup({ email, source: 'footer_signup' });
+    if (!isBotSubmit(e.currentTarget, email)) await saveEmailSignup({ email, source: 'footer_signup' });
     markSubscribed();
     setDone(true);
     showToast('Welcome to the list');
@@ -34,6 +35,7 @@ export default function Footer() {
               <p style={{ color: 'var(--bone)' }}>You're in. Code <b>{CONFIG.welcomeCode}</b> = 10% off.</p>
             ) : (
               <form className="foot-signup" onSubmit={submit}>
+                <BotTrap />
                 <input type="email" name="email" required placeholder="Email for drop alerts" aria-label="Email for drop alerts" autoComplete="email" spellCheck="false"
                   value={email} onChange={(e) => setEmail(e.target.value)} />
                 <button className="btn btn-sm" type="submit">Join</button>

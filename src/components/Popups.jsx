@@ -3,6 +3,7 @@ import gsap from 'gsap';
 import { useGSAP } from '@gsap/react';
 import { useStore } from '../context/StoreContext';
 import { saveEmailSignup } from '../lib/marketing';
+import { BotTrap, isBotSubmit } from '../lib/botTrap';
 import { RATING_AVG, TOTAL_SHOPIFY_RATINGS } from '../lib/reviews';
 import { reducedMotion } from '../lib/motion';
 
@@ -76,7 +77,7 @@ export default function Popups() {
 
   async function submit(e) {
     e.preventDefault();
-    await saveEmailSignup({ email, source: 'popup', meta: { variant } });
+    if (!isBotSubmit(e.currentTarget, email)) await saveEmailSignup({ email, source: 'popup', meta: { variant } });
     markSubscribed();
     setDone(true);
     showToast('Welcome to the list');
@@ -106,6 +107,7 @@ export default function Popups() {
                 ? 'Leave with the code — 10% off plus the next private access code before anyone else.'
                 : 'Plus drop alerts and private access codes before every release. One email per drop.'}</p>
               <form className="signup-form" onSubmit={submit}>
+                <BotTrap />
                 <input type="email" required placeholder="Email address" aria-label="Email address" autoComplete="email"
                   value={email} onChange={(e) => setEmail(e.target.value)} />
                 <button className="btn" type="submit">Get 10% Off</button>
