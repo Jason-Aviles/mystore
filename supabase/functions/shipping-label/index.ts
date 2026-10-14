@@ -20,7 +20,7 @@ import { createClient } from 'npm:@supabase/supabase-js@2';
 import { json, corsHeaders } from '../_shared/checkout-core.ts';
 import { callerRole } from '../_shared/caller.ts';
 import {
-  loadShipConfig, configGaps, shippoKey, parcelFor, shippo, fromAddress, ALL_SERVICE_TOKENS,
+  loadShipConfig, configGaps, shippoKey, parcelFor, shippo, fromAddress, pickRates,
 } from '../_shared/shipping.ts';
 
 const SITE = Deno.env.get('SITE_URL') || 'https://darkdivine.store';
@@ -111,8 +111,8 @@ Deno.serve(async (req) => {
       if (!r.ok) return json({ ok: false, error: msgs(r.body).join(' ') || `shippo ${r.status}` }, 502);
       const rates = (r.body?.rates || []).sort((a: any, b: any) => Number(a.amount) - Number(b.amount));
       const paid = order.shipping_quote?.chosen || 'standard';
-      const wanted = ALL_SERVICE_TOKENS[paid] || [];
-      const rec = wanted.map((t) => rates.find((x: any) => x.servicelevel?.token === t)).find(Boolean);
+      // same rule as checkout: the cheapest rate within the service they paid for
+      const rec = pickRates(rates, s.country === 'CA' ? 'CA' : 'US').find((p) => p.id === paid)?.rate;
       return json({
         ok: true, test,
         parcel: { weight_oz: weightOz, box: box?.name ?? auto.box },

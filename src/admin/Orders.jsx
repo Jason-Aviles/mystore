@@ -24,7 +24,8 @@ function csv(name, head, rows) {
 }
 
 const SERVICE_NAMES = {
-  standard: 'Standard', priority: 'Priority', express: 'Express', ups_2day: 'UPS 2nd Day', ups_next: 'UPS Next Day',
+  standard: 'Standard', priority: 'USPS Priority', express: 'USPS Express', ups_2day: 'UPS 2nd Day', ups_next: 'UPS Next Day',
+  fedex_2day: 'FedEx 2Day', fedex_next: 'FedEx Overnight', ca_express: 'Canada Express',
 };
 
 async function callLabel(body) {

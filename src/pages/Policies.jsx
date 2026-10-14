@@ -60,10 +60,10 @@ export function ShippingPolicy() {
       <h2 className="display">Rates &amp; Delivery</h2>
       {CONFIG.shipLiveRates ? (
         <ul>
-          <li><b>US Standard</b> (USPS Ground Advantage) — free over ${CONFIG.freeShipThreshold} to the contiguous US; otherwise the carrier’s rate for your ZIP · about 2–5 business days</li>
-          <li><b>Faster options</b> — USPS Priority, Priority Express and UPS 2nd Day / Next Day Air at the carrier’s rate for your ZIP</li>
+          <li><b>US Standard</b> — the best-priced tracked ground service that day (USPS, UPS or FedEx), free over ${CONFIG.freeShipThreshold} to the contiguous US; otherwise the carrier’s rate for your ZIP · about 2–5 business days</li>
+          <li><b>Faster options</b> — USPS Priority / Priority Express, UPS 2nd Day / Next Day Air and FedEx 2Day / Overnight (where available) at the carrier’s rate for your ZIP</li>
           <li><b>Alaska, Hawaii, US territories &amp; military addresses</b> — carrier rate for your ZIP (free shipping doesn’t apply)</li>
-          <li><b>Canada</b> — USPS International, tracked, at the carrier’s rate for your postal code</li>
+          <li><b>Canada</b> — tracked international (USPS, UPS or FedEx), or Canada Express (DHL, UPS or FedEx), at the carrier’s rate for your postal code</li>
         </ul>
       ) : (
         <ul>

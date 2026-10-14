@@ -18,11 +18,15 @@ const FROM_FIELDS = [
   ['phone', 'Phone (carriers require it)', ''],
   ['email', 'Email', 'contact@darkdivine.store'],
 ];
+// mirrors UPGRADE_IDS in supabase/functions/_shared/shipping.ts
 const UPGRADES = [
   ['priority', 'USPS Priority Mail'],
   ['ups_2day', 'UPS 2nd Day Air'],
+  ['fedex_2day', 'FedEx 2Day (needs FedEx connected in Shippo)'],
   ['express', 'USPS Priority Mail Express'],
   ['ups_next', 'UPS Next Day Air'],
+  ['fedex_next', 'FedEx Standard Overnight (needs FedEx connected in Shippo)'],
+  ['ca_express', 'Canada Express (DHL / UPS / FedEx — cheapest)'],
 ];
 const STARTER_BOXES = [
   { name: 'Poly mailer 14.5×19', length: 19, width: 14.5, height: 2, maxOz: 48 },
@@ -47,7 +51,7 @@ export default function Shipping() {
         defaultItemOz: d.defaultItemOz ?? 24,
         handlingCents: d.handlingCents ?? 0,
         boxes: d.boxes?.length ? d.boxes : STARTER_BOXES,
-        services: d.services ?? UPGRADES.map(([id]) => id),
+        servicesOff: d.servicesOff ?? [],
       });
     });
   }, []);
@@ -150,12 +154,12 @@ export default function Shipping() {
           <legend>Faster options offered at checkout</legend>
           {UPGRADES.map(([id, label]) => (
             <label key={id} style={{ display: 'flex', gap: 8, alignItems: 'center', textTransform: 'none', letterSpacing: 0 }}>
-              <input type="checkbox" style={{ width: 'auto' }} checked={cfg.services.includes(id)}
-                onChange={(e) => setCfg((c) => ({ ...c, services: e.target.checked ? [...c.services, id] : c.services.filter((x) => x !== id) }))} />
+              <input type="checkbox" style={{ width: 'auto' }} checked={!cfg.servicesOff.includes(id)}
+                onChange={(e) => setCfg((c) => ({ ...c, servicesOff: e.target.checked ? c.servicesOff.filter((x) => x !== id) : [...c.servicesOff, id] }))} />
               {label}
             </label>
           ))}
-          <small>Standard (USPS Ground Advantage) is always offered. Canada gets USPS First-Class and Priority International.</small>
+          <small>Standard is always offered: the cheapest ground service that day across USPS, UPS and FedEx (Canada: USPS / UPS / FedEx economy). If one carrier doesn’t answer, the next one is used.</small>
         </fieldset>
 
         <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}>

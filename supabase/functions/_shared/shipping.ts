@@ -33,23 +33,31 @@ export type Quote = {
   weightOz?: number;
 };
 
-// what the customer can pick, in order — first match per service wins
-const US_SERVICES: { id: string; label: string; tokens: string[] }[] = [
-  { id: 'standard', label: 'Standard (USPS Ground Advantage)', tokens: ['usps_ground_advantage'] },
+// What the customer can pick, in order. Each service takes the CHEAPEST
+// rate among its tokens, so Standard is whichever ground carrier is cheapest
+// today — USPS, else UPS, else FedEx — and never disappears because one
+// carrier didn't answer. `carrierInLabel` names the carrier that won.
+// FedEx rates only arrive once a FedEx account is connected in Shippo
+// (Settings → Carriers); until then those options simply don't show.
+type Service = { id: string; label: string; tokens: string[]; carrierInLabel?: boolean };
+const US_SERVICES: Service[] = [
+  { id: 'standard', label: 'Standard', carrierInLabel: true,
+    tokens: ['usps_ground_advantage', 'ups_ground_saver', 'ups_ground', 'fedex_ground', 'fedex_home_delivery'] },
   { id: 'priority', label: 'USPS Priority Mail', tokens: ['usps_priority'] },
   { id: 'ups_2day', label: 'UPS 2nd Day Air', tokens: ['ups_second_day_air'] },
+  { id: 'fedex_2day', label: 'FedEx 2Day', tokens: ['fedex_2_day'] },
   { id: 'express', label: 'USPS Priority Mail Express', tokens: ['usps_priority_express'] },
   { id: 'ups_next', label: 'UPS Next Day Air', tokens: ['ups_next_day_air_saver', 'ups_next_day_air'] },
+  { id: 'fedex_next', label: 'FedEx Standard Overnight', tokens: ['fedex_standard_overnight'] },
 ];
-const CA_SERVICES = [
-  { id: 'standard', label: 'Canada Tracked (USPS First-Class International)', tokens: ['usps_first_class_package_international_service'] },
+const CA_SERVICES: Service[] = [
+  { id: 'standard', label: 'Canada Tracked', carrierInLabel: true,
+    tokens: ['usps_first_class_package_international_service', 'ups_standard', 'fedex_international_economy'] },
   { id: 'priority', label: 'USPS Priority Mail International', tokens: ['usps_priority_mail_international'] },
+  { id: 'ca_express', label: 'Canada Express', carrierInLabel: true,
+    tokens: ['dhl_express_worldwide', 'ups_worldwide_express', 'ups_worldwide_saver', 'fedex_international_priority', 'usps_priority_mail_express_international'] },
 ];
-// US and Canada share ids (standard, priority) — merge, don't overwrite
-export const ALL_SERVICE_TOKENS: Record<string, string[]> = {};
-for (const s of [...US_SERVICES, ...CA_SERVICES]) {
-  ALL_SERVICE_TOKENS[s.id] = [...(ALL_SERVICE_TOKENS[s.id] || []), ...s.tokens];
-}
+export const UPGRADE_IDS = ['priority', 'ups_2day', 'fedex_2day', 'express', 'ups_next', 'fedex_next', 'ca_express'];
 
 /** US ZIP → zone. Free shipping is contiguous-US only. */
 export function zoneOf(country: string, zip?: string | null): Zone {
@@ -92,7 +100,7 @@ export type ShipConfig = {
   defaultItemOz?: number;
   boxes?: { name: string; length: number; width: number; height: number; maxOz?: number }[];
   handlingCents?: number;
-  services?: string[]; // enabled upgrade ids; standard is always on
+  servicesOff?: string[]; // upgrade ids the owner switched off; standard is always on
 };
 
 export async function loadShipConfig(supabase: any): Promise<ShipConfig> {
@@ -150,14 +158,24 @@ export function fromAddress(cfg: ShipConfig) {
   };
 }
 
+/** Cheapest rate among the given servicelevel tokens (null if none quoted). */
+export function cheapestOf(rates: any[], tokens: string[]) {
+  return rates
+    .filter((r) => tokens.includes(r.servicelevel?.token))
+    .sort((a, b) => Number(a.amount) - Number(b.amount))[0] ?? null;
+}
+
 /** Pick one rate per offered service from a Shippo rates list. */
-export function pickRates(rates: any[], country: 'US' | 'CA', enabled?: string[]) {
+export function pickRates(rates: any[], country: 'US' | 'CA', off: string[] = []) {
   const list = country === 'CA' ? CA_SERVICES : US_SERVICES;
   const out: { id: string; label: string; rate: any }[] = [];
   for (const s of list) {
-    if (s.id !== 'standard' && enabled && !enabled.includes(s.id)) continue;
-    const match = s.tokens.map((t) => rates.find((r) => r.servicelevel?.token === t)).find(Boolean);
-    if (match) out.push({ id: s.id, label: s.label, rate: match });
+    // the owner switches upgrades OFF; anything new is on by default
+    if (s.id !== 'standard' && off.includes(s.id)) continue;
+    const match = cheapestOf(rates, s.tokens);
+    if (!match) continue;
+    const label = s.carrierInLabel ? `${s.label} — ${match.provider} ${match.servicelevel?.name ?? ''}`.trim() : s.label;
+    out.push({ id: s.id, label, rate: match });
   }
   return out;
 }
@@ -188,7 +206,7 @@ export async function quoteShipping(opts: {
       parcels: [parcel],
       async: false,
     });
-    const picked = pickRates(res.body?.rates || [], country, cfg.services);
+    const picked = pickRates(res.body?.rates || [], country, cfg.servicesOff || []);
     if (!res.ok || !picked.length || picked[0].id !== 'standard') return flat;
     const zone = zoneOf(country, zip);
     const free = zone === 'L48' && threshold > 0 && subtotal >= threshold;
