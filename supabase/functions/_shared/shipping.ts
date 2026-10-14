@@ -177,6 +177,19 @@ export function pickRates(rates: any[], country: 'US' | 'CA', off: string[] = []
     const label = s.carrierInLabel ? `${s.label} — ${match.provider} ${match.servicelevel?.name ?? ''}`.trim() : s.label;
     out.push({ id: s.id, label, rate: match });
   }
+  // No standard-tier carrier quoted (e.g. a big mailer is over USPS
+  // First-Class International's size limit): the cheapest option that DID
+  // quote becomes Standard, instead of falling back to a flat rate that
+  // doesn't cover the real cost.
+  if (out.length && out[0].id !== 'standard') {
+    const cheapest = out.slice().sort((a, b) => Number(a.rate.amount) - Number(b.rate.amount))[0];
+    const base = (list.find((s) => s.id === 'standard') as Service).label;
+    out.splice(out.indexOf(cheapest), 1);
+    out.unshift({
+      id: 'standard', rate: cheapest.rate,
+      label: `${base} — ${cheapest.rate.provider} ${cheapest.rate.servicelevel?.name ?? ''}`.trim(),
+    });
+  }
   return out;
 }
 
