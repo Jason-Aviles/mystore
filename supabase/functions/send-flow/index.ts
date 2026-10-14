@@ -201,6 +201,7 @@ const FLOWS: Record<string, { subject: string; html: string }> = {
       <tr><td style="${P}">
         <p style="${H}">Your order is being prepared for shipment.</p>
         <p style="margin:0 0 14px;">Packing is underway. Tracking arrives by email the moment your order ships.</p>
+        <p style="margin:0 0 14px;"><b>Moved since you ordered?</b> Reply to this email within 48 hours with your new address and we'll ship it there.</p>
       </td></tr>
       ${BTN('{{status_url}}', 'VIEW ORDER STATUS')}`, { transactional: true }),
   },

@@ -65,7 +65,7 @@ Deno.serve(async (req) => {
     if (gaps.length) return json({ ok: false, error: 'setup', gaps }, 400);
 
     const { data: order } = await supabase.from('orders')
-      .select('id, status, customer_email, shipping, shipping_quote, label, tracking, access_token')
+      .select('id, status, customer_email, shipping, shipping_quote, label, tracking, access_token, campaign_id')
       .eq('id', String(body.order_id || '')).maybeSingle();
     if (!order) return json({ ok: false, error: 'order not found' }, 404);
 
@@ -150,6 +150,8 @@ Deno.serve(async (req) => {
       }
       await supabase.from('orders').update({
         label, tracking: tx.tracking_number, status: 'shipped', updated_at: new Date().toISOString(),
+        // preorders: the status page's production stepper moves to Shipped too
+        ...(order.campaign_id ? { production_status: 'shipped' } : {}),
       }).eq('id', order.id);
 
       let emailed = false;

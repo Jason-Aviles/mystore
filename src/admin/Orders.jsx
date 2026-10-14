@@ -45,6 +45,19 @@ function ShipPanel({ order: o, onDone }) {
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState('');
   const q = o.shipping_quote || {};
+  // customer moved (preorders ship months later) — fix the address before buying
+  const [addr, setAddr] = useState(null);
+  async function saveAddr() {
+    const zip = String(addr.postal_code || '').trim();
+    if (!addr.line1 || !addr.city || !zip) { setErr('Street, city and ZIP are required'); return; }
+    if (addr.country === 'US' && !/^\d{5}(-\d{4})?$/.test(zip)) { setErr('US ZIP must be 5 digits'); return; }
+    setBusy(true); setErr('');
+    try {
+      await adminUpdateOrder(o.id, { shipping: { ...o.shipping, ...addr, postal_code: zip, state: String(addr.state || '').trim().toUpperCase() } });
+      setAddr(null); setRes(null); onDone(false);
+    } catch (e) { setErr(`Not saved — ${e.message}`); }
+    setBusy(false);
+  }
 
   async function loadRates() {
     setBusy(true); setErr('');
@@ -74,6 +87,23 @@ function ShipPanel({ order: o, onDone }) {
 
   return (
     <div className="ship-panel">
+      {addr ? (
+        <div style={{ display: 'grid', gap: 6, gridTemplateColumns: 'repeat(auto-fit, minmax(120px, 1fr))', marginBottom: 10 }}>
+          {[['name', 'Name'], ['line1', 'Street'], ['line2', 'Apt / suite'], ['city', 'City'], ['state', 'State'], ['postal_code', 'ZIP / postal'], ['phone', 'Phone']].map(([k, l]) => (
+            <input key={k} placeholder={l} aria-label={l} value={addr[k] || ''} onChange={(e) => setAddr({ ...addr, [k]: e.target.value })}
+              style={{ padding: '6px 8px', fontSize: 12 }} />
+          ))}
+          <div style={{ display: 'flex', gap: 6 }}>
+            <button type="button" className="btn btn-sm" onClick={saveAddr} disabled={busy}>Save address</button>
+            <button type="button" className="btn btn-ghost btn-sm" onClick={() => setAddr(null)}>Cancel</button>
+          </div>
+        </div>
+      ) : (
+        <button type="button" className="btn btn-ghost btn-sm" style={{ marginBottom: 8 }}
+          onClick={() => setAddr({ ...(o.shipping || {}) })} disabled={busy || (o.label?.url && !o.label.test && !o.label.refund_status)}>
+          Edit ship-to address
+        </button>
+      )}
       <div style={{ fontSize: 12, color: 'var(--silver)', marginBottom: 8 }}>
         Customer paid for: <b style={{ color: 'var(--bone)' }}>{SERVICE_NAMES[q.chosen] || 'Standard'}</b>
         {q.paid_cents != null && <> (${(q.paid_cents / 100).toFixed(2)})</>}
@@ -270,7 +300,7 @@ export default function Orders() {
                   </td>
                 </tr>
                 {shipOpen === o.id && (
-                  <tr><td colSpan={8}><ShipPanel order={o} onDone={() => { setShipOpen(null); load(); }} /></td></tr>
+                  <tr><td colSpan={8}><ShipPanel order={o} onDone={(close = true) => { if (close) setShipOpen(null); load(); }} /></td></tr>
                 )}
                 </Fragment>
               ))}

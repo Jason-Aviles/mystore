@@ -4,6 +4,7 @@ import { supabase, hasSupabase } from '../lib/supabase';
 import { isLive, uploadProductImage, adminGetSettings, adminReplaceSettings } from './adminData';
 import PublishBar from './PublishBar';
 import LockdownCard from './LockdownCard';
+import BulkShip from './BulkShip';
 import { COMMON_ZONES, zonedToUtcIso, utcToZonedLocal, formatInZone } from '../lib/tz';
 import { DROP_STATUS_LABEL } from '../lib/preorder';
 
@@ -193,7 +194,7 @@ export default function Preorders() {
       const [p, c, o, u] = await Promise.all([
         supabase.from('products').select('handle, title, price, status, data, campaign_id, per_customer_limit, max_preorder_units, deposit').neq('status', 'archived').order('title'),
         supabase.from('preorder_access_codes').select('*').eq('campaign_id', selId).order('created_at'),
-        supabase.from('orders').select('id, customer_email, status, production_status, total, tracking, created_at, access_token, balance_due, balance_status, shipping').eq('campaign_id', selId).order('created_at', { ascending: false }),
+        supabase.from('orders').select('id, customer_email, status, production_status, total, tracking, created_at, access_token, balance_due, balance_status, shipping, shipping_quote, label').eq('campaign_id', selId).order('created_at', { ascending: false }),
         supabase.from('preorder_campaign_updates').select('*').eq('campaign_id', selId).order('created_at', { ascending: false }),
       ]);
       setProducts(p.data || []);
@@ -615,6 +616,9 @@ export default function Preorders() {
             </table>
           </div>
         )}
+
+        <div className="admin-head" style={{ marginTop: 26 }}><h2 style={{ fontSize: 18 }}>Ship the batch</h2></div>
+        <BulkShip orders={orders} items={items} onDone={() => flash('Labels done — orders refreshed')} />
 
         <div className="admin-head" style={{ marginTop: 26 }}><h2 style={{ fontSize: 18 }}>Orders ({orders.length})</h2></div>
         {orders.length === 0 ? <p className="empty-note">No orders in this campaign yet.</p> : (
