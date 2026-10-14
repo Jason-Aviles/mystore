@@ -237,7 +237,8 @@ export async function quoteShipping(opts: {
           token: p.rate.servicelevel?.token,
           days: p.rate.estimated_days ?? null,
         };
-      }),
+      // Standard stays first; faster options read cheapest → priciest
+      }).sort((a, b) => (a.id === 'standard' ? -1 : b.id === 'standard' ? 1 : a.cents - b.cents)),
     };
   } catch {
     return flat;
